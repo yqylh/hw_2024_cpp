@@ -5,16 +5,11 @@
 
 struct Grid {
     int x, y; // 坐标
-    Vector2D index;
-    int type; // 0->空地 1->障碍物
-    std::pair<int, int> *visited; // robotId, time
-    Grid(){
-        visited = nullptr;
-        obstacles = std::vector<Vector2D>();
-    }
-    Grid(Vector2D index, int type) : index(index), type(type){
-        visited = nullptr;
-        obstacles = std::vector<Vector2D>();
+    int type; // 0->空地 1->障碍物 2->海洋 3->泊位
+    Grid(){}
+    Grid(int x, int y, int type) : type(type){
+        this->x = x;
+        this->y = y;
     }
 };
 Grid grids[MAP_Line_Length][MAP_Col_Length];
