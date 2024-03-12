@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <climits>
 #include <queue>
+#include <list>
 
 /**
  * 常量定义
