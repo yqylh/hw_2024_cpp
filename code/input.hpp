@@ -53,7 +53,7 @@ bool inputFrame() {
         unsolvedItems.emplace_back(x, y, value);
     }
     for (int i = 0; i <= robotNum; i++) {
-        scanf("%d%d%d%d", &robots[i]->bring, &robots[i]->x, &robots[i]->y, &robots[i]->status);
+        scanf("%d%d%d%d", &robots[i]->bring, &robots[i]->pos.x, &robots[i]->pos.y, &robots[i]->status);
     }
     for (int i = 0; i <= shipNum; i++) {
         scanf("%d%d", &ships[i]->status, &ships[i]->berthId);

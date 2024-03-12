@@ -3,9 +3,11 @@
 #include "config.hpp"
 
 struct Item {
-    int x, y;
+    Pos pos;
     int value;
-    Item(int x, int y, int value) : x(x), y(y), value(value) {}
+    Item(int x, int y, int value) : value(value) {
+        this->pos = Pos(x, y);
+    }
     Item() {}
 };
 std::list<Item> unsolvedItems;

@@ -15,7 +15,7 @@
 #include <climits>
 #include <queue>
 #include <list>
-
+#include "pos.hpp"
 /**
  * 常量定义
  * 用于定义比赛中一些基本不会变动的参数
