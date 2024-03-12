@@ -64,17 +64,13 @@ bool inputFrame() {
 }
 
 void solveFrame() {
-//     TESTOUTPUT(fout << nowTime << std::endl;)
-
-//     for (int i = 0; i <= robotNum; i++) robots[i].action();
-
-//     // TESTOUTPUT(fout << "碰撞检测" << std::endl;)
-
-//     TESTOUTPUT(fout << "开始移动" << std::endl;)
-//     for (int i = 0; i <= robotNum; i++) robots[i].Move();
+    TESTOUTPUT(fout << nowTime << std::endl;)
+    for (int i = 0; i <= shipNum; i++) ships[i]->action();
+    for (int i = 0; i <= robotNum; i++) robots[i]->action();
+    for (int i = 0; i <= robotNum; i++) robots[i]->move();
 
     puts("OK");
-//     TESTOUTPUT(fout << "OK" << std::endl;)
+    TESTOUTPUT(fout << "OK" << std::endl;)
     fflush(stdout);
 }
 #endif

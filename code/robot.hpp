@@ -23,6 +23,13 @@ struct Robot{
     void outputTest() {
         TESTOUTPUT(fout << "Robot id: " << id << std::endl;)
     }
+    void move() {
+        printf("move %d %d\n", id , (x + y ) % 4);
+    }
+    void action() {
+
+    }
+    void load() {}
 };
 
 Robot *robots[MAX_Robot_Num];
