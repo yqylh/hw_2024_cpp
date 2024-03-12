@@ -5,3 +5,4 @@ problem/
 oldFile/
 .vscode/
 main
+*.img
