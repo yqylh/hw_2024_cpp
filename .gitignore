@@ -1,5 +1,6 @@
 .DS_Store
 judge/
 upload/
-problem1/
+problem/
 oldFileLog/
+.vscode/
