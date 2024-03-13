@@ -1,16 +1,43 @@
 #ifndef __SHIP_H__
 #define __SHIP_H__
 #include "config.hpp"
+#include "berth.hpp"
 struct Ship {
     int id;
-    Pos pos; // 坐标
     int status; // 0 移动(运输)中 1正常状态(即装货状态或运输完成状态) 2 泊位外等待状态
     int berthId; // 表示目标泊位，如果目标泊位是虚拟点，则为-1
-    Ship(int id, int x, int y): id(id) {
-        this->pos = Pos(x, y);
+    int capacity; // 货物数量
+    int waitTime; // 等待时间
+    Ship(int id): id(id) {
+        status = 1;
+        berthId = -1;
+        capacity = 0;
+        waitTime = 0;
     }
     void action() {
-        
+        TESTOUTPUT(fout << "ship的状态" << id << " " << status << " " << berthId << " " << capacity << " " << waitTime << " max" << MAX_Capacity << std::endl;)
+        if ((capacity == MAX_Capacity && nowTime >= waitTime) 
+            || (capacity > MAX_Capacity) 
+            || (berthId != -1 && nowTime + berths[berthId]->time + 10 >= MAX_TIME)) {
+            if (status == 0) return;
+            status = 0;
+            capacity = 0;
+            berthId = -1;
+            printf("go %d\n", id);
+            return;
+        }
+        if (status == 1 && berthId == -1) {
+            for (int i = 0; i < MAX_Berth_Num; i++) {
+                if (berths[i]->shipId == -1) {
+                    berthId = i;
+                    berths[i]->shipId = id;
+                    printf("ship %d %d\n", id, i);
+                    TESTOUTPUT(fout << "ship " << id << " " << i << std::endl;)
+                    TESTOUTPUT(fout << "ship移动的时间=" << berths[i]->time << std::endl;)
+                    break;
+                }
+            }
+        }
     }
 };
 

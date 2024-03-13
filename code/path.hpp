@@ -4,7 +4,7 @@
 #include "config.hpp"
 
 struct Path {
-    std::vector<Pos> path;
+    std::list<Pos> path;
     Pos begin;
     Pos end;
     Path() {

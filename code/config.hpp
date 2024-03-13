@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <unordered_map>
+#include <unordered_set>
 #include <climits>
 #include <queue>
 #include <list>
@@ -28,6 +29,7 @@ const int MAX_Col_Length = 200; // 地图有多少列
 const int MAX_TIME = 5 * 60 * 50; // 最大帧数
 const int Item_Continue_Time = 1000; // 物品持续时间
 const int Ship_Move_Time = 500; // 船移动时间
+int MAX_Capacity; // 船的容量
 
 /**
  * 全局变量
@@ -35,11 +37,19 @@ const int Ship_Move_Time = 500; // 船移动时间
 */
 
 int robotNum = -1; // 当前机器人标号,实际数量-1, 0-robotNum
-int shipNum = -1; // 当前船标号,实际数量-1, 0-shipNum
+int shipNum = -1; // 当前船只标号,实际数量-1, 0-shipNum
 int money = 0; // 当前金钱
 int nowTime = 0; // 当前帧数
 bool inputFlag = true; // 是否input是否结束
-int capacity; // 船的容量
+
+Pos dir[4] = {Pos(0, 1), Pos(0, -1), Pos(1, 0), Pos(-1, 0)};
+// 0 表示右移一格 1 表示左移一格 2 表示上移一格 3 表示下移一格
+std::unordered_map<Pos, int> Pos2move = {
+    {Pos(0, 1), 0},
+    {Pos(0, -1), 1},
+    {Pos(-1, 0), 2},
+    {Pos(1, 0), 3}
+};
 
 #ifdef EBUG
     #define TESTOUTPUT(x) x

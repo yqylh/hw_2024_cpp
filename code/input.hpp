@@ -28,13 +28,16 @@ void inputMap(){
         }
     }
     for (int i = 0; i < MAX_Berth_Num; i++) {
-        int x, y, time, velocity;
-        scanf("%d%d%d%d", &x, &y, &time, &velocity);
-        berths[i] = new Berth(i, x, y, time, velocity);
+        int id, x, y, time, velocity;
+        scanf("%d%d%d%d%d", &id, &x, &y, &time, &velocity);
+        berths[i] = new Berth(id, x, y, time, velocity);
+        TESTOUTPUT(fout << "Berth" << i << " :" << id << " " << x << " " << y << " " << time << " " << velocity << std::endl;)
     }
-    std::cin >> capacity;
+    std::cin >> MAX_Capacity;
     std::string line;
     while(getline(std::cin, line) && line != "OK");
+    for (int i = 0; i < MAX_Ship_Num; i++) ships[i] = new Ship(i);
+    shipNum = MAX_Ship_Num - 1;
     puts("OK");
     fflush(stdout);
 }
@@ -51,6 +54,7 @@ bool inputFrame() {
         int x, y, value;
         scanf("%d%d%d", &x, &y, &value);
         unsolvedItems.emplace_back(x, y, value);
+        unsolvedItems.back().beginTime = nowTime;
     }
     for (int i = 0; i <= robotNum; i++) {
         scanf("%d%d%d%d", &robots[i]->bring, &robots[i]->pos.x, &robots[i]->pos.y, &robots[i]->status);
@@ -64,13 +68,12 @@ bool inputFrame() {
 }
 
 void solveFrame() {
-    TESTOUTPUT(fout << nowTime << std::endl;)
+    TESTOUTPUT(fout <<"当前帧数="<< nowTime << std::endl;)
+    for (int i = 0; i <= 0; i++) robots[i]->action();
+    for (int i = 0; i <= 0; i++) robots[i]->move();
     for (int i = 0; i <= shipNum; i++) ships[i]->action();
-    for (int i = 0; i <= robotNum; i++) robots[i]->action();
-    for (int i = 0; i <= robotNum; i++) robots[i]->move();
 
     puts("OK");
-    TESTOUTPUT(fout << "OK" << std::endl;)
     fflush(stdout);
 }
 #endif
