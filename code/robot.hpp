@@ -27,8 +27,11 @@ struct Robot{
         this->toShip = nullptr;
     }
     void move() {
+        // 如果机器人被撞到了
         if (!status) return;
+        // 如果没分配路径
         if (path == nullptr) return;
+        // 如果路径走完了,但是因为一些原因没有到达目的地
         if (path->path.empty()) return;
         auto next = path->path.front();
         path->path.pop_front();
@@ -39,10 +42,10 @@ struct Robot{
         TESTOUTPUT(fout << "pos " << pos.x << " " << pos.y << std::endl;)
         TESTOUTPUT(fout << "next " << next.x << " " << next.y << std::endl;)
     }
+
     void action() {
         TESTOUTPUT(fout << "action " << id << std::endl;)
-        // 输出机器人的信息
-        TESTOUTPUT(fout << "robot " << id << " " << pos.x << " " << pos.y << " " << status << " " << bring << std::endl;)
+        // 如果机器人被撞到了
         if (!status) return;
         if (path != nullptr) {
             // 机器人有路径
@@ -52,18 +55,22 @@ struct Robot{
                 printf("get %d\n", id);
                 TESTOUTPUT(fout << "get " << id << std::endl;)
                 bring = 1;
-            } else if (bring == 1) {
+            } else if (bring == 1 && grids[pos.x][pos.y]->type == 3) {
                 printf("pull %d\n", id);
                 TESTOUTPUT(fout << "pull " << id << std::endl;)
                 bring = 0;
-                toShip->capacity++;
-                toShip->waitTime = nowTime + berths[toShip->berthId]->velocity;
+                if (toShip->berthId != -1) {
+                    toShip->capacity++;
+                    toShip->waitTime = nowTime + berths[toShip->berthId]->velocity;
+                    TESTOUTPUT(fout << "toShip->capacity " << toShip->capacity << std::endl;)
+                }
             }
             delete path;
             path = nullptr;
         }
         if (bring == 0) {
             // 机器人没有货物
+            TESTOUTPUT(fout << "unsolvedItems.size() " << unsolvedItems.size() << std::endl;)
             for (auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
                 if (i->checkDead()) {
                     unsolvedItems.erase(i++);
@@ -89,6 +96,9 @@ struct Robot{
         if (bring == 1) {
             // 机器人有货物
             for (auto & ship : ships) {
+                if (ship->id != id % 5 && ship->id != shipNum) {
+                    continue;
+                }
                 if (ship->status == 1 && ship->berthId != -1 && ship->capacity != MAX_Capacity) {
                     path = findPath(pos, berths[ship->berthId]->pos + Pos(3, 3));
                     if (path == nullptr) {

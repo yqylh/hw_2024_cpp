@@ -69,8 +69,8 @@ bool inputFrame() {
 
 void solveFrame() {
     TESTOUTPUT(fout <<"当前帧数="<< nowTime << std::endl;)
-    for (int i = 0; i <= 0; i++) robots[i]->action();
-    for (int i = 0; i <= 0; i++) robots[i]->move();
+    for (int i = 0; i <= robotNum; i++) robots[i]->action();
+    for (int i = 0; i <= robotNum; i++) robots[i]->move();
     for (int i = 0; i <= shipNum; i++) ships[i]->action();
 
     puts("OK");
