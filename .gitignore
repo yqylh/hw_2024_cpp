@@ -6,3 +6,4 @@ oldFile/
 .vscode/
 main
 code/output.txt
+*.img
