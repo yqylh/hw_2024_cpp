@@ -15,7 +15,7 @@ struct Ship {
         waitTime = 0;
     }
     void action() {
-        TESTOUTPUT(fout << "ship的状态" << id << " " << status << " " << berthId << " " << capacity << " " << waitTime << " max" << MAX_Capacity << std::endl;)
+        TEST(fout << "ship的状态" << id << " " << status << " " << berthId << " " << capacity << " " << waitTime << " max" << MAX_Capacity << std::endl;)
         if ((capacity == MAX_Capacity && nowTime >= waitTime) 
             || (capacity > MAX_Capacity) 
             || (berthId != -1 && nowTime + berths[berthId]->time + 10 >= MAX_TIME)) {
@@ -32,8 +32,8 @@ struct Ship {
                     berthId = i;
                     berths[i]->shipId = id;
                     printf("ship %d %d\n", id, i);
-                    TESTOUTPUT(fout << "ship " << id << " " << i << std::endl;)
-                    TESTOUTPUT(fout << "ship移动的时间=" << berths[i]->time << std::endl;)
+                    TEST(fout << "ship " << id << " " << i << std::endl;)
+                    TEST(fout << "ship移动的时间=" << berths[i]->time << std::endl;)
                     break;
                 }
             }

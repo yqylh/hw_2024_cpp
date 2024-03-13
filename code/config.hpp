@@ -42,7 +42,7 @@ int money = 0; // 当前金钱
 int nowTime = 0; // 当前帧数
 bool inputFlag = true; // 是否input是否结束
 
-Pos dir[4] = {Pos(0, 1), Pos(0, -1), Pos(1, 0), Pos(-1, 0)};
+Pos dir[4] = {Pos(0, 1), Pos(0, -1), Pos(-1, 0), Pos(1, 0)};
 // 0 表示右移一格 1 表示左移一格 2 表示上移一格 3 表示下移一格
 std::unordered_map<Pos, int> Pos2move = {
     {Pos(0, 1), 0},
@@ -52,10 +52,10 @@ std::unordered_map<Pos, int> Pos2move = {
 };
 
 #ifdef EBUG
-    #define TESTOUTPUT(x) x
+    #define TEST(x) x
     std::ofstream fout("output.txt"); // 测试用输出
 #else
-    #define TESTOUTPUT(x) 
+    #define TEST(x) 
 #endif
 
 #ifdef CREATE
