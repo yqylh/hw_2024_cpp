@@ -72,6 +72,12 @@ bool inputFrame() {
 void solveFrame() {
     TEST(fout <<"当前帧数="<< nowTime << std::endl;)
     for (int i = 0; i <= robotNum; i++) robots[i]->action();
+    // 碰撞检测
+    std::vector<Collision> collisions;
+    for (int i = 0; i <= robotNum; i++) {
+        robots[i]->checkCollision(collisions);
+    }
+    // 移动
     for (int i = 0; i <= robotNum; i++) robots[i]->move();
     for (int i = 0; i <= shipNum; i++) ships[i]->action();
 
