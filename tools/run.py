@@ -65,7 +65,7 @@ def main():
     try:
         os.chdir("../code")
         cmd = "g++ main.cpp -o main -std=c++17 -O3"
-        cmd = cmd + " -g -DDEBUG" if args.debug else cmd
+        cmd = cmd + " -g -DEBUG" if args.debug else cmd
         print(cmd)
         os.system(cmd)
         Do_cmd(args)
