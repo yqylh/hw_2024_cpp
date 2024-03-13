@@ -6,6 +6,7 @@
 #include "ship.hpp"
 #include "berth.hpp"
 #include "item.hpp"
+#include "precode_grid.hpp"
 
 void inputMap(){
     for (int i = 0; i < MAX_Line_Length; i++) {
@@ -38,7 +39,22 @@ void inputMap(){
     while(getline(std::cin, line) && line != "OK");
     for (int i = 0; i < MAX_Ship_Num; i++) ships[i] = new Ship(i);
     shipNum = MAX_Ship_Num - 1;
+    sovle_grid();
     puts("OK");
+    // TESTOUTPUT(fout << "inputMap() OK" << std::endl;)
+    // TESTOUTPUT(fout << "sovle_grid() OK" << std::endl;)
+    // for(int i = 0; i<MAX_Line_Length; i++){
+    //     for(int j = 0; j<MAX_Col_Length; j++){
+    //         TESTOUTPUT(fout << reachable_grids[i][j]->type << " ");
+    //     }
+    //     TESTOUTPUT(fout << std::endl;)
+    // }
+    // for(int i = 0; i<MAX_Line_Length; i++){
+    //     for(int j = 0; j<MAX_Col_Length; j++){
+    //         TESTOUTPUT(fout << min_dis[i][j][0] << " ");
+    //     }
+    //     TESTOUTPUT(fout << std::endl;)
+    // }
     fflush(stdout);
 }
 
