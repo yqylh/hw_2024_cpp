@@ -15,6 +15,9 @@ void init_doing() 初始化，指引船只进入泊位，在初始化时使用
 void get_berth_want_goods_level() 计算每个泊位的需求等级，内部使用
 int chose_bertch(int robot_id) 用于指引机器人来到最佳的泊位 
     使用方法 bert_id1，pos_id1,bert_id2,pos_id2 = chose_bertch(robot_id)
+void pull_good(int bert_id) 装载货物时通知塔台
+void declare_ship(int bert_id) 通知塔台有船要进入泊位
+void declare_robot(int bert_id) 通知塔台有机器人要进入泊位
 */
 
 
@@ -30,9 +33,6 @@ struct Berth_center {
     int bert_times[MAX_Berth_Num]; //运输到虚拟点的时间
     int bert_fix_times[MAX_Berth_Num]; //运输到虚拟点的 “修正时间”（即运输到虚拟点的时间+船只装货时间）
 
-
-    // int sortted_bert_by_time[MAX_Berth_Num];
-    // int sortted_bert_by_velocity[MAX_Berth_Num];
     std::vector<int> sortted_bert_by_time = std::vector<int>(MAX_Berth_Num);
     std::vector<int> sortted_bert_by_velocity = std::vector<int>(MAX_Berth_Num);
     std::vector<int> sortted_bert_fix_times = std::vector<int>(MAX_Berth_Num);
@@ -41,7 +41,7 @@ struct Berth_center {
         /*
         todo: 这里应该有些不必要的变量，记得优化掉
         */
-        //初始化 berth_want_goods_level
+        //初始化各种参数
         for (int i = 0; i < MAX_Berth_Num; i++){
             berth_want_goods_level[i] = 15000.0;
             bert_load_finish_times[i] = 0;
@@ -64,6 +64,7 @@ struct Berth_center {
     }
     
     void first_frame_doing(){
+        //指引初始状态的船只进入泊位，能不能放到init_doing里？
         for (int i = 0; i < MAX_Ship_Num; i++){
             allships[i]->go(sortted_bert_by_time[i]); // 指引船只进入泊位, 优先级按时间升序排列
             allberths[sortted_bert_by_time[i]]->on_way_ship ++;
@@ -71,7 +72,7 @@ struct Berth_center {
     }
 
     void get_berth_want_goods_level(){
-        //按泊位多，船少计算
+        //按泊位多，船少计算，计算每个泊位对机器人的需求等级
         for (int i = 0; i < MAX_Berth_Num; i++){
             if (allberths[i]->waitting_ship != 0 && //有船(可能不止一只)
             allberths[i]->goodsNum + allships[allberths[i]->shipId]->capacity < MAX_Capacity * allberths[i]->waitting_ship //这船(可能不止一只)还装不满
@@ -95,6 +96,9 @@ struct Berth_center {
         int pos_id1 = -1, pos_id2 = -1;
         int best_fixed_level = 15000, second_fixed_level = 15000;
         for (int i = 0; i < MAX_Berth_Num; i++){
+            if (allberths[i]->on_way_robot < 5){
+                continue; //泊位上有五个以上机器人，不要去打扰，快检查是不是撞一起了
+            }
             int min_length = 10000, min_id = -1;
             int id = 0;
             for (auto & dir : berths[i]->usePosDir) {
@@ -123,6 +127,7 @@ struct Berth_center {
     }
 
     int bert_ship_goods_check(int bert_id){
+        //检查泊位和船只状态，返回值为泊位剩余容量
         if (allberths[bert_id]->goodsNum > 0){
             if (bert_load_finish_times[bert_id] < nowTime){
                 allships[allberths[bert_id]->shipId]->capacity += allberths[bert_id]->goodsNum;
@@ -136,10 +141,6 @@ struct Berth_center {
         return MAX_Capacity - allberths[bert_id]->goodsNum;
     }
 
-    void check_ship_goods_num(){
-        
-    }
-
     void declare_ship(int bert_id){
         allberths[bert_id]->on_way_ship ++;
     }
@@ -148,16 +149,17 @@ struct Berth_center {
         allberths[bert_id]->on_way_robot ++;
     }
 
-
-
     void pull_good(int bert_id){
-        /*
-        装载货物: 首先顺手检查一下港口和轮船状态，然后装货
-        */
+        // 装载货物: 首先顺手检查一下港口和轮船状态，然后装货
+        /* 暂时检测港口和轮船状态的函数放这了，如果有条件还是放到主时间轴上比较好 */
         int cap_left = bert_ship_goods_check(bert_id);
         allberths[bert_id]->goodsNum ++;
+        allberths[bert_id]->on_way_robot --;
         bert_load_finish_times[bert_id] = bert_velocitys[bert_id] + nowTime;
         bert_load_start_times[bert_id] = nowTime;
+        if (cap_left <= 2){
+            allships[allberths[bert_id]->shipId]->go(bert_id);
+        }
     }
 };
 
