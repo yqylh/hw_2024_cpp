@@ -4,6 +4,7 @@
 #include "grid.hpp"
 #include "ship.hpp"
 #include "berth.hpp"
+#include "robot.hpp"
 #include <vector>
 
 /*
@@ -24,6 +25,8 @@ struct Berth_center {
     float berth_want_goods_level[MAX_Berth_Num]; //表示正常货物需求等级 0-?越低越急
 
     int bert_velocitys[MAX_Berth_Num];
+    int bert_load_start_times[MAX_Berth_Num];
+    int bert_load_finish_times[MAX_Berth_Num]; //运输到虚拟点的剩余时间
     int bert_times[MAX_Berth_Num]; //运输到虚拟点的时间
     int bert_fix_times[MAX_Berth_Num]; //运输到虚拟点的 “修正时间”（即运输到虚拟点的时间+船只装货时间）
 
@@ -41,11 +44,13 @@ struct Berth_center {
         //初始化 berth_want_goods_level
         for (int i = 0; i < MAX_Berth_Num; i++){
             berth_want_goods_level[i] = 15000.0;
+            bert_load_finish_times[i] = 0;
+            bert_load_start_times[i] = 0;
         }
         for (int i = 0; i < MAX_Berth_Num; i++){
             bert_velocitys[i] = allberths[i]->velocity;
             bert_times[i] = allberths[i]->time;
-            bert_fix_times[i] = bert_times[i] + bert_velocitys[i] * allships[0]->capacity; //运输到虚拟点的时间+船只装货时间
+            bert_fix_times[i] = bert_times[i] + bert_velocitys[i] * MAX_Capacity; //运输到虚拟点的时间+船只装货时间
         }
         std::sort(sortted_bert_by_time.begin(), sortted_bert_by_time.end(), [&](const int& a, const int& b) {
             return bert_times[a] < bert_times[b]; // 按时间升序排列
@@ -56,23 +61,25 @@ struct Berth_center {
         std::sort(sortted_bert_fix_times.begin(), sortted_bert_fix_times.end(), [&](const int& a, const int& b) {
             return bert_fix_times[a] < bert_fix_times[b]; // 按修正时间升序排列
         });
+    }
+    
+    void first_frame_doing(){
         for (int i = 0; i < MAX_Ship_Num; i++){
             allships[i]->go(sortted_bert_by_time[i]); // 指引船只进入泊位, 优先级按时间升序排列
             allberths[sortted_bert_by_time[i]]->on_way_ship ++;
         }
-        
     }
 
     void get_berth_want_goods_level(){
         //按泊位多，船少计算
         for (int i = 0; i < MAX_Berth_Num; i++){
             if (allberths[i]->waitting_ship != 0 && //有船(可能不止一只)
-            allberths[i]->goodsNum + allships[allberths[i]->shipId]->goodsNum < MAX_Capacity * allberths[i]->waitting_ship //这船(可能不止一只)还装不满
+            allberths[i]->goodsNum + allships[allberths[i]->shipId]->capacity < MAX_Capacity * allberths[i]->waitting_ship //这船(可能不止一只)还装不满
             ){
                 berth_want_goods_level [i] = 0; //急需货物，快来！
                 continue;
             }
-            int remaining_shipment = (allberths[i]->goodsNum +allberths[i]->on_way_robot)/ allships[0]->capacity; //剩余运输次数,货物包括已经在泊位上的和机器人手上的
+            int remaining_shipment = (allberths[i]->goodsNum +allberths[i]->on_way_robot)/ MAX_Capacity; //剩余运输次数,货物包括已经在泊位上的和机器人手上的
             berth_want_goods_level[i] = bert_fix_times[i] * remaining_shipment;
         }
     }
@@ -115,6 +122,24 @@ struct Berth_center {
         return best_bert_id, pos_id1, second_bert_id, pos_id2;
     }
 
+    int bert_ship_goods_check(int bert_id){
+        if (allberths[bert_id]->goodsNum > 0){
+            if (bert_load_finish_times[bert_id] < nowTime){
+                allships[allberths[bert_id]->shipId]->capacity += allberths[bert_id]->goodsNum;
+                allberths[bert_id] = 0;
+            }else{
+                int pulled_goods =  (nowTime - bert_load_start_times[bert_id]) / bert_velocitys[bert_id];
+                allships[allberths[bert_id]->shipId]->capacity += pulled_goods;
+                allberths[bert_id]->goodsNum -= pulled_goods;
+            }
+        }
+        return MAX_Capacity - allberths[bert_id]->goodsNum;
+    }
+
+    void check_ship_goods_num(){
+        
+    }
+
     void declare_ship(int bert_id){
         allberths[bert_id]->on_way_ship ++;
     }
@@ -123,8 +148,16 @@ struct Berth_center {
         allberths[bert_id]->on_way_robot ++;
     }
 
+
+
     void pull_good(int bert_id){
+        /*
+        装载货物: 首先顺手检查一下港口和轮船状态，然后装货
+        */
+        int cap_left = bert_ship_goods_check(bert_id);
         allberths[bert_id]->goodsNum ++;
+        bert_load_finish_times[bert_id] = bert_velocitys[bert_id] + nowTime;
+        bert_load_start_times[bert_id] = nowTime;
     }
 };
 

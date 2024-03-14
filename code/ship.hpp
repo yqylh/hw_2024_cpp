@@ -8,13 +8,11 @@ struct Ship {
     int berthId; // 表示目标泊位，如果目标泊位是虚拟点，则为-1
     int capacity; // 货物数量
     int waitTime; // 等待时间
-    int goodsNum; // 货物数量
     Ship(int id): id(id) {
         status = 1;
         berthId = -1;
         capacity = 0;
         waitTime = 0;
-        goodsNum = 0;
     }
     void action() {
         TEST(fout << "ship的状态" << id << " " << status << " " << berthId << " " << capacity << " " << waitTime << " max" << MAX_Capacity << std::endl;)
