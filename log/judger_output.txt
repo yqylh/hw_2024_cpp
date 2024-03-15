@@ -1,0 +1,6 @@
+stdout:
+{"status":"Successful","score":12371}
+
+stderr:
+{"status":"Successful","score":12371}
+

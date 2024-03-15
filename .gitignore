@@ -3,6 +3,7 @@ judge/
 upload/
 problem/
 oldFile/
+test/
 .vscode/
 main
 code/output.txt

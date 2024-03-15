@@ -1,5 +1,6 @@
 import os,sys,shutil
 import argparse
+import subprocess
 
 if sys.platform.startswith('linux'):
     print("System: Linux")
@@ -28,7 +29,25 @@ def Do_cmd(args):
 def win_cmd(args):
     Win_Cmd = '%CD%/../judge/PreliminaryJudge.exe -s ' + str(args.random_seed) + ' -m ../allMaps/' + args.map +' -r ./$map%Y-%m-%d.%H.%M.%S.rep main.exe'
     print(Win_Cmd)
-    os.system(Win_Cmd)
+    
+    # check if '../judge' exists
+    if not os.path.exists('../log'):
+        os.makedirs('../log')
+    
+    process = subprocess.Popen(Win_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    
+    if stdout:
+        with open('../log/judger_output.txt', 'w') as f:
+            f.write("stdout:\n")
+            f.write(stdout.decode('utf-8'))
+    
+    # 检查错误输出并打印
+    if stderr:
+        with open('../log/judger_output.txt', 'a') as f:
+            f.write("stderr:\n")
+            f.write(stderr.decode('utf-8'))
+    
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
             shutil.move('replay/' + files, '../judge/replay/' + files)
