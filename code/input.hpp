@@ -34,12 +34,7 @@ void inputMap(){
         int id, x, y, time, velocity;
         scanf("%d%d%d%d%d", &id, &x, &y, &time, &velocity);
         berths[i] = new Berth(id, x, y, time, velocity);
-        TEST(fout << "Berth" << i << " :" << id << " " << x << " " << y << " " << time << " " << velocity << std::endl;)
-        // format:
-        // Berth0 :0 0 0 0 0
-        // use the format in c++20
-        
-        berthLogger.log(0, "{0},{1},{2},{3},{4},{5}", i, id, x, y, time, velocity);
+        berthLogger.log(nowTime, "Berth{0} :id={1} x={2} y={3} time={4} v={5}", i, id, x, y, time, velocity);
     }
     std::cin >> MAX_Capacity;
     std::string line;
@@ -80,7 +75,7 @@ bool inputFrame() {
 }
 
 void solveFrame() {
-    TEST(fout <<"当前帧数="<< nowTime << std::endl;)
+    flowLogger.log(nowTime, "当前帧数={0}", nowTime);
     for (int i = 0; i <= robotNum; i++) robots[i]->action();
 
     // 碰撞检测
@@ -95,7 +90,7 @@ void solveFrame() {
         end = high_resolution_clock::now();
         usedTime = duration_cast<milliseconds>(end - frameStart).count();
     }
-    TEST(fout << "frameTime: " << usedTime << std::endl;)
+    flowLogger.log(nowTime, "frameTime: usedTime={0}", usedTime);
     puts("OK");
     fflush(stdout);
 }

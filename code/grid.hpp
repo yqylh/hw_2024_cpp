@@ -135,7 +135,7 @@ void solveAllGrid() {
                 }
             }
         }
-        TEST(fout << "thread Finish" << std::endl;)
+        flowLogger.log(nowTime, "thread Finish");
         threadFinish = true;
     });
     // 这个线程要后台运行
@@ -152,7 +152,7 @@ void solveAllGrid() {
             }
         }
     }
-    TEST(fout << "main thread: " << "finish" << std::endl;)
+    flowLogger.log(nowTime, "main thread Finish");
     return;
 }
 

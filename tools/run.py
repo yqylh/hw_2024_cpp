@@ -132,7 +132,7 @@ def main():
             
         if args.debug:
             compile_fmt()
-            cmd += " -g -DDEBUG"
+            cmd += " -g -DDEBUG -DEBUG"
             # cmd = cmd + " ../dcode/src/format.cc -I../dcode/include"
             cmd += " -L../dcode -lfmt -I../dcode/include"
         print(cmd)

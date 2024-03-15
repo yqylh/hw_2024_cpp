@@ -15,7 +15,7 @@ struct Ship {
         waitTime = 0;
     }
     void action() {
-        TEST(fout << "ship的状态" << id << " " << status << " " << berthId << " " << capacity << " " << waitTime << " max" << MAX_Capacity << std::endl;)
+        shipLogger.log(nowTime, "ship的状态{0} {1} {2} {3} {4} max{5}", id, status, berthId, capacity, waitTime, MAX_Capacity);
         if ((capacity == MAX_Capacity && nowTime >= waitTime) 
             || (capacity > MAX_Capacity) 
             || (berthId != -1 && nowTime + berths[berthId]->time + 10 >= MAX_TIME)) {
@@ -24,7 +24,7 @@ struct Ship {
             capacity = 0;
             berthId = -1;
             printf("go %d\n", id);
-            TEST(fout << "go " << id << std::endl;)
+            flowLogger.log(nowTime, "ship{0} go", id);
             return;
         }
         if (status == 1 && berthId == -1) {
@@ -33,8 +33,7 @@ struct Ship {
                     berthId = i;
                     berths[i]->shipId = id;
                     printf("ship %d %d\n", id, i);
-                    TEST(fout << "ship " << id << " " << i << std::endl;)
-                    TEST(fout << "ship移动的时间=" << berths[i]->time << std::endl;)
+                    flowLogger.log(nowTime, "ship{0} move to berth{1} 移动时间 {2}", id, i, berths[i]->time);
                     break;
                 }
             }

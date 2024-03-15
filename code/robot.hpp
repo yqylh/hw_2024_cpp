@@ -41,10 +41,10 @@ void Robot::move() {
     // 如果路径走完了,但是因为一些原因没有到达目的地
     if (pos == path->end) return;
     printf("move %d %d\n", id , path->pathDir->getDir(pos.x, pos.y));
-    TEST(fout << "move " << id << " " << path->pathDir->getDir(pos.x, pos.y) << std::endl;)
+    flowLogger.log(nowTime, "move {0} {1}", id, path->pathDir->getDir(pos.x, pos.y));
 }
 void Robot::action() {
-    TEST(fout << "action " << id << std::endl;)
+    flowLogger.log(nowTime, "action {0}", id);
     // 如果机器人被撞到了
     if (!status) return;
     if (path != nullptr) {
@@ -52,16 +52,16 @@ void Robot::action() {
         // 机器人到达目的地
         if (bring == 0 && nowTime <= bringTimeLimit) {
             printf("get %d\n", id);
-            TEST(fout << "get " << id << std::endl;)
+            flowLogger.log(nowTime, "get {0}", id);
             bring = 1;
         } else if (bring == 1 && grids[pos.x][pos.y]->type == 3) {
             printf("pull %d\n", id);
-            TEST(fout << "pull " << id << std::endl;)
+            flowLogger.log(nowTime, "pull {0}", id);
             bring = 0;
             if (toShip->berthId != -1) {
                 toShip->capacity++;
                 toShip->waitTime = nowTime + berths[toShip->berthId]->velocity;
-                TEST(fout << "toShip->capacity " << toShip->capacity << std::endl;)
+                robotLogger.log(nowTime, "toShip->capacity {0}", toShip->capacity);
             }
         }
         delete path;
@@ -106,7 +106,7 @@ void Robot::action() {
                     continue;
                 }
                 toShip = ship;
-                TEST(fout << "toShip " << toShip->id << std::endl;)
+                flowLogger.log(nowTime, "toShip {0}", toShip->id);
                 break;
             }
         }
@@ -114,6 +114,7 @@ void Robot::action() {
 }
 // first 表示机器人的目标位置, second 表示机器人原始位置
 void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
+    robotLogger.log(nowTime, "robot{0} checkCollision", id);
     Pos nextTimePos;
     int nextDir = -1;
     // 首先预处理自己之后几帧的位置
@@ -123,10 +124,10 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
         nextDir = path->pathDir->getDir(pos.x, pos.y);
         nextTimePos = pos + dir[nextDir];
     }
-    TEST(fout << "robot " << id << " pos " << pos.x << " " << pos.y << " nextTimePos " << nextTimePos.x << " " << nextTimePos.y << " nextDir " << nextDir << std::endl;)
+    robotLogger.log(nowTime, "robot{0} pos{1},{2} nextTimePos{3},{4} nextDir{5}", id, pos.x, pos.y, nextTimePos.x, nextTimePos.y, nextDir);
     // 如果下一帧的位置有机器人 或者有两个机器人交换位置
     if (otherPos.find(nextTimePos) != otherPos.end() || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextTimePos) ){
-        TEST(fout << "crash " << id << std::endl;)
+        robotLogger.log(nowTime, "robot{0} crash", id);
         // 不能继续走同样的方向,尽量不被追着揍
         std::vector<int> ableDir;
         if (nextDir == 0) ableDir = {2, 3, 1}; 
@@ -141,7 +142,7 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
                 continue;
             }
             printf("move %d %d\n", id, d);
-            TEST(fout << "move " << id << " " << d << std::endl;)
+            flowLogger.log(nowTime, "move {0} {1}", id, d);
             status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
             otherPos[nextPos] = pos;
             return;
