@@ -60,6 +60,9 @@ std::unordered_map<Pos, int> Pos2move = {
 
 
 FileLogger shipLogger("../log/ship_log.txt");
+FileLogger robotLogger("../log/robot_log.txt");
+FileLogger berthLogger("../log/berth_log.txt");
+FileLogger itemLogger("../log/item_log.txt");
 
 #ifdef DEBUG
     #define TEST(x) x

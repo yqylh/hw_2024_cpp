@@ -6,6 +6,7 @@
 #include "ship.hpp"
 #include "berth.hpp"
 #include "item.hpp"
+#include "logger.hpp"
 
 void inputMap(){
     for (int i = 0; i < MAX_Line_Length; i++) {
@@ -27,8 +28,6 @@ void inputMap(){
             }
         }
     }
-    #include "logger.hpp"
-
     for (int i = 0; i < MAX_Berth_Num; i++) {
         int id, x, y, time, velocity;
         scanf("%d%d%d%d%d", &id, &x, &y, &time, &velocity);

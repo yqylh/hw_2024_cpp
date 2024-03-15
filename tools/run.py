@@ -46,12 +46,12 @@ def win_cmd(args):
     
     if stdout:
         with open('../log/judger_output.txt', 'w') as f:
-            f.write("stdout:\n")
+            f.write("stdout:")
             f.write(stdout.decode('utf-8'))
     
     if stderr:
         with open('../log/judger_output.txt', 'a') as f:
-            f.write("stderr:\n")
+            f.write("stderr:")
             f.write(stderr.decode('utf-8'))
     
     for files in os.listdir('./replay'):
@@ -76,12 +76,12 @@ def linux_cmd(args):
     
     if stdout:
         with open('../log/judger_output.txt', 'w') as f:
-            f.write("stdout:\n")
+            f.write("stdout:")
             f.write(stdout.decode('utf-8'))
     
     if stderr:
         with open('../log/judger_output.txt', 'a') as f:
-            f.write("stderr:\n")
+            f.write("stderr:")
             f.write(stderr.decode('utf-8'))
             
     for files in os.listdir('./replay'):
