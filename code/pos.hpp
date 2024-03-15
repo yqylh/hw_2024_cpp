@@ -18,6 +18,9 @@ struct Pos {
     bool operator==(const Pos v)const {// 重载等于号
         return x == v.x && y == v.y;
     }
+    int length(const Pos v)const {// 计算两点之间的距离
+        return abs(x - v.x) + abs(y - v.y);
+    }
 };
 
 

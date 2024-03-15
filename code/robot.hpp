@@ -30,7 +30,7 @@ struct Robot{
     }
     void move();
     void action();
-    void checkCollision(std::unordered_set<Pos> &collisions);
+    void checkCollision(std::unordered_map<Pos, Pos> &otherPos);
 };
 
 void Robot::move() {
@@ -112,8 +112,8 @@ void Robot::action() {
         }
     }
 }
-void Robot::checkCollision(std::unordered_set<Pos> &collisions){
-    TEST(fout << "checkCollision " << id << "status " << status << std::endl;)
+// first 表示机器人的目标位置, second 表示机器人原始位置
+void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
     Pos nextTimePos;
     int nextDir = -1;
     // 首先预处理自己之后几帧的位置
@@ -124,8 +124,8 @@ void Robot::checkCollision(std::unordered_set<Pos> &collisions){
         nextTimePos = pos + dir[nextDir];
     }
     TEST(fout << "robot " << id << " pos " << pos.x << " " << pos.y << " nextTimePos " << nextTimePos.x << " " << nextTimePos.y << " nextDir " << nextDir << std::endl;)
-    // 如果下一帧的位置有机器人 或者有机器人走到我的位置
-    if (collisions.find(nextTimePos) != collisions.end() || collisions.find(pos) != collisions.end() ){
+    // 如果下一帧的位置有机器人 或者有两个机器人交换位置
+    if (otherPos.find(nextTimePos) != otherPos.end() || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextTimePos) ){
         TEST(fout << "crash " << id << std::endl;)
         // 不能继续走同样的方向,尽量不被追着揍
         std::vector<int> ableDir;
@@ -136,22 +136,24 @@ void Robot::checkCollision(std::unordered_set<Pos> &collisions){
         for (auto & d : ableDir) { 
             auto nextPos = pos + dir[d];
             if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
-            if (collisions.find(nextPos) == collisions.end()) {
-                printf("move %d %d\n", id, d);
-                TEST(fout << "move " << id << " " << d << std::endl;)
-                status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
-                collisions.insert(nextPos);
-                return;
+            if (otherPos.find(nextPos) != otherPos.end() 
+                || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextPos) ) {
+                continue;
             }
-        }
-        // 如果可以停留在原地,有点弱智这里
-        if (collisions.find(pos) == collisions.end()) {
+            printf("move %d %d\n", id, d);
+            TEST(fout << "move " << id << " " << d << std::endl;)
             status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
-            collisions.insert(pos);
+            otherPos[nextPos] = pos;
+            return;
+        }
+        // 如果可以停留在原地,有点弱智这里??这里应该是直接可以留下来
+        if (otherPos.find(pos) == otherPos.end()) {
+            status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
+            otherPos[pos] = pos;
             return;
         }
     } else {
-        collisions.insert(nextTimePos);
+        otherPos[nextTimePos] = pos;
     }
     return;
 }
@@ -163,6 +165,87 @@ void solveRobot() {
         robots[i]->robotDir = sovleGrid(robots[i]->pos);
         grids[robots[i]->pos.x][robots[i]->pos.y]->gridDir = robots[i]->robotDir;
     }
+}
+
+void solveCollision() {
+    // 记录 friends
+    std::vector<std::vector<int>> friends(MAX_Robot_Num + 1, std::vector<int>(0));
+    std::unordered_set<Pos> robotPos;
+    // 计算每个节点的 friend 的 id
+    for (int i = 0; i <= robotNum; i++) {
+        robotPos.insert(robots[i]->pos);
+        for (int j = i + 1; j <= robotNum; j++) {
+            if (robots[i]->pos.length(robots[j]->pos) <= 2) {
+                friends[i].push_back(j);
+                friends[j].push_back(i);
+            }
+        }
+    }
+    // 记录周围的空闲度
+    int free[MAX_Robot_Num + 1] = {0};
+    for (int i = 0; i <= robotNum; i++) {
+        for (int j = 0; j < 4; j++) {
+            auto nextPos = robots[i]->pos + dir[j];
+            if (robotPos.find(nextPos) != robotPos.end()) continue;
+            if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
+            free[i]++;
+        }
+    }
+    // 使用Lambda表达式作为比较函数
+    auto compare = [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
+        if (a.second == b.second) {
+            int ida = a.first, idb = b.first;
+            if (robots[ida]->pos.x == robots[idb]->pos.x) {
+                return robots[ida]->pos.y < robots[idb]->pos.y;
+            } else {
+                return robots[ida]->pos.x < robots[idb]->pos.x;
+            }
+        } else {
+            return a.second < b.second;
+        }
+    };
+    // 初始化set，指定Lambda表达式作为比较器
+    std::set<std::pair<int, int>, decltype(compare)> mySet(compare);
+    // 按照 free 排序    id   free. 如果 free 相同按照 x y 排序
+    for (int i = 0; i <= robotNum; i++) {
+        mySet.insert(std::make_pair(i, free[i]));
+    }
+    /**
+     * 1. 首先找到没计算的点中空闲度最小的点
+     * 2. 然后找到它的邻居 优先距离 1,其次距离 2,然后将其删除
+     * 3. 重复 1 2 步骤
+    */
+    std::unordered_map<int, std::vector<int>> group; group.clear();
+    while (!mySet.empty()) {
+        auto it = mySet.begin();
+        int u = it->first;
+        mySet.erase(it);
+        group[u] = std::vector<int>();
+        std::queue<int> q;
+        while (!q.empty()) {
+            auto top = q.front();
+            q.pop();
+            group[u].push_back(top);
+            for (auto & item : mySet) if (item.first == top) {
+                mySet.erase(item);
+                break;
+            }
+            for (auto &frd : friends[top]) {
+                if (robots[top]->pos.length(robots[frd]->pos) == 1) q.push(frd);
+            }
+            for (auto &frd : friends[top]) {
+                if (robots[top]->pos.length(robots[frd]->pos) == 2) q.push(frd);
+            }
+        }
+    }
+    // 按组进行碰撞检测
+    std::unordered_map<Pos, Pos> nextPos; nextPos.clear();
+    for (auto & g : group) {
+        for (auto & i : g.second) {
+            robots[i]->checkCollision(nextPos);
+        }
+    }
+    return;
 }
 
 #endif
