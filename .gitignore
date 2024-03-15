@@ -12,3 +12,4 @@ code/output.txt
 *.zip
 *.a
 *.o
+*.exe
