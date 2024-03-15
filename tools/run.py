@@ -91,8 +91,8 @@ def linux_cmd(args):
             shutil.move('./replay/' + files, '../judge/replay/' + files)
     if os.path.isfile('main'):
         os.remove('main')
-    if os.path.isfile('main.dSYM'):
-        os.remove('main.dSYM')
+    if os.path.exists('main.dSYM'):
+        shutil.rmtree('main.dSYM')
     if os.path.exists('replay'):
         os.rmdir('replay')
 
