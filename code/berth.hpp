@@ -2,6 +2,8 @@
 #define __BERTH_H__
 #include "config.hpp"
 #include "grid.hpp"
+#include <vector>
+
 struct Berth {
     int id;
     Pos pos;
@@ -10,11 +12,20 @@ struct Berth {
     int time; // 运输到虚拟点的时间  
     int velocity; // 装载速度
     int shipId; // 表示当前泊位上的船的 id 如果没有则为-1
+    //上面的是原始值，别改
     bool selected; // 表示当前泊位是否被选中
+    int goodsNum; // 表示当前泊位上的货物数量
+    int on_way_ship;
+    int on_way_robot;
+    int waitting_ship;
     Berth(int id, int x, int y, int time, int velocity) : id(id), time(time), velocity(velocity) {
         this->pos = Pos(x, y);
         shipId = -1;
         selected = false;
+        goodsNum = 0;
+        on_way_ship = 0;
+        on_way_robot = 0;
+        waitting_ship = 0;
     }
     void findUsePos() {
         usePos.clear();

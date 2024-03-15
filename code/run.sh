@@ -4,7 +4,7 @@ debug=1
 # 如果是 python,上面几个参数改成默认值. debug可以改成是否包含'debug' word
 compile= ;
 if [ $debug -eq 1 ] ; then
-    compile="-g -DEBUG"
+    compile="-g -DDEBUG"
 fi
 
 # 如果文件夹不存在

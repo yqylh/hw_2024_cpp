@@ -3,8 +3,12 @@ judge/
 upload/
 problem/
 oldFile/
+test/
+log/
 .vscode/
 main
 code/output.txt
 *.img
 *.zip
+*.a
+*.o

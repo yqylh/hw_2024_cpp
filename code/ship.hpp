@@ -40,6 +40,9 @@ struct Ship {
             }
         }
     }
+    void go(int berthId){
+        printf("go %d\n", id);
+    }
 };
 
 Ship *ships[MAX_Ship_Num];

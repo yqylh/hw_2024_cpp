@@ -1,5 +1,6 @@
 import os,sys,shutil
 import argparse
+import subprocess
 
 if sys.platform.startswith('linux'):
     print("System: Linux")
@@ -12,12 +13,19 @@ elif sys.platform.startswith('darwin'):
     system = 'mac'
 
 def setup_args():
+    config = {}
     parser = argparse.ArgumentParser(description='Upload a file to the server')
     parser.add_argument('--file_name',nargs='?',type=str,default=None, help='File name to upload')
-    parser.add_argument('--debug',nargs='?',type=bool,default=False, help='Destination on the server')
+    parser.add_argument('--debug',nargs='?',type=str,default=False, help='Destination on the server')
     parser.add_argument('--map',nargs='?',type=str,default='map1.txt', help='Map to use')
     parser.add_argument('--random_seed',nargs='?',type=int,default=123, help='Random seed to use')
-    return parser.parse_args()
+    args = parser.parse_args()
+    config['file_name'] = args.file_name
+    # to boolean
+    config['debug'] = (args.debug == 'True' or args.debug == 'true' or args.debug == '1')
+    config['map'] = args.map
+    config['random_seed'] = args.random_seed
+    return argparse.Namespace(**config)
 
 def Do_cmd(args):
     if system == 'win':
@@ -28,7 +36,24 @@ def Do_cmd(args):
 def win_cmd(args):
     Win_Cmd = '%CD%/../judge/PreliminaryJudge.exe -s ' + str(args.random_seed) + ' -m ../allMaps/' + args.map +' -r ./$map%Y-%m-%d.%H.%M.%S.rep main.exe'
     print(Win_Cmd)
-    os.system(Win_Cmd)
+    
+    # check if '../log' exists
+    if not os.path.exists('../log'):
+        os.makedirs('../log')
+    
+    process = subprocess.Popen(Win_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    
+    if stdout:
+        with open('../log/judger_output.txt', 'w') as f:
+            f.write("stdout:")
+            f.write(stdout.decode('utf-8'))
+    
+    if stderr:
+        with open('../log/judger_output.txt', 'a') as f:
+            f.write("stderr:")
+            f.write(stderr.decode('utf-8'))
+    
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
             shutil.move('replay/' + files, '../judge/replay/' + files)
@@ -40,7 +65,25 @@ def win_cmd(args):
 
 def linux_cmd(args):
     Linux_Cmd = '../judge/PreliminaryJudge -s ' + str(args.random_seed) + ' -m ../allMaps/' + args.map +' -r ./$map%Y-%m-%d.%H.%M.%S.rep ./main'
-    os.system(Linux_Cmd)
+    print(Linux_Cmd)
+    
+    # check if '../log' exists
+    if not os.path.exists('../log'):
+        os.makedirs('../log')
+    
+    process = subprocess.Popen(Linux_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    
+    if stdout:
+        with open('../log/judger_output.txt', 'w') as f:
+            f.write("stdout:")
+            f.write(stdout.decode('utf-8'))
+    
+    if stderr:
+        with open('../log/judger_output.txt', 'a') as f:
+            f.write("stderr:")
+            f.write(stderr.decode('utf-8'))
+            
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
             shutil.move('./replay/' + files, '../judge/replay/' + files)
@@ -51,6 +94,22 @@ def linux_cmd(args):
     if os.path.exists('replay'):
         os.rmdir('replay')
 
+def compile_fmt():
+    fmt_lib_path = "../dcode/libfmt.a"
+    if not os.path.exists(fmt_lib_path):
+        # 如果静态库不存在，先编译fmt库
+        print("Compiling fmt library...")
+        fmt_compile_cmd = "g++ -c -o ../dcode/fmt.o ../dcode/src/format.cc -I../dcode/include"
+        if os.system(fmt_compile_cmd) == 0:
+            print("fmt library compile success")
+        else:
+            print("fmt library compile failed")
+            raise Exception("fmt library compile failed")
+        ar_cmd = "ar rcs " + fmt_lib_path + " ../dcode/fmt.o"
+        os.system(ar_cmd)
+    else:
+        print("fmt library exists")
+        
 def main():
     args = setup_args()
     print(args)
@@ -65,11 +124,17 @@ def main():
     try:
         os.chdir("../code")
         cmd = "g++ main.cpp -o main -std=c++17 -O3"
-        cmd = cmd + " -g -DEBUG" if args.debug else cmd
+        if args.debug:
+            compile_fmt()
+            cmd += " -g -DDEBUG"
+            # cmd = cmd + " ../dcode/src/format.cc -I../dcode/include"
+            cmd += " -L../dcode -lfmt -I../dcode/include"
         print(cmd)
-        os.system(cmd)
-        Do_cmd(args)
-        print("Compile success")
+        if os.system(cmd) == 0:
+            print("Compile success")
+            Do_cmd(args)
+        else:
+            print("Compile failed")
     except Exception as e:
         print("Compile failed")
         print(e)
