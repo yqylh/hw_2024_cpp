@@ -20,6 +20,7 @@
 #include <thread>
 #include <bitset>
 #include <memory>
+#include <atomic>
 #include "pos.hpp"
 
 using namespace std::chrono;
