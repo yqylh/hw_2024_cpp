@@ -101,6 +101,7 @@ struct Berth_center {
             }
             int min_length = 10000, min_id = -1;
             int id = 0;
+            // bugs
             for (auto & dir : berths[i]->usePosDir) {
                 if (dir[robot_pos.x][robot_pos.y].length < min_length){
                     min_length = dir[robot_pos.x][robot_pos.y].length;

@@ -114,7 +114,6 @@ void Robot::action() {
 }
 // first 表示机器人的目标位置, second 表示机器人原始位置
 void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
-    robotLogger.log(nowTime, "robot{0} checkCollision", id);
     Pos nextTimePos;
     int nextDir = -1;
     // 首先预处理自己之后几帧的位置
@@ -134,8 +133,14 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
         if (nextDir == 1) ableDir = {2, 3, 0}; 
         if (nextDir == 2) ableDir = {0, 1, 3}; 
         if (nextDir == 3) ableDir = {0, 1, 2}; 
+        if (nextDir == -1) ableDir = {0, 1, 2, 3};
+        if (rand() % 2 == 0) std::swap(ableDir[0], ableDir[1]);
+        if (rand() % 10 == 0) std::swap(ableDir[0], ableDir[2]);
         for (auto & d : ableDir) { 
             auto nextPos = pos + dir[d];
+            if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) {
+                continue;
+            }
             if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
             if (otherPos.find(nextPos) != otherPos.end() 
                 || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextPos) ) {
@@ -187,6 +192,9 @@ void solveCollision() {
     for (int i = 0; i <= robotNum; i++) {
         for (int j = 0; j < 4; j++) {
             auto nextPos = robots[i]->pos + dir[j];
+            if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) {
+                continue;
+            }
             if (robotPos.find(nextPos) != robotPos.end()) continue;
             if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
             free[i]++;

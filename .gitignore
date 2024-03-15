@@ -13,3 +13,4 @@ code/output.txt
 *.a
 *.o
 *.exe
+main.dSYM
