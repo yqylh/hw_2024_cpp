@@ -99,6 +99,7 @@ protected:
 
 // 文件日志记录器
 class FileLogger : public Logger {
+#ifdef DEBUG
 public:
     FileLogger(const std::string& filename) : outputStream(filename) {}
 
@@ -116,6 +117,12 @@ private:
     }
 
     std::ofstream outputStream;
+#else
+public:
+    FileLogger(const std::string& filename) {}
+private:
+    void writeLog(const std::string& message) override {}
+#endif
 };
 
 
