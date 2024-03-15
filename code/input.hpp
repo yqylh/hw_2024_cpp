@@ -33,7 +33,11 @@ void inputMap(){
         scanf("%d%d%d%d%d", &id, &x, &y, &time, &velocity);
         berths[i] = new Berth(id, x, y, time, velocity);
         TEST(fout << "Berth" << i << " :" << id << " " << x << " " << y << " " << time << " " << velocity << std::endl;)
-        shipLogger.log("Berth" + std::to_string(i) + " :" + std::to_string(id) + " " + std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(time) + " " + std::to_string(velocity));
+        // format:
+        // Berth0 :0 0 0 0 0
+        // use the format in c++20
+        
+        berthLogger.log(0, "{0},{1},{2},{3},{4},{5}", i, id, x, y, time, velocity);
     }
     std::cin >> MAX_Capacity;
     std::string line;

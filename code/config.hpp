@@ -56,6 +56,7 @@ std::unordered_map<Pos, int> Pos2move = {
 /**
  * 日志记录
  * 用于全局的日志器
+ * 建议写日志时少用空格，使用逗号分隔
 */
 
 
@@ -63,6 +64,7 @@ FileLogger shipLogger("../log/ship_log.txt");
 FileLogger robotLogger("../log/robot_log.txt");
 FileLogger berthLogger("../log/berth_log.txt");
 FileLogger itemLogger("../log/item_log.txt");
+FileLogger centerLogger("../log/center_log.txt");
 
 #ifdef DEBUG
     #define TEST(x) x

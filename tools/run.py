@@ -94,6 +94,22 @@ def linux_cmd(args):
     if os.path.exists('replay'):
         os.rmdir('replay')
 
+def compile_fmt():
+    fmt_lib_path = "../dcode/libfmt.a"
+    if not os.path.exists(fmt_lib_path):
+        # 如果静态库不存在，先编译fmt库
+        print("Compiling fmt library...")
+        fmt_compile_cmd = "g++ -c -o ../dcode/fmt.o ../dcode/src/format.cc -I../dcode/include"
+        if os.system(fmt_compile_cmd) == 0:
+            print("fmt library compile success")
+        else:
+            print("fmt library compile failed")
+            raise Exception("fmt library compile failed")
+        ar_cmd = "ar rcs " + fmt_lib_path + " ../dcode/fmt.o"
+        os.system(ar_cmd)
+    else:
+        print("fmt library exists")
+        
 def main():
     args = setup_args()
     print(args)
@@ -107,12 +123,18 @@ def main():
     
     try:
         os.chdir("../code")
-        cmd = "g++ main.cpp -o main -std=c++17 -O3"
-        cmd = cmd + " -g -DDEBUG" if args.debug else cmd
+        cmd = "g++ main.cpp -o main -std=c++20 -O3"
+        if args.debug:
+            compile_fmt()
+            cmd += " -g -DDEBUG"
+            # cmd = cmd + " ../dcode/src/format.cc -I../dcode/include"
+            cmd += " -L../dcode -lfmt -I../dcode/include"
         print(cmd)
-        os.system(cmd)
-        Do_cmd(args)
-        print("Compile success")
+        if os.system(cmd) == 0:
+            print("Compile success")
+            Do_cmd(args)
+        else:
+            print("Compile failed")
     except Exception as e:
         print("Compile failed")
         print(e)
