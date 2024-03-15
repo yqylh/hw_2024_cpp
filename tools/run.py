@@ -35,7 +35,7 @@ def Do_cmd(args):
         linux_cmd(args)
 
 def win_cmd(args):
-    Win_Cmd = '%CD%/../judge/PreliminaryJudge.exe -s ' + str(args.random_seed) + ' -m ../allMaps/' + args.map +' -r ./$map%Y-%m-%d.%H.%M.%S.rep main.exe'
+    Win_Cmd = '%CD%/../judge/PreliminaryJudge.exe -s ' + str(args.random_seed) + ' -m ../allMaps/' + args.map +' -r ./{}%Y-%m-%d.%H.%M.%S.rep ./main'.format(args.map)
     print(Win_Cmd)
     
     # check if '../log' exists
@@ -66,7 +66,7 @@ def win_cmd(args):
 
 
 def linux_cmd(args):
-    Linux_Cmd = '../judge/PreliminaryJudge -s ' + str(args.random_seed) + ' -m ../allMaps/' + args.map +' -r ./$map%Y-%m-%d.%H.%M.%S.rep ./main'
+    Linux_Cmd = '../judge/PreliminaryJudge -s ' + str(args.random_seed) + ' -m ../allMaps/' + args.map +' -r ./{}%Y-%m-%d.%H.%M.%S.rep ./main'.format(args.map)
     print(Linux_Cmd)
     
     # check if '../log' exists
