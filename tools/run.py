@@ -16,16 +16,18 @@ elif sys.platform.startswith('darwin'):
 def setup_args():
     config = {}
     parser = argparse.ArgumentParser(description='Upload a file to the server')
-    parser.add_argument('--file_name',nargs='?',type=str,default=None, help='File name to upload')
-    parser.add_argument('--debug',nargs='?',type=str,default=False, help='Destination on the server')
-    parser.add_argument('--map',nargs='?',type=str,default='map1.txt', help='Map to use')
-    parser.add_argument('--random_seed',nargs='?',type=int,default=123, help='Random seed to use')
+    parser.add_argument('--stdout', '-s', nargs='?',type=str,default="False", help='File name to upload')
+    parser.add_argument('--file_name', '-f', nargs='?',type=str,default=None, help='File name to upload')
+    parser.add_argument('--debug', '-d', nargs='?',type=str,default="False", help='Destination on the server')
+    parser.add_argument('--map', '-m', nargs='?',type=str,default='map1.txt', help='Map to use')
+    parser.add_argument('--random_seed', nargs='?',type=int,default=123, help='Random seed to use')
     args = parser.parse_args()
     config['file_name'] = args.file_name
     # to boolean
     config['debug'] = (args.debug == 'True' or args.debug == 'true' or args.debug == '1')
     config['map'] = args.map
     config['random_seed'] = args.random_seed
+    config['stdout'] = (args.stdout == 'True' or args.stdout == 'true' or args.stdout == '1')
     return argparse.Namespace(**config)
 
 def Do_cmd(args):
@@ -34,6 +36,21 @@ def Do_cmd(args):
     else:
         linux_cmd(args)
 
+def remove_file(file_path, attempts=10):
+    for i in range(attempts):
+        try:
+            # check file or folder
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+            else:
+                shutil.rmtree(file_path)
+            break
+        except Exception as e:
+            if i == attempts - 1:
+                print(e)
+            else:
+                sleep(0.5)
+    
 def win_cmd(args):
     Win_Cmd = '%CD%/../judge/PreliminaryJudge.exe -s ' + str(args.random_seed) + ' -m ../allMaps/' + args.map +' -r ./{}%Y-%m-%d.%H.%M.%S.rep ./main'.format(args.map)
     print(Win_Cmd)
@@ -42,25 +59,28 @@ def win_cmd(args):
     if not os.path.exists('../log'):
         os.makedirs('../log')
     
-    process = subprocess.Popen(Win_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-    
-    if stdout:
-        with open('../log/judger_output.txt', 'w') as f:
-            f.write("stdout:")
-            f.write(stdout.decode('utf-8'))
-    
-    if stderr:
-        with open('../log/judger_output.txt', 'a') as f:
-            f.write("stderr:")
-            f.write(stderr.decode('utf-8'))
+    if args.stdout:
+        os.system(Win_Cmd)
+    else:
+        process = subprocess.Popen(Win_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        
+        if stdout:
+            with open('../log/judger_output.txt', 'w') as f:
+                f.write("stdout:")
+                f.write(stdout.decode('utf-8'))
+        
+        if stderr:
+            with open('../log/judger_output.txt', 'a') as f:
+                f.write("stderr:")
+                f.write(stderr.decode('utf-8'))
     
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
             shutil.move('replay/' + files, '../judge/replay/' + files)
-    sleep(1)
+    # sleep(1)
     if os.path.isfile('main.exe'):
-        os.remove('main.exe')
+        remove_file('main.exe')
     if os.path.exists('replay'):
         os.rmdir('replay')
 
@@ -72,19 +92,22 @@ def linux_cmd(args):
     # check if '../log' exists
     if not os.path.exists('../log'):
         os.makedirs('../log')
-    
-    process = subprocess.Popen(Linux_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
-    
-    if stdout:
-        with open('../log/judger_output.txt', 'w') as f:
-            f.write("stdout:")
-            f.write(stdout.decode('utf-8'))
-    
-    if stderr:
-        with open('../log/judger_output.txt', 'a') as f:
-            f.write("stderr:")
-            f.write(stderr.decode('utf-8'))
+        
+    if args.stdout:
+        os.system(Linux_Cmd)
+    else:
+        process = subprocess.Popen(Linux_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        
+        if stdout:
+            with open('../log/judger_output.txt', 'w') as f:
+                f.write("stdout:")
+                f.write(stdout.decode('utf-8'))
+        
+        if stderr:
+            with open('../log/judger_output.txt', 'a') as f:
+                f.write("stderr:")
+                f.write(stderr.decode('utf-8'))
             
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
