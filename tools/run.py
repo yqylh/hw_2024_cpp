@@ -132,11 +132,18 @@ def main():
         print(cmd)
         if os.system(cmd) == 0:
             print("Compile success")
-            Do_cmd(args)
         else:
             print("Compile failed")
+            return 
     except Exception as e:
         print("Compile failed")
+        print(e)
+        return
+
+    try:
+        Do_cmd(args)
+    except Exception as e:
+        print("Run failed")
         print(e)
         return
 
