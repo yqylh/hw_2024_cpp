@@ -9,3 +9,5 @@ log/
 main
 code/output.txt
 *.img
+*.a
+*.o
