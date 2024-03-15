@@ -8,15 +8,6 @@
 #include "ship.hpp"
 #include "berth.hpp"
 
-struct Collision {
-    Pos pos;
-    int time;
-    Collision(Pos pos, int time) {
-        this->pos = pos;
-        this->time = time;
-    }
-    Collision(){}
-};
 struct Robot{
     int id; // 机器人的 id
     Pos pos; // 机器人的位置
@@ -25,7 +16,7 @@ struct Robot{
     int bringTimeLimit; // 机器人到达带货物的时间
     Ship *toShip; // 机器人所在的船的 id
     Path *path; // 机器人的路径
-    Direction **robotDir; // 机器人到达每个点的方向
+    Direction *robotDir; // 机器人到达每个点的方向
     Robot() {
         this->id = -1;
     }
@@ -39,7 +30,7 @@ struct Robot{
     }
     void move();
     void action();
-    void checkCollision(std::vector<Collision> collisions);
+    void checkCollision(std::unordered_set<Pos> &collisions);
 };
 
 void Robot::move() {
@@ -49,28 +40,8 @@ void Robot::move() {
     if (path == nullptr) return;
     // 如果路径走完了,但是因为一些原因没有到达目的地
     if (pos == path->end) return;
-
-    if (path->getOrPull == 1) {
-        printf("move %d %d\n", id , path->pathDir[pos.x][pos.y].dir);
-    } else {
-        // reverse 这是get的路径,从机器人初始点或者从港口去找货物的路径
-        TEST(fout << "reverse" << id << std::endl;)
-        // TEST(fout << "nowPos " << pos.x << " " << pos.y << std::endl;)
-        // TEST(fout << "end " << path->end.x << " " << path->end.y << std::endl;)
-        auto nowPos = path->end;
-        // TEST(fout << "reverse nowPos " << nowPos.x << " " << nowPos.y << std::endl;)
-        while (true) {
-            auto nextDir = path->pathDir[nowPos.x][nowPos.y].dir;
-            nowPos = nowPos + dir[nextDir];
-            // TEST(fout << "reverse nowPos " << nowPos.x << " " << nowPos.y << std::endl;)
-            if (nowPos == pos) {
-                if (nextDir == 0 || nextDir == 2) nextDir++; else nextDir--;
-                printf("move %d %d\n", id , nextDir);
-                break;
-            }
-        }
-        // TEST(fout << "reverse end" << std::endl;)
-    }
+    printf("move %d %d\n", id , path->pathDir->getDir(pos.x, pos.y));
+    TEST(fout << "move " << id << " " << path->pathDir->getDir(pos.x, pos.y) << std::endl;)
 }
 void Robot::action() {
     TEST(fout << "action " << id << std::endl;)
@@ -98,26 +69,18 @@ void Robot::action() {
     }
     if (bring == 0) {
         // 机器人没有货物
-        TEST(fout << "unsolvedItems.size() " << unsolvedItems.size() << std::endl;)
         for (auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
             if (i->checkDead()) {
                 unsolvedItems.erase(i++);
                 continue;
             }
             path = new Path(pos, i->pos, 0);
-            auto where = pos2berth.find(pos);
-            if (where != pos2berth.end()) {
-                auto berth = berths[where->second->id];
-                if (berth->usePos[0] == pos) {
-                    path->pathDir = berth->usePosDir[0];
-                } else {
-                    path->pathDir = berth->usePosDir[1];
-                }
-            } else {
-                path->pathDir = robotDir;
-            }
+            
+            if (grids[i->pos.x][i->pos.y]->gridDir == nullptr) grids[i->pos.x][i->pos.y]->gridDir = sovleGrid(i->pos);
+            path->pathDir = grids[i->pos.x][i->pos.y]->gridDir;
             // 如果到哪里的时间超过了货物的时间 或者 不可达
-            if (path->pathDir[i->pos.x][i->pos.y].dir == -1 || path->pathDir[i->pos.x][i->pos.y].length + nowTime + 3 > i->beginTime + Item_Continue_Time) {
+            auto length = (std::abs(pos.x - i->pos.x) + std::abs(pos.y - i->pos.y));
+            if (path->pathDir->isVisited(pos.x, pos.y) == false || length + nowTime + 3 > i->beginTime + Item_Continue_Time) {
                 delete path;
                 path = nullptr;
                 i++;
@@ -129,17 +92,15 @@ void Robot::action() {
         }
     } 
     if (bring == 1) {
-        TEST(fout << "begin" << std::endl;)
         // 机器人有货物
         for (auto & ship : ships) {
             if (ship->id != id % 5 && ship->id != shipNum) {
                 continue;
             }
             if (ship->status == 1 && ship->berthId != -1 && ship->capacity != MAX_Capacity) {
-                TEST(fout << berths[ship->berthId]->usePos.size() << std::endl;)
                 path = new Path(pos, berths[ship->berthId]->usePos[ship->id % 2], 1);
                 path->pathDir = berths[ship->berthId]->usePosDir[ship->id % 2];
-                if (path->pathDir[pos.x][pos.y].dir == -1) {
+                if (path->pathDir->isVisited(pos.x, pos.y) == false) {
                     delete path;
                     path = nullptr;
                     continue;
@@ -149,11 +110,50 @@ void Robot::action() {
                 break;
             }
         }
-        TEST(fout << "嗯对" << std::endl;)
     }
 }
-void Robot::checkCollision(std::vector<Collision> collisions){
-
+void Robot::checkCollision(std::unordered_set<Pos> &collisions){
+    TEST(fout << "checkCollision " << id << "status " << status << std::endl;)
+    Pos nextTimePos;
+    int nextDir = -1;
+    // 首先预处理自己之后几帧的位置
+    if (!status || path == nullptr || pos == path->end) {
+        nextTimePos = pos;
+    } else {
+        nextDir = path->pathDir->getDir(pos.x, pos.y);
+        nextTimePos = pos + dir[nextDir];
+    }
+    TEST(fout << "robot " << id << " pos " << pos.x << " " << pos.y << " nextTimePos " << nextTimePos.x << " " << nextTimePos.y << " nextDir " << nextDir << std::endl;)
+    // 如果下一帧的位置有机器人 或者有机器人走到我的位置
+    if (collisions.find(nextTimePos) != collisions.end() || collisions.find(pos) != collisions.end() ){
+        TEST(fout << "crash " << id << std::endl;)
+        // 不能继续走同样的方向,尽量不被追着揍
+        std::vector<int> ableDir;
+        if (nextDir == 0) ableDir = {2, 3, 1}; 
+        if (nextDir == 1) ableDir = {2, 3, 0}; 
+        if (nextDir == 2) ableDir = {0, 1, 3}; 
+        if (nextDir == 3) ableDir = {0, 1, 2}; 
+        for (auto & d : ableDir) { 
+            auto nextPos = pos + dir[d];
+            if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
+            if (collisions.find(nextPos) == collisions.end()) {
+                printf("move %d %d\n", id, d);
+                TEST(fout << "move " << id << " " << d << std::endl;)
+                status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
+                collisions.insert(nextPos);
+                return;
+            }
+        }
+        // 如果可以停留在原地,有点弱智这里
+        if (collisions.find(pos) == collisions.end()) {
+            status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
+            collisions.insert(pos);
+            return;
+        }
+    } else {
+        collisions.insert(nextTimePos);
+    }
+    return;
 }
 Robot *robots[MAX_Robot_Num];
 
@@ -161,6 +161,7 @@ void solveRobot() {
     // 预处理每个机器人初始点到每个虚拟点的时间, 也就是机器人能到达的点
     for (int i = 0; i < MAX_Robot_Num; i++) {
         robots[i]->robotDir = sovleGrid(robots[i]->pos);
+        grids[robots[i]->pos.x][robots[i]->pos.y]->gridDir = robots[i]->robotDir;
     }
 }
 

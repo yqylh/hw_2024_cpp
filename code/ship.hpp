@@ -24,6 +24,7 @@ struct Ship {
             capacity = 0;
             berthId = -1;
             printf("go %d\n", id);
+            TEST(fout << "go " << id << std::endl;)
             return;
         }
         if (status == 1 && berthId == -1) {

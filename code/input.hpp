@@ -24,6 +24,8 @@ void inputMap(){
                 grids[i][j] = new Grid(i, j, 0);
             } else if (line[j] == 'B') {
                 grids[i][j] = new Grid(i, j, 3);
+            } else {
+                throw;
             }
         }
     }
@@ -40,6 +42,7 @@ void inputMap(){
     shipNum = MAX_Ship_Num - 1;
     solveBerth();
     solveRobot();
+    solveAllGrid();
     puts("OK");
     fflush(stdout);
 }
@@ -50,6 +53,7 @@ bool inputFrame() {
         inputFlag = false;
         return false;
     }
+    frameStart = high_resolution_clock::now();
     int K;
     scanf("%d", &K);
     for (int i = 1; i <= K; i++) {
@@ -73,14 +77,21 @@ void solveFrame() {
     TEST(fout <<"当前帧数="<< nowTime << std::endl;)
     for (int i = 0; i <= robotNum; i++) robots[i]->action();
     // 碰撞检测
-    std::vector<Collision> collisions;
+    std::unordered_set<Pos> collisions; collisions.clear();
     for (int i = 0; i <= robotNum; i++) {
-        robots[i]->checkCollision(collisions);
+        // robots[i]->checkCollision(collisions);
     }
     // 移动
     for (int i = 0; i <= robotNum; i++) robots[i]->move();
     for (int i = 0; i <= shipNum; i++) ships[i]->action();
-
+    
+    auto end = high_resolution_clock::now();
+    auto usedTime = duration_cast<milliseconds>(end - frameStart).count();
+    while (usedTime < 14 && threadFinish == false) {
+        end = high_resolution_clock::now();
+        usedTime = duration_cast<milliseconds>(end - frameStart).count();
+    }
+    TEST(fout << "frameTime: " << usedTime << std::endl;)
     puts("OK");
     fflush(stdout);
 }

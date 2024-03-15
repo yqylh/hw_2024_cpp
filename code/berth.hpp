@@ -6,7 +6,7 @@ struct Berth {
     int id;
     Pos pos;
     std::vector<Pos> usePos; // 使用的位置
-    std::vector<Direction **> usePosDir; // 使用的位置 任何节点到这个位置的下一步方向
+    std::vector<Direction *> usePosDir; // 使用的位置 任何节点到这个位置的下一步方向
     int time; // 运输到虚拟点的时间  
     int velocity; // 装载速度
     int shipId; // 表示当前泊位上的船的 id 如果没有则为-1
