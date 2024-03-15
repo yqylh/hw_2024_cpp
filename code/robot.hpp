@@ -217,12 +217,15 @@ void solveCollision() {
      * 3. 重复 1 2 步骤
     */
     std::unordered_map<int, std::vector<int>> group; group.clear();
+    bool visited[MAX_Robot_Num + 1] = {0};
     while (!mySet.empty()) {
         auto it = mySet.begin();
         int u = it->first;
         mySet.erase(it);
         group[u] = std::vector<int>();
         std::queue<int> q;
+        q.push(u);
+        visited[u] = true;
         while (!q.empty()) {
             auto top = q.front();
             q.pop();
@@ -231,11 +234,18 @@ void solveCollision() {
                 mySet.erase(item);
                 break;
             }
+            Pos topPos = robots[top]->pos;
             for (auto &frd : friends[top]) {
-                if (robots[top]->pos.length(robots[frd]->pos) == 1) q.push(frd);
+                if (visited[frd] == false && topPos.length(robots[frd]->pos) == 1) {
+                    q.push(frd);
+                    visited[frd] = true;
+                }
             }
             for (auto &frd : friends[top]) {
-                if (robots[top]->pos.length(robots[frd]->pos) == 2) q.push(frd);
+                if (visited[frd] == false && topPos.length(robots[frd]->pos) == 2) {
+                    q.push(frd);
+                    visited[frd] = true;
+                }
             }
         }
     }
