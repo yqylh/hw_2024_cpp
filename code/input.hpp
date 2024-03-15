@@ -12,6 +12,7 @@ void inputMap(){
     for (int i = 0; i < MAX_Line_Length; i++) {
         std::string line;
         getline(std::cin, line);
+    
         for (int j = 0; j < MAX_Col_Length; j++) {
             if (line[j] == '.') {
                 grids[i][j] = new Grid(i, j, 0);
@@ -75,14 +76,22 @@ bool inputFrame() {
 }
 
 void solveFrame() {
+    TEST(fout << "nowTime=" << nowTime << std::endl;)
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
     for (int i = 0; i <= robotNum; i++) robots[i]->action();
 
     // 碰撞检测
-    solveCollision();
+    // solveCollision();
     // 移动
+    TEST(fout << "action done" << std::endl;)
     for (int i = 0; i <= robotNum; i++) robots[i]->move();
+    pathLogger.log(nowTime, "allPath.size()={0}", allPath.size());
+    // 时间向前推进
+    TEST(fout << "move done" << std::endl;)
+    if (allPath.size() > 0) allPath.pop_front();
+
     for (int i = 0; i <= shipNum; i++) ships[i]->action();
+    TEST(fout << "ship done" << std::endl;)
     
     auto end = high_resolution_clock::now();
     auto usedTime = duration_cast<milliseconds>(end - frameStart).count();

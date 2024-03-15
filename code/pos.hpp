@@ -9,7 +9,7 @@
 struct Pos {
     int x, y;
     int cmp;
-    Pos(int x = 0, int y = 0) : x(x), y(y) {}
+    Pos(int x = -1, int y = -1) : x(x), y(y) {}
     Pos operator+(const Pos v)const { return Pos(x + v.x, y + v.y); }
     Pos operator-(const Pos v)const { return Pos(x - v.x, y - v.y); }
     bool operator<(const Pos v)const {// 重载小于号

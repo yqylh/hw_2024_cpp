@@ -16,9 +16,9 @@ elif sys.platform.startswith('darwin'):
 def setup_args():
     config = {}
     parser = argparse.ArgumentParser(description='Upload a file to the server')
-    parser.add_argument('--stdout', '-s', nargs='?',type=str,default="False", help='File name to upload')
+    parser.add_argument('--stdout', '-s', nargs='?',type=str,default="1", help='File name to upload')
     parser.add_argument('--file_name', '-f', nargs='?',type=str,default=None, help='File name to upload')
-    parser.add_argument('--debug', '-d', nargs='?',type=str,default="False", help='Destination on the server')
+    parser.add_argument('--debug', '-d', nargs='?',type=str,default="1", help='Destination on the server')
     parser.add_argument('--map', '-m', nargs='?',type=str,default='map1.txt', help='Map to use')
     parser.add_argument('--random_seed', nargs='?',type=int,default=123, help='Random seed to use')
     args = parser.parse_args()
