@@ -123,7 +123,7 @@ def main():
     
     try:
         os.chdir("../code")
-        cmd = "g++ main.cpp -o main -std=c++20 -O3"
+        cmd = "g++ main.cpp -o main -std=c++17 -O3"
         if args.debug:
             compile_fmt()
             cmd += " -g -DDEBUG"
