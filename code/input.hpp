@@ -27,11 +27,14 @@ void inputMap(){
             }
         }
     }
+    #include "logger.hpp"
+
     for (int i = 0; i < MAX_Berth_Num; i++) {
         int id, x, y, time, velocity;
         scanf("%d%d%d%d%d", &id, &x, &y, &time, &velocity);
         berths[i] = new Berth(id, x, y, time, velocity);
         TEST(fout << "Berth" << i << " :" << id << " " << x << " " << y << " " << time << " " << velocity << std::endl;)
+        shipLogger.log("Berth" + std::to_string(i) + " :" + std::to_string(id) + " " + std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(time) + " " + std::to_string(velocity));
     }
     std::cin >> MAX_Capacity;
     std::string line;

@@ -17,6 +17,8 @@
 #include <queue>
 #include <list>
 #include "pos.hpp"
+#include "logger.hpp"
+
 /**
  * 常量定义
  * 用于定义比赛中一些基本不会变动的参数
@@ -51,7 +53,15 @@ std::unordered_map<Pos, int> Pos2move = {
     {Pos(1, 0), 3}
 };
 
-#ifdef EBUG
+/**
+ * 日志记录
+ * 用于全局的日志器
+*/
+
+
+FileLogger shipLogger("../log/ship_log.txt");
+
+#ifdef DEBUG
     #define TEST(x) x
     std::ofstream fout("output.txt"); // 测试用输出
 #else
