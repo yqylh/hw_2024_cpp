@@ -1,6 +1,7 @@
 import os,sys,shutil
 import argparse
 import subprocess
+from time import sleep
 
 if sys.platform.startswith('linux'):
     print("System: Linux")
@@ -57,6 +58,7 @@ def win_cmd(args):
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
             shutil.move('replay/' + files, '../judge/replay/' + files)
+    sleep(1)
     if os.path.isfile('main.exe'):
         os.remove('main.exe')
     if os.path.exists('replay'):
@@ -123,7 +125,11 @@ def main():
     
     try:
         os.chdir("../code")
-        cmd = "g++ main.cpp -o main -std=c++17 -O3"
+        if system == 'win' or system == 'linux':
+            cmd = "g++ main.cpp -o main -std=c++17 -O3"
+        else:
+            cmd = "g++-13 main.cpp -o main -std=c++17 -O3"
+            
         if args.debug:
             compile_fmt()
             cmd += " -g -DDEBUG"
@@ -146,6 +152,8 @@ def main():
         print("Run failed")
         print(e)
         return
+    
+    print("Run success")
 
 if __name__ == "__main__":
     main()
