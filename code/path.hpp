@@ -18,6 +18,7 @@ int disWithTime[MAX_Line_Length + 1][MAX_Col_Length + 1];
 Pos preWithTime[MAX_Line_Length + 1][MAX_Col_Length + 1];
 std::deque<std::vector<Pos>> allPath;
 std::vector<Pos> fixPos(MAX_Robot_Num, Pos(-1, -1));
+Pos queue[40010];
 
 void solveGridWithTime(Pos begin, int nowRobotId) {
     memset(disWithTime, 0x3f, sizeof(disWithTime));
@@ -29,13 +30,13 @@ void solveGridWithTime(Pos begin, int nowRobotId) {
         }
     }
 
-    std::queue<Pos> q;
-    q.push(begin);
+    int start = 0;
+    int end = 0;
+    queue[end++] = begin;
     disWithTime[begin.x][begin.y] = 0;
-    while (!q.empty()) {
-        Pos now = q.front();
-        q.pop();
-
+    while (start != end) {
+        Pos now = queue[start++];
+        if (start == 40010) start = 0;
 
         if (disWithTime[now.x][now.y] < allPath.size()) {
             for (Pos tar : allPath[disWithTime[now.x][now.y]]) {
@@ -56,7 +57,8 @@ void solveGridWithTime(Pos begin, int nowRobotId) {
             if (next.x < 0 || next.x >= MAX_Line_Length || next.y < 0 || next.y >= MAX_Col_Length) continue;
             if (disWithTime[next.x][next.y] <= disWithTime[now.x][now.y] + 1 || (grids[next.x][next.y]->type != 0 && grids[next.x][next.y]->type != 3)) continue;
             if (grids[next.x][next.y]->robotOnIt) continue;
-            q.push(next);
+            queue[end++] = next;
+            if (end == 40010) end = 0;
             disWithTime[next.x][next.y] = disWithTime[now.x][now.y] + 1;
             preWithTime[next.x][next.y] = now;
         }
