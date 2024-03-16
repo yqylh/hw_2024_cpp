@@ -99,11 +99,20 @@ std::list<Pos> *findPath(Pos begin, Pos end) {
     std::reverse(path->begin(), path->end());
     return path;
 }
+Pos _arr1[40010], _arr2[40010];
+std::thread::id main_thread_id;
 
 Direction * sovleGrid(Pos origin) {
     Direction * result = new Direction;
     result->setVisited(origin.x, origin.y);
-    Pos _arr[40010];
+    // Pos _arr[40010];
+    Pos *_arr;
+    // 如果是主线程
+    if (std::this_thread::get_id() == main_thread_id) {
+        _arr = _arr1;
+    } else {
+        _arr = _arr2;
+    }
     int start = 0, end = 0;
     _arr[end++] = origin;
     while (start < end) {
@@ -124,6 +133,7 @@ void solveAllGrid() {
     // begin time
     std::atomic<int> threadLineMain = 0;
     std::atomic<int> threadLineT1 = 199;
+    main_thread_id = std::this_thread::get_id();
     // 创建一个新的线程 thread
     std::thread t1([&](){
         for (int i = MAX_Line_Length - 1; i >= 0; i--) {
