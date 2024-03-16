@@ -112,7 +112,10 @@ def win_cmd(args):
         if files.endswith('.rep'):
             shutil.move('replay/' + files, '../judge/replay/' + files)
             
-    return stdout.decode('utf-8')
+    if not args.stdout:
+        return stdout.decode('utf-8')
+    else:
+        return 0
     # sleep(1)
 
 
@@ -143,8 +146,10 @@ def linux_cmd(args):
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
             shutil.move('./replay/' + files, '../judge/replay/' + files)
-            
-    return stdout.decode('utf-8')   
+    if not args.stdout:
+        return stdout.decode('utf-8')   
+    else :
+        return 0
 
 def compile_fmt():
     fmt_lib_path = "../dcode/libfmt.a"
