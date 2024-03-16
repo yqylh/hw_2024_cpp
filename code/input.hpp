@@ -7,6 +7,7 @@
 #include "berth.hpp"
 #include "item.hpp"
 #include "logger.hpp"
+#include "berth_centre.hpp"
 
 void inputMap(){
     for (int i = 0; i < MAX_Line_Length; i++) {
@@ -76,13 +77,18 @@ bool inputFrame() {
 
 void solveFrame() {
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
+
+    if (berth_center->is_init == false) {berth_center->do_first_frame();}
+    else {berth_center->call_ship_and_berth_check();}
+    bcenterlogger.log(nowTime, "ship_and_berth_check_ok");
+
     for (int i = 0; i <= robotNum; i++) robots[i]->action();
 
     // 碰撞检测
     solveCollision();
     // 移动
     for (int i = 0; i <= robotNum; i++) robots[i]->move();
-    for (int i = 0; i <= shipNum; i++) ships[i]->action();
+    // for (int i = 0; i <= shipNum; i++) ships[i]->action();
     
     auto end = high_resolution_clock::now();
     auto usedTime = duration_cast<milliseconds>(end - frameStart).count();

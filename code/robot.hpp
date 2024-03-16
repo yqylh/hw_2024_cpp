@@ -7,6 +7,7 @@
 #include "item.hpp"
 #include "ship.hpp"
 #include "berth.hpp"
+#include "berth_centre.hpp"
 
 struct Robot{
     int id; // 机器人的 id
@@ -59,9 +60,10 @@ void Robot::action() {
             flowLogger.log(nowTime, "pull {0}", id);
             bring = 0;
             if (toShip->berthId != -1) {
-                toShip->capacity++;
-                toShip->waitTime = nowTime + berths[toShip->berthId]->velocity;
-                robotLogger.log(nowTime, "toShip->capacity {0}", toShip->capacity);
+                berth_center->declare_robot_pull_good(toShip->berthId);
+                // toShip->capacity++;
+                // toShip->waitTime = nowTime + berths[toShip->berthId]->velocity;
+                // robotLogger.log(nowTime, "toShip->capacity {0}", toShip->capacity);
             }
         }
         delete path;
