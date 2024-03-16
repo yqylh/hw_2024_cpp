@@ -32,7 +32,7 @@ public:
         for(int i = 0; i < MAX_Ship_Num; i++){
             if(allships[i] ->berthId != -1){
                 if (allships[i] -> is_last_round) continue;
-                if (allberths[allships[i]->berthId]->time + nowTime + 20 < MAX_TIME){
+                if (allberths[allships[i]->berthId]->time + nowTime + 20 > MAX_TIME){
                     allships[i]->go(allships[i]->berthId);
                     allships[i] -> is_last_round = true;
                     bcenterlogger.log(nowTime, "ship{0} go last round", i);
