@@ -7,19 +7,6 @@
 // #include "robot.hpp"
 #include <vector>
 
-/*
-使用说明：
-Berth_center 即控制塔台，用于调送货轮，指引机器人进入泊位
-函数说明：
-void init_doing() 初始化，指引船只进入泊位，在初始化时使用
-void get_berth_want_goods_level() 计算每个泊位的需求等级，内部使用
-int chose_bertch(int robot_id) 用于指引机器人来到最佳的泊位 
-    使用方法 bert_id1，pos_id1,bert_id2,pos_id2 = chose_bertch(robot_id)
-void pull_good(int bert_id) 装载货物时通知塔台
-void declare_ship(int bert_id) 通知塔台有船要进入泊位
-void declare_robot(int bert_id) 通知塔台有机器人要进入泊位
-*/
-
 
 class Berth_center {
 public:
@@ -31,6 +18,7 @@ public:
 
         for(int i = 0; i < MAX_Ship_Num; i++){
             if(allships[i] ->berthId != -1){
+                // 判断是否是最后一轮
                 if (allships[i] -> is_last_round) continue;
                 if (allberths[allships[i]->berthId]->time + nowTime + 20 > MAX_TIME){
                     allships[i]->go(allships[i]->berthId);
@@ -125,7 +113,7 @@ private:
         for (int i = 0; i < MAX_Ship_Num; i++){
             allships[i]->go_berth(sortted_bert_by_time[i]); // 指引船只进入泊位, 优先级按时间升序排列
             declare_ship(sortted_bert_by_time[i], i);
-            allberths[sortted_bert_by_time[i]]->on_way_ship ++;
+            allberths[sortted_bert_by_time[i]]->on_way_ship++;
         }
     }
 
@@ -203,23 +191,23 @@ private:
     }
 
     void declare_ship(int bert_id,int ship_id){
-        allberths[bert_id]->on_way_ship ++;
+        allberths[bert_id]->on_way_ship++;
         allberths[bert_id]->shipId.push_back(ship_id);
     }
 
     void declare_robot(int bert_id){
-        allberths[bert_id]->on_way_robot ++;
+        allberths[bert_id]->on_way_robot++;
     }
 
     void ship_declare_go(int bert_id){
-        allberths[bert_id]->on_way_ship --;
+        allberths[bert_id]->on_way_ship--;
     }
 
     void pull_good(int bert_id){
         // 装载货物: 首先顺手检查一下港口和轮船状态，然后装货
         bcenterlogger.log(nowTime, "pull_good:berths {}->goodsNum: {}", bert_id,allberths[bert_id]->goodsNum);
-        allberths[bert_id]->goodsNum ++;
-        allberths[bert_id]->on_way_robot --;
+        allberths[bert_id]->goodsNum++;
+        allberths[bert_id]->on_way_robot--;
         if(allberths[bert_id]->on_way_ship > 0) if(allships[allberths[bert_id]->shipId[0]]->status == 0){
             //没船,等待船来装货
             bert_load_start_times[bert_id] = MAX_TIME;
@@ -261,7 +249,6 @@ private:
 
     void normal_ship_check(int i){
         bcenterlogger.log(nowTime, "ship: {0}", i);
-        // shipLogger.log(nowTime, "ship{0} status: {1}, berthId: {2}", i, allships[i]->status, allships[i]->berthId);
         if (allships[i]->status == 0){
             //运输中，不做处理
             return;

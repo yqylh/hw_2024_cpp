@@ -16,8 +16,7 @@ struct Robot{
     int status; // 机器人的状态 0表示寄了 1 表示正常运行
     int bring; // 机器人带的货物 0 表示没有货物 1 表示有货物
     int bringTimeLimit; // 机器人到达带货物的时间
-    // Ship *toShip; // 机器人所在的船的 id
-    int choosed_berth_id;
+    int choosed_berth_id; // 机器人选择的泊位
     Direction *robotDir; // 机器人到达每个点的方向
     int lastWeak; // 上一次的弱智时间
     Pos lastWeakPos; // 上一次的弱智位置
@@ -101,6 +100,7 @@ void Robot::action() {
 
     if (bring == 0) {
         // 机器人没有货物，找一个最近的可达的货物
+        double value = 0;
         int minDis = 0x3f3f3f3f;
         auto targetItem = unsolvedItems.end();
 
@@ -120,9 +120,11 @@ void Robot::action() {
                 i++;
                 continue;
             }
-            if (disWithTime[i->pos.x][i->pos.y] < minDis) {
+            auto tempValue = double(i->value) / disWithTime[i->pos.x][i->pos.y];
+            if (tempValue > value){
                 minDis = disWithTime[i->pos.x][i->pos.y];
                 targetItem = i;
+                value = tempValue;
             }
             i++;
         }
@@ -149,14 +151,14 @@ void Robot::action() {
         for (int i = 0; i < MAX_Berth_Num;i++){
             Berth* now_berth = berths[i];
             for(Pos sub_berths : now_berth->usePos){
-                    berthLogger.log(nowTime, "rid={},bid={},sub_berths=({},{}),berth_level_list={},disWithTime={}", id, i, sub_berths.x, sub_berths.y, berth_level_list[i], disWithTime[sub_berths.x][sub_berths.y]);
-                    if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
-                    
-                    if (disWithTime[sub_berths.x][sub_berths.y] + berth_level_list[i]< minDis){
-                        minDis = disWithTime[sub_berths.x][sub_berths.y];
-                        choosed_berth_pos = sub_berths;
-                        choosed_berth_id = i;
-                    }   
+                berthLogger.log(nowTime, "rid={},bid={},sub_berths=({},{}),berth_level_list={},disWithTime={}", id, i, sub_berths.x, sub_berths.y, berth_level_list[i], disWithTime[sub_berths.x][sub_berths.y]);
+                if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
+                
+                if (disWithTime[sub_berths.x][sub_berths.y] + berth_level_list[i]< minDis){
+                    minDis = disWithTime[sub_berths.x][sub_berths.y];
+                    choosed_berth_pos = sub_berths;
+                    choosed_berth_id = i;
+                }   
             }
         }
         berthLogger.log(nowTime, "find berth, rid={},choosed_berth_pos=({},{}),minDis={}", id, choosed_berth_pos.x, choosed_berth_pos.y, minDis);
@@ -227,89 +229,89 @@ void Robot::move() {
 
 // first 表示机器人的目标位置, second 表示机器人原始位置
 void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
-    Pos nextTimePos;
-    int nextDir = -1;
-    // 首先预处理自己之后几帧的位置
-    if (!status || path == nullptr || pos == path->end) {
-        nextTimePos = pos;
-    } else {
-        nextDir = path->pathDir->getDir(pos.x, pos.y);
-        nextTimePos = pos + dir[nextDir];
-    }
-    robotLogger.log(nowTime, "robot{0} pos{1},{2} nextTimePos{3},{4} nextDir{5}", id, pos.x, pos.y, nextTimePos.x, nextTimePos.y, nextDir);
-    // 如果下一帧的位置有机器人 或者有两个机器人交换位置
-    if (otherPos.find(nextTimePos) != otherPos.end() || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextTimePos) ){
-        robotLogger.log(nowTime, "robot{0} crash", id);
-        // 不能继续走同样的方向,尽量不被追着揍
-        std::vector<int> ableDir;
-        if (nextDir == 0) ableDir = {2, 3, 1}; 
-        if (nextDir == 1) ableDir = {2, 3, 0}; 
-        if (nextDir == 2) ableDir = {0, 1, 3}; 
-        if (nextDir == 3) ableDir = {0, 1, 2}; 
-        if (nextDir == -1) ableDir = {0, 1, 2, 3};
-        while (rand() % 2) std::swap(ableDir[rand() % ableDir.size()], ableDir[rand() % ableDir.size()]);
-        if (otherPos.find(nextTimePos) != otherPos.end() && otherPos.find(nextTimePos)->first == otherPos.find(nextTimePos)->second) {
-            // 这是一个弱智的情况,有机器人停下来了,那我需要下一帧继续绕开走
-            lastWeak = nowTime;
-            lastWeakPos = pos;
-        }
-        for (auto & d : ableDir) { 
-            auto nextPos = pos + dir[d];
-            if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) {
-                continue;
-            }
-            if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
-            if (otherPos.find(nextPos) != otherPos.end() 
-                || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextPos) ) {
-                continue;
-            }
-            printf("move %d %d\n", id, d);
-            flowLogger.log(nowTime, "move {0} {1}", id, d);
-            status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
-            otherPos[nextPos] = pos;
-            return;
-        }
-        // 如果可以停留在原地,有点弱智这里??这里应该是直接可以留下来
-        if (otherPos.find(pos) == otherPos.end()) {
-            status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
-            otherPos[pos] = pos;
-            return;
-        }
-    } else { // 如果下一帧的位置没有机器人
-        // 特殊情况:如果上一帧遇到了弱智,而且这一帧的下一步是回到弱智面前,就不要走了,换一个方向.
-        if (!status || path == nullptr || pos == path->end) {}
-        else if (lastWeak == nowTime - 1 && pos+dir[path->pathDir->getDir(pos.x, pos.y)] == lastWeakPos) {
-            auto nextDir = path->pathDir->getDir(pos.x, pos.y);
-            int minLength = 1e9; int minDir = -1;
-            // 遍历其他三个方向,选择一个最近的方向
-            for (int d = 0; d < 4; d++) if (d != nextDir) {
-                auto nextPos = pos + dir[d];
-                auto length = path->end.length(nextPos);
-                // 判断越界
-                if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) continue;
-                // 判断是否是障碍物
-                if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
-                // 判断是否有机器人
-                if (otherPos.find(nextPos) != otherPos.end()) continue;
-                // 判断是否重叠
-                if (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextPos) continue;
-                if (length < minLength) {
-                    minLength = length;
-                    minDir = d;
-                } else if (length == minLength) {
-                    if (rand() % 2 == 0) minDir = d;
-                }
-            }
-            if (minDir != -1) {
-                printf("move %d %d\n", id, minDir);
-                status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
-                otherPos[pos + dir[minDir]] = pos;
-                flowLogger.log(nowTime, "move {0} {1}", id, minDir);
-                return;
-            }
-        }
-        otherPos[nextTimePos] = pos;
-    }
+    // Pos nextTimePos;
+    // int nextDir = -1;
+    // // 首先预处理自己之后几帧的位置
+    // if (!status || path == nullptr || pos == path->end) {
+    //     nextTimePos = pos;
+    // } else {
+    //     nextDir = path->pathDir->getDir(pos.x, pos.y);
+    //     nextTimePos = pos + dir[nextDir];
+    // }
+    // robotLogger.log(nowTime, "robot{0} pos{1},{2} nextTimePos{3},{4} nextDir{5}", id, pos.x, pos.y, nextTimePos.x, nextTimePos.y, nextDir);
+    // // 如果下一帧的位置有机器人 或者有两个机器人交换位置
+    // if (otherPos.find(nextTimePos) != otherPos.end() || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextTimePos) ){
+    //     robotLogger.log(nowTime, "robot{0} crash", id);
+    //     // 不能继续走同样的方向,尽量不被追着揍
+    //     std::vector<int> ableDir;
+    //     if (nextDir == 0) ableDir = {2, 3, 1}; 
+    //     if (nextDir == 1) ableDir = {2, 3, 0}; 
+    //     if (nextDir == 2) ableDir = {0, 1, 3}; 
+    //     if (nextDir == 3) ableDir = {0, 1, 2}; 
+    //     if (nextDir == -1) ableDir = {0, 1, 2, 3};
+    //     while (rand() % 2) std::swap(ableDir[rand() % ableDir.size()], ableDir[rand() % ableDir.size()]);
+    //     if (otherPos.find(nextTimePos) != otherPos.end() && otherPos.find(nextTimePos)->first == otherPos.find(nextTimePos)->second) {
+    //         // 这是一个弱智的情况,有机器人停下来了,那我需要下一帧继续绕开走
+    //         lastWeak = nowTime;
+    //         lastWeakPos = pos;
+    //     }
+    //     for (auto & d : ableDir) { 
+    //         auto nextPos = pos + dir[d];
+    //         if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) {
+    //             continue;
+    //         }
+    //         if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
+    //         if (otherPos.find(nextPos) != otherPos.end() 
+    //             || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextPos) ) {
+    //             continue;
+    //         }
+    //         printf("move %d %d\n", id, d);
+    //         flowLogger.log(nowTime, "move {0} {1}", id, d);
+    //         status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
+    //         otherPos[nextPos] = pos;
+    //         return;
+    //     }
+    //     // 如果可以停留在原地,有点弱智这里??这里应该是直接可以留下来
+    //     if (otherPos.find(pos) == otherPos.end()) {
+    //         status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
+    //         otherPos[pos] = pos;
+    //         return;
+    //     }
+    // } else { // 如果下一帧的位置没有机器人
+    //     // 特殊情况:如果上一帧遇到了弱智,而且这一帧的下一步是回到弱智面前,就不要走了,换一个方向.
+    //     if (!status || path == nullptr || pos == path->end) {}
+    //     else if (lastWeak == nowTime - 1 && pos+dir[path->pathDir->getDir(pos.x, pos.y)] == lastWeakPos) {
+    //         auto nextDir = path->pathDir->getDir(pos.x, pos.y);
+    //         int minLength = 1e9; int minDir = -1;
+    //         // 遍历其他三个方向,选择一个最近的方向
+    //         for (int d = 0; d < 4; d++) if (d != nextDir) {
+    //             auto nextPos = pos + dir[d];
+    //             auto length = path->end.length(nextPos);
+    //             // 判断越界
+    //             if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) continue;
+    //             // 判断是否是障碍物
+    //             if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
+    //             // 判断是否有机器人
+    //             if (otherPos.find(nextPos) != otherPos.end()) continue;
+    //             // 判断是否重叠
+    //             if (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextPos) continue;
+    //             if (length < minLength) {
+    //                 minLength = length;
+    //                 minDir = d;
+    //             } else if (length == minLength) {
+    //                 if (rand() % 2 == 0) minDir = d;
+    //             }
+    //         }
+    //         if (minDir != -1) {
+    //             printf("move %d %d\n", id, minDir);
+    //             status = 0; // 假装被撞了 不会触发 move 下一帧的输入会改回正常
+    //             otherPos[pos + dir[minDir]] = pos;
+    //             flowLogger.log(nowTime, "move {0} {1}", id, minDir);
+    //             return;
+    //         }
+    //     }
+    //     otherPos[nextTimePos] = pos;
+    // }
     return;
 }
 Robot *robots[MAX_Robot_Num];
