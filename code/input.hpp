@@ -86,7 +86,7 @@ void solveFrame() {
     for (int i = 0; i <= robotNum; i++) robots[i]->action();
 
     // 碰撞检测
-    // solveCollision();
+    solveCollision();
     // 移动
     
 
