@@ -45,9 +45,20 @@ void Robot::action() {
     // robotLogger.log(nowTime, "ac id={},bring={},havePath={},pathSize={}", id, bring, havePath, wholePath.size());
     robotLogger.log(nowTime, "id={},status={},bring={},pos=({},{}),havePath={},pathSize={}", id, status, bring, pos.x, pos.y, havePath, wholePath.size());
     // 如果机器人被撞到了
-    if (!status) return;    
-    // 没走到，还在走
-    if (wholePath.size() > 1) return;
+    if (!status) {
+        wholePath.clear();
+        havePath = false;
+        updateFixPos(pos, id);
+        deletePathFromAllPath(id);
+        return;
+    }
+
+    if (pos.x != wholePath.front().x || pos.y != wholePath.front().y) {
+        // 如果机器人的路径首位不等于当前位置，则需要重新计算路径。
+        havePath = false;
+        wholePaht.clear();
+        deletePathFromAllPath(id);
+    }
 
     // ==1 表示走到了，需要找新的路了
     if (wholePath.size() == 1) {
@@ -74,7 +85,11 @@ void Robot::action() {
         wholePath.clear();
         havePath = false;
     }
-    // 机器人现在应该是没事干
+
+
+    // 没走到，还在走
+    if (wholePath.size() > 1) return;
+
     // 找当前机器人在不碰撞前提下的所有路，路长存在disWithTime，前序点存在preWithTime
     auto beginSolveTime = high_resolution_clock::now();
     solveGridWithTime(pos, id);

@@ -107,6 +107,12 @@ void addPathToAllPath(std::deque<Pos> path, int nowRobotId) {
     fixPos[nowRobotId] = Pos(-1, -1);
 }
 
+void deletePathFromAllPath(int nowRobotId) {
+    for (int nowFrame = 0; nowFrame < allPath.size(); nowFrame++) {
+        allPath[nowFrame][nowRobotId] = Pos(-1, -1);
+    }
+}
+
 void updateFixPos(Pos pos, int nowRobotId) {
     fixPos[nowRobotId] = pos;
 }

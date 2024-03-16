@@ -104,6 +104,7 @@ def linux_cmd(args):
             with open('../log/judger_output.txt', 'w') as f:
                 f.write("stdout:")
                 f.write(stdout.decode('utf-8'))
+            print(stdout.decode('utf-8'))
         
         if stderr:
             with open('../log/judger_output.txt', 'a') as f:
