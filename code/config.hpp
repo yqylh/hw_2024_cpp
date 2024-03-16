@@ -21,6 +21,7 @@
 #include <bitset>
 #include <memory>
 #include <atomic>
+#include <ctime>
 #include "pos.hpp"
 using namespace std::chrono;
 #include "logger.hpp"
@@ -55,8 +56,6 @@ bool inputFlag = true; // 是否input是否结束
  * 预处理&多线程控制相关变量
 */
 auto programStart = high_resolution_clock::now(); // 计时器
-auto frameStart = high_resolution_clock::now(); // 计时器
-std::atomic<bool> threadFinish = false;
 
 Pos dir[4] = {Pos(0, 1), Pos(0, -1), Pos(-1, 0), Pos(1, 0)};
 // 0 表示右移一格 1 表示左移一格 2 表示上移一格 3 表示下移一格

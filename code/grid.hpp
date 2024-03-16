@@ -99,20 +99,10 @@ std::list<Pos> *findPath(Pos begin, Pos end) {
     std::reverse(path->begin(), path->end());
     return path;
 }
-Pos _arr1[40010], _arr2[40010];
-std::thread::id main_thread_id;
-
+Pos _arr[40010];
 Direction * sovleGrid(Pos origin) {
     Direction * result = new Direction;
     result->setVisited(origin.x, origin.y);
-    // Pos _arr[40010];
-    Pos *_arr;
-    // 如果是主线程
-    if (std::this_thread::get_id() == main_thread_id) {
-        _arr = _arr1;
-    } else {
-        _arr = _arr2;
-    }
     int start = 0, end = 0;
     _arr[end++] = origin;
     while (start < end) {
@@ -130,29 +120,7 @@ Direction * sovleGrid(Pos origin) {
 }
 
 void solveAllGrid() {
-    // begin time
-    std::atomic<int> threadLineMain = 0;
-    std::atomic<int> threadLineT1 = 199;
-    main_thread_id = std::this_thread::get_id();
-    // 创建一个新的线程 thread
-    std::thread t1([&](){
-        for (int i = MAX_Line_Length - 1; i >= 0; i--) {
-            threadLineT1 = i;
-            if (i == threadLineMain) break;
-            for (int j = 0; j < MAX_Col_Length; j++) {
-                if ((grids[i][j]->type == 0 || grids[i][j]->type == 3) && grids[i][j]->gridDir == nullptr) {
-                    grids[i][j]->gridDir = sovleGrid(Pos(i, j));
-                }
-            }
-        }
-        flowLogger.log(nowTime, "thread Finish");
-        threadFinish = true;
-    });
-    // 这个线程要后台运行
-    t1.detach();
     for (int i = 0; i < MAX_Line_Length; i++) {
-        threadLineMain = i;
-        if (i == threadLineT1) break;
         for (int j = 0; j < MAX_Col_Length; j++) {
             auto stop = high_resolution_clock::now();
             auto usedTime = duration_cast<milliseconds>(stop - programStart).count();

@@ -138,8 +138,7 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
         if (nextDir == 2) ableDir = {0, 1, 3}; 
         if (nextDir == 3) ableDir = {0, 1, 2}; 
         if (nextDir == -1) ableDir = {0, 1, 2, 3};
-        if (rand() % 2 == 0) std::swap(ableDir[0], ableDir[1]);
-        if (rand() % 4 == 0) std::swap(ableDir[rand()%2], ableDir[2]);
+        while (rand() % 2) std::swap(ableDir[rand() % ableDir.size()], ableDir[rand() % ableDir.size()]);
         if (otherPos.find(nextTimePos) != otherPos.end() && otherPos.find(nextTimePos)->first == otherPos.find(nextTimePos)->second) {
             // 这是一个弱智的情况,有机器人停下来了,那我需要下一帧继续绕开走
             lastWeak = nowTime;

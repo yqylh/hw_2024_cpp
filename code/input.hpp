@@ -44,6 +44,7 @@ void inputMap(){
     solveBerth();
     solveRobot();
     solveAllGrid();
+    srand(time(0));
     puts("OK");
     fflush(stdout);
 }
@@ -54,7 +55,6 @@ bool inputFrame() {
         inputFlag = false;
         return false;
     }
-    frameStart = high_resolution_clock::now();
     int K;
     scanf("%d", &K);
     for (int i = 1; i <= K; i++) {
@@ -84,13 +84,6 @@ void solveFrame() {
     for (int i = 0; i <= robotNum; i++) robots[i]->move();
     for (int i = 0; i <= shipNum; i++) ships[i]->action();
     
-    auto end = high_resolution_clock::now();
-    auto usedTime = duration_cast<milliseconds>(end - frameStart).count();
-    while (usedTime < 14 && threadFinish == false) {
-        end = high_resolution_clock::now();
-        usedTime = duration_cast<milliseconds>(end - frameStart).count();
-    }
-    flowLogger.log(nowTime, "frameTime: usedTime={0}", usedTime);
     puts("OK");
     fflush(stdout);
 }
