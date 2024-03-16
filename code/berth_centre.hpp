@@ -106,13 +106,13 @@ private:
         for (int i = 0; i < MAX_Berth_Num; i++){
             bert_velocitys[i] = allberths[i]->velocity;
             bert_times[i] = allberths[i]->time;
-            bert_fix_times[i] = bert_times[i] + bert_velocitys[i] * MAX_Capacity; //运输到虚拟点的时间+船只装货时间
+            bert_fix_times[i] = bert_times[i] + MAX_Capacity / bert_velocitys[i]; //运输到虚拟点的时间+船只装货时间
         }
         std::sort(sortted_bert_by_time.begin(), sortted_bert_by_time.end(), [&](const int& a, const int& b) {
             return bert_times[a] < bert_times[b]; // 按时间升序排列
         });
         std::sort(sortted_bert_by_velocity.begin(), sortted_bert_by_velocity.end(), [&](const int& a, const int& b) {
-            return bert_velocitys[a] < bert_velocitys[b]; // 按装填速度升序排列
+            return bert_velocitys[a] > bert_velocitys[b]; // 按装填速度升序排列
         });
         std::sort(sortted_bert_fix_times.begin(), sortted_bert_fix_times.end(), [&](const int& a, const int& b) {
             return bert_fix_times[a] < bert_fix_times[b]; // 按修正时间升序排列
@@ -138,10 +138,10 @@ private:
                 berth_want_goods_level [i] = 0; //急需货物，快来！
                 continue;
             }
-            bcenterlogger.log(nowTime, "goodsNum :{0}", allberths[i]->goodsNum + allberths[i]->on_way_robot);
+            bcenterlogger.log(nowTime, "goodsNum :{}", allberths[i]->goodsNum + allberths[i]->on_way_robot);
             float remaining_shipment = (allberths[i]->goodsNum + allberths[i]->on_way_robot) / float(MAX_Capacity); //剩余运输次数,货物包括已经在泊位上的和机器人手上的
-            bcenterlogger.log(nowTime, "remaining_shipment: {0} int: {0} , bert_fix_times:{0}", remaining_shipment,floor(remaining_shipment),bert_fix_times[i]);
-            berth_want_goods_level[i] = bert_fix_times[i] * floor(remaining_shipment); //剩余运输次数越多，需求等级越低
+            bcenterlogger.log(nowTime, "remaining_shipment: {} int: {} , bert_fix_times:{}", remaining_shipment,floor(remaining_shipment),bert_fix_times[i]);
+            berth_want_goods_level[i] = bert_fix_times[i] * ceil(remaining_shipment); //剩余运输次数越多，需求等级越低
         }
         std::sort(sortted_berth_want_goods_level.begin(), sortted_berth_want_goods_level.end(), [&](const int& a, const int& b) {
             return berth_want_goods_level[a] < berth_want_goods_level[b]; // 按需求等级升序排列
@@ -170,72 +170,33 @@ private:
         return best_bert_id;
     }
 
-    // int robot_choose_berth(int robot_id){
-    //     /* !!! 废弃代码 !!!*/
-    //     /* !!! 废弃代码 !!!*/
-    //     /* !!! 废弃代码 !!!*/
-
-    //     /*用于指引机器人来到最佳的泊位
-    //     使用: bert_id1，pos_id1,bert_id2,pos_id2 = chose_bertch(robot_id)
-    //     bert_id1，pos_id1,bert_id2,pos_id2分别代表最佳位置和次佳位置,可供机器人寻路时自行选择。*/
-    //     cal_berth_want_goods_level();
-    //     Pos robot_pos = robots[robot_id]->pos;
-
-    //     int best_bert_id = -1, second_bert_id = -1;
-    //     int pos_id1 = -1, pos_id2 = -1;
-    //     int best_fixed_level = 15000, second_fixed_level = 15000;
-    //     for (int i = 0; i < MAX_Berth_Num; i++){
-    //         if (allberths[i]->on_way_robot < 5){
-    //             continue; //泊位上有五个以上机器人，不要去打扰，快检查是不是撞一起了
-    //         }
-    //         int min_length = 10000, min_id = -1;
-    //         int id = 0;
-    //         // bugs
-    //         for (Direction* & dir : berths[i]->usePosDir) {
-    //             if (dir[robot_pos.x][robot_pos.y].length < min_length){
-    //                 min_length = dir[robot_pos.x][robot_pos.y].length;
-    //                 min_id = id;
-    //             }
-    //             id++;
-    //         }
-
-    //         int refixed_level = berth_want_goods_level[i] + min_length;
-    //         if (refixed_level < best_fixed_level){
-    //             second_fixed_level = best_fixed_level;
-    //             second_bert_id = best_bert_id;
-    //             best_fixed_level = refixed_level;
-    //             best_bert_id = i;
-    //             pos_id1 = min_id;
-    //         }
-    //         else if (refixed_level < second_fixed_level){
-    //             second_fixed_level = refixed_level;
-    //             second_bert_id = i;
-    //             pos_id2 = min_id;
-    //         }
-    //     }
-    //     return best_bert_id, pos_id1, second_bert_id, pos_id2;
-    // }
-
     int bert_ship_goods_check(int bert_id){
         //检查泊位和船只状态，返回值为泊位剩余容量
         if (!allberths[bert_id]->shipId.empty()) if (allships[allberths[bert_id]->shipId[0]]->status == 1){
+            //有船,检查船的状态
+            if (bert_load_start_times[bert_id] == MAX_TIME){
+                bert_load_start_times[bert_id] = nowTime;
+                bert_load_finish_times[bert_id] = nowTime + allberths[bert_id]->goodsNum / bert_velocitys[bert_id] + 1;
+            }
             if (allberths[bert_id]->goodsNum > 0){
                 if (bert_load_finish_times[bert_id] < nowTime){
                     allships[allberths[bert_id]->shipId[0]]->capacity += allberths[bert_id]->goodsNum;
                     allberths[bert_id]->goodsNum = 0;
+                    bert_load_start_times[bert_id] = 0;
                 }
                 else{
-                    int loaded_goods =  (nowTime - bert_load_start_times[bert_id]) / bert_velocitys[bert_id];
+                    int loaded_goods =  (nowTime - bert_load_start_times[bert_id]) * bert_velocitys[bert_id];
                     if (loaded_goods > allberths[bert_id]->goodsNum){
                         loaded_goods = allberths[bert_id]->goodsNum;
                     }
                     allships[allberths[bert_id]->shipId[0]]->capacity += loaded_goods;
                     allberths[bert_id]->goodsNum -= loaded_goods;
-                    bcenterlogger.log(nowTime, "loaded_goods: {0}, remaining goods: {0}", loaded_goods, allberths[bert_id]->goodsNum);
+                    bcenterlogger.log(nowTime, "loaded_goods: {}, remaining goods: {}", loaded_goods, allberths[bert_id]->goodsNum);
+                    bert_load_start_times[bert_id] = bert_load_start_times[bert_id] + loaded_goods / bert_velocitys[bert_id];
                 }
             }
             else if (allberths[bert_id]->on_way_robot < 0){
-                bcenterlogger.log(nowTime, "goodsNum: {0}", allberths[bert_id]->goodsNum);
+                bcenterlogger.log(nowTime, "warning : goodsNum: {0}", allberths[bert_id]->goodsNum);
             }
         }
         return MAX_Capacity - allberths[bert_id]->goodsNum;
@@ -256,12 +217,22 @@ private:
 
     void pull_good(int bert_id){
         // 装载货物: 首先顺手检查一下港口和轮船状态，然后装货
-        bcenterlogger.log(nowTime, "pull_good:allberths[bert_id]->goodsNum: {0}", allberths[bert_id]->goodsNum);
+        bcenterlogger.log(nowTime, "pull_good:berths {}->goodsNum: {}", bert_id,allberths[bert_id]->goodsNum);
         allberths[bert_id]->goodsNum ++;
-        bcenterlogger.log(nowTime, "pull_good_recored:allberths[bert_id]->goodsNum: {0}", allberths[bert_id]->goodsNum);
         allberths[bert_id]->on_way_robot --;
-        bert_load_finish_times[bert_id] = bert_velocitys[bert_id] + nowTime;
-        bert_load_start_times[bert_id] = nowTime;
+        if(allberths[bert_id]->on_way_ship > 0) if(allships[allberths[bert_id]->shipId[0]]->status == 0){
+            //没船,等待船来装货
+            bert_load_start_times[bert_id] = MAX_TIME;
+            bert_load_finish_times[bert_id] = MAX_TIME + 1;
+        }
+        else if(bert_load_finish_times[bert_id] < nowTime){
+            bert_load_finish_times[bert_id] = 1 + nowTime;
+            bert_load_start_times[bert_id] = nowTime;
+        }else{
+            bert_ship_goods_check(bert_id);
+            bert_load_finish_times[bert_id] += 1;
+        }
+         bcenterlogger.log(nowTime, "pulled_good:berths {}->goodsNum: {}", bert_id,allberths[bert_id]->goodsNum);
     }
 
     void normal_berth_check(){
