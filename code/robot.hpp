@@ -56,7 +56,7 @@ void Robot::action() {
     if (pos.x != wholePath.front().x || pos.y != wholePath.front().y) {
         // 如果机器人的路径首位不等于当前位置，则需要重新计算路径。
         havePath = false;
-        wholePaht.clear();
+        wholePath.clear();
         deletePathFromAllPath(id);
     }
 

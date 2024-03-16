@@ -30,11 +30,43 @@ def setup_args():
     config['stdout'] = (args.stdout == 'True' or args.stdout == 'true' or args.stdout == '1')
     return argparse.Namespace(**config)
 
+def run_all(args):
+    mapList = os.listdir('../allMaps')
+    resList = []
+    for map in mapList:
+        args.map = map
+        res = Do_cmd(args)
+        resList.append(res)
+    
+    for i in range(len(mapList)):
+        print(mapList[i], resList[i])
+
+def del_files_win():
+    if os.path.isfile('main.exe'):
+        remove_file('main.exe')
+    if os.path.exists('replay'):
+        os.rmdir('replay')
+
+def del_files_linux():
+    if os.path.isfile('main'):
+        os.remove('main')
+    if os.path.exists('main.dSYM'):
+        shutil.rmtree('main.dSYM')
+    if os.path.exists('replay'):
+        os.rmdir('replay')
+
+def del_files():
+    if system == 'win':
+        del_files_win()
+    else:
+        del_files_linux()
+
 def Do_cmd(args):
     if system == 'win':
-        win_cmd(args)
+        res = win_cmd(args)
     else:
-        linux_cmd(args)
+        res = linux_cmd(args)
+    return res
 
 def remove_file(file_path, attempts=10):
     for i in range(attempts):
@@ -75,15 +107,13 @@ def win_cmd(args):
             with open('../log/judger_output.txt', 'a') as f:
                 f.write("stderr:")
                 f.write(stderr.decode('utf-8'))
-    
+                
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
             shutil.move('replay/' + files, '../judge/replay/' + files)
+            
+    return stdout.decode('utf-8')
     # sleep(1)
-    if os.path.isfile('main.exe'):
-        remove_file('main.exe')
-    if os.path.exists('replay'):
-        os.rmdir('replay')
 
 
 def linux_cmd(args):
@@ -110,16 +140,11 @@ def linux_cmd(args):
             with open('../log/judger_output.txt', 'a') as f:
                 f.write("stderr:")
                 f.write(stderr.decode('utf-8'))
-            
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
             shutil.move('./replay/' + files, '../judge/replay/' + files)
-    if os.path.isfile('main'):
-        os.remove('main')
-    if os.path.exists('main.dSYM'):
-        shutil.rmtree('main.dSYM')
-    if os.path.exists('replay'):
-        os.rmdir('replay')
+            
+    return stdout.decode('utf-8')   
 
 def compile_fmt():
     fmt_lib_path = "../dcode/libfmt.a"
@@ -172,13 +197,24 @@ def main():
         return
 
     try:
-        Do_cmd(args)
+        if args.map == 'all':
+            run_all(args)
+        else:
+            Do_cmd(args)
     except Exception as e:
         print("Run failed")
         print(e)
         return
-    
     print("Run success")
 
+
+    try:
+        del_files()
+    except Exception as e:
+        print("Delete failed")
+        print(e)
+        return
+    print("Delete success")
+    
 if __name__ == "__main__":
     main()
