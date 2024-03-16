@@ -8,12 +8,14 @@
 // 定义二维向量结构体
 struct Pos {
     int x, y;
-    int cmp;
     Pos(int x = -1, int y = -1) : x(x), y(y) {}
     Pos operator+(const Pos v)const { return Pos(x + v.x, y + v.y); }
     Pos operator-(const Pos v)const { return Pos(x - v.x, y - v.y); }
     bool operator==(const Pos v)const {// 重载等于号
         return x == v.x && y == v.y;
+    }
+    bool operator!=(const Pos v)const {// 重载不等于号
+        return x != v.x || y != v.y;
     }
     int length(const Pos v)const {// 计算两点之间的距离
         return abs(x - v.x) + abs(y - v.y);

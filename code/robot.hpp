@@ -55,7 +55,7 @@ void Robot::action() {
         return;
     }
 
-    if (pos.x != wholePath.front().x || pos.y != wholePath.front().y) {
+    if (pos != wholePath.front()) {
         // 如果机器人的路径首位不等于当前位置，则需要重新计算路径。
         havePath = false;
         wholePath.clear();
@@ -71,16 +71,13 @@ void Robot::action() {
             printf("get %d\n", id);
             flowLogger.log(nowTime, "get {0}", id);
             bring = 1;
-        // 送货物
         } else if (bring == 1 && grids[pos.x][pos.y]->type == 3) {
+            // 送货物
             printf("pull %d\n", id);
             flowLogger.log(nowTime, "pull {0}", id);
             bring = 0;
             if (choosed_berth_id != -1) {
                 berth_center->declare_robot_pull_good(choosed_berth_id);
-                // toShip->capacity++;
-                // toShip->waitTime = nowTime + berths[toShip->berthId]->velocity;
-                // robotLogger.log(nowTime, "toShip->capacity {0}", toShip->capacity);
             }
         }
 
@@ -161,40 +158,8 @@ void Robot::action() {
             }
         }
         berthLogger.log(nowTime, "find berth, rid={},choosed_berth_pos=({},{}),minDis={}", id, choosed_berth_pos.x, choosed_berth_pos.y, minDis);
-
-        // auto targetShip = ships[0];
-
-        // for (auto & ship : ships) {
-        //     if (ship->id != id % 5 && ship->id != shipNum) {
-        //         continue;
-        //     }
-        //     if (ship->status == 1 && ship->berthId != -1 && ship->capacity != MAX_Capacity) {
-        //         // 机器人有货物，找一个最近的可达的泊位
-        //         // Pos nowShipPos = berths[ship->berthId]->usePos[ship->id % 2];
-                
-        //         // 判断是否可达
-        //         if (disWithTime[nowShipPos.x][nowShipPos.y] == 0x3f3f3f3f) {
-        //             continue;
-        //         }
-        //         /*
-        //         // 判断是否超时
-        //         if (nowTime + disWithTime[nowShipPos.x][nowShipPos.y] + 3 > ship->waitTime) {
-        //             continue;
-        //         }
-        //         */
-        //         if (disWithTime[nowShipPos.x][nowShipPos.y] < minDis) {
-        //             minDis = disWithTime[nowShipPos.x][nowShipPos.y];
-        //             targetShip = ship;
-        //         }
-
-        //     }
-        // }
         
         if (minDis != 0x3f3f3f3f) {
-            // toShip = targetShip;
-            
-            // auto targetPos = berths[targetShip->berthId]->usePos[targetShip->id % 2];
-            // flowLogger.log(nowTime, "rid={},toShip={},targetPos=({},{}),ship->berthId={}", id, toShip->id, choosed_berth_pos.x, choosed_berth_pos.y, toShip->berthId);
             wholePath = findPathWithTime(pos, choosed_berth_pos);
             havePath = true;
             berth_center->declare_robot_choose_berth(choosed_berth_id);

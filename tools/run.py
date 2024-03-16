@@ -1,6 +1,7 @@
 import os,sys,shutil
 import argparse
 import subprocess
+from analysis import analyze_judger_output_v3,analyze_time_distribution
 from time import sleep
 
 if sys.platform.startswith('linux'):
@@ -66,6 +67,11 @@ def Do_cmd(args):
         res = win_cmd(args)
     else:
         res = linux_cmd(args)
+    file_path = '../log/judger_output.txt'
+    analyze_judger_output_v3(file_path)
+    file_path = '../log/path_log.txt'
+    analyze_time_distribution(file_path)
+    print('=====================nextMap=====================')
     return res
 
 def remove_file(file_path, attempts=10):

@@ -15,3 +15,4 @@ code/output.txt
 *.exe
 main.dSYM
 *.rep
+__pycache__

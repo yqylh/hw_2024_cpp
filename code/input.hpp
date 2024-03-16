@@ -79,18 +79,15 @@ bool inputFrame() {
 void solveFrame() {
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
 
-    if (berth_center->is_init == false) {berth_center->do_first_frame();}
-    else {berth_center->call_ship_and_berth_check();}
+    if (berth_center->is_init == false) berth_center->do_first_frame();
+    else berth_center->call_ship_and_berth_check();
+    
     bcenterlogger.log(nowTime, "ship_and_berth_check_ok");
 
     for (int i = 0; i <= robotNum; i++) robots[i]->action();
-
     // 碰撞检测
     solveCollision();
     // 移动
-    
-
-
     for (int i = 0; i <= robotNum; i++) robots[i]->move();
     pathLogger.log(nowTime, "allPath.size()={0}", allPath.size());
     // 时间向前推进
