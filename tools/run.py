@@ -69,6 +69,7 @@ def win_cmd(args):
             with open('../log/judger_output.txt', 'w') as f:
                 f.write("stdout:")
                 f.write(stdout.decode('utf-8'))
+            print(stdout.decode('utf-8'))
         
         if stderr:
             with open('../log/judger_output.txt', 'a') as f:
@@ -149,9 +150,9 @@ def main():
     try:
         os.chdir("../code")
         if system == 'win' or system == 'linux':
-            cmd = "g++ main.cpp -o main -std=c++17 -O3"
+            cmd = "g++ main.cpp -o main -std=c++17 -O2"
         else:
-            cmd = "g++-13 main.cpp -o main -std=c++17 -O3"
+            cmd = "g++-13 main.cpp -o main -std=c++17 -O2"
             
         if args.debug:
             compile_fmt()

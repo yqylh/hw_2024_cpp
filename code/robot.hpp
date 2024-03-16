@@ -171,7 +171,7 @@ void Robot::move() {
     if (!status) return;
     // 只要路径小于2，就说明无论如何不用走
     if (wholePath.size() < 2) return;
-    robotLogger.log(nowTime, "id={},bring={},havePath={},pathSize={},from=({},{}),to=({},{}),status={}", id, bring, havePath, wholePath.size(), wholePath.front().x, wholePath.front().y, wholePath.back().x, wholePath.back().y, status);
+    // robotLogger.log(nowTime, "id={},bring={},havePath={},pathSize={},from=({},{}),to=({},{}),status={}", id, bring, havePath, wholePath.size(), wholePath.front().x, wholePath.front().y, wholePath.back().x, wholePath.back().y, status);
     auto nowPos = wholePath.front();
     auto nextPos = wholePath.at(1);
     int nextDir = getDirWithPath(nowPos, nextPos);

@@ -76,14 +76,6 @@ bool inputFrame() {
 }
 
 void solveFrame() {
-    allPathLogger.log(nowTime, "allPath.size()={0}", allPath.size());
-    for (int nexFrame = 0; nexFrame < allPath.size(); nexFrame++) {
-        auto robotList = allPath[nexFrame];
-        for (int i = 0; i < robotList.size(); i++) {
-            allPathLogger.log(nowTime, "f{},robotList[{}/{}]=({},{})", nexFrame, i, robotList.size(), robotList[i].x, robotList[i].y);
-        }
-    }
-
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
     for (int i = 0; i <= robotNum; i++) robots[i]->action();
 
