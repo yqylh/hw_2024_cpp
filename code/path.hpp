@@ -17,11 +17,18 @@ struct TPos {
 int disWithTime[MAX_Line_Length + 1][MAX_Col_Length + 1];
 Pos preWithTime[MAX_Line_Length + 1][MAX_Col_Length + 1];
 std::deque<std::vector<Pos>> allPath;
+std::vector<Pos> fixPos(MAX_Robot_Num, Pos(-1, -1));
 
-void solveGridWithTime(Pos begin) {
+void solveGridWithTime(Pos begin, int nowRobotId) {
     memset(disWithTime, 0x3f, sizeof(disWithTime));
     memset(preWithTime, 0, sizeof(preWithTime));
     
+    for (int i = 0; i < fixPos.size(); i++) {
+        if (fixPos[i].x != -1 and i != nowRobotId) {
+            grids[fixPos[i].x][fixPos[i].y]->robotOnIt = true;
+        }
+    }
+
     std::queue<Pos> q;
     q.push(begin);
     disWithTime[begin.x][begin.y] = 0;
@@ -29,12 +36,20 @@ void solveGridWithTime(Pos begin) {
         Pos now = q.front();
         q.pop();
 
+
         if (disWithTime[now.x][now.y] < allPath.size()) {
             for (Pos tar : allPath[disWithTime[now.x][now.y]]) {
                 if (tar.x == -1) continue;
                 grids[tar.x][tar.y]->robotOnIt = true;
             }
         }
+        if (disWithTime[now.x][now.y] + 1 < allPath.size()) {
+            for (Pos tar : allPath[disWithTime[now.x][now.y] + 1]) {
+                if (tar.x == -1) continue;
+                grids[tar.x][tar.y]->robotOnIt = true;
+            }
+        }
+
 
         for (int i = 0; i < 4; i++) {
             Pos next = now + dir[i];
@@ -53,8 +68,20 @@ void solveGridWithTime(Pos begin) {
                 grids[tar.x][tar.y]->robotOnIt = false;
             }
         }
+        if (disWithTime[now.x][now.y] + 1 < allPath.size()) {
+            for (Pos tar : allPath[disWithTime[now.x][now.y] + 1]) {
+                if (tar.x == -1) continue;
+                grids[tar.x][tar.y]->robotOnIt = false;
+            }
+        }
+
     }
 
+    for (int i = 0; i < fixPos.size(); i++) {
+        if (fixPos[i].x != -1 and i != nowRobotId) {
+            grids[fixPos[i].x][fixPos[i].y]->robotOnIt = false;
+        }
+    }
     /*
     auto now = end;
     while (!(now == begin)) {
@@ -74,6 +101,14 @@ void addPathToAllPath(std::deque<Pos> path, int nowRobotId) {
         }
         allPath[nowFrame][nowRobotId] = path[nowFrame];
     }
+    for (int nowFrame = path.size(); nowFrame < allPath.size(); nowFrame++) {
+        allPath[nowFrame][nowRobotId] = Pos(-1, -1);
+    }
+    fixPos[nowRobotId] = Pos(-1, -1);
+}
+
+void updateFixPos(Pos pos, int nowRobotId) {
+    fixPos[nowRobotId] = pos;
 }
 
 int getDirWithPath(Pos now, Pos next) {

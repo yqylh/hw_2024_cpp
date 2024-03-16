@@ -82,6 +82,7 @@ FileLogger centerLogger("../log/center_log.txt");
 // 用来输出每一帧和各个主要函数的开始和结束，还有运行时间，主要是用来定位 bug 位置
 FileLogger flowLogger("../log/flow_log.txt");
 FileLogger pathLogger("../log/path_log.txt");
+FileLogger allPathLogger("../log/allPath_log.txt");
 
 #ifdef DEBUG
     #define TEST(x) x

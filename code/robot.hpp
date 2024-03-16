@@ -37,26 +37,11 @@ struct Robot{
     void checkCollision(std::unordered_map<Pos, Pos> &otherPos);
 };
 
-void Robot::move() {
-    // 如果机器人被撞到了
-    if (!status) return;
-    // 只要路径小于2，就说明无论如何不用走
-    if (wholePath.size() < 2) return;
-    robotLogger.log(nowTime, "id={},bring={},havePath={},pathSize={},from=({},{}),to=({},{}),status={}", id, bring, havePath, wholePath.size(), wholePath.front().x, wholePath.front().y, wholePath.back().x, wholePath.back().y, status);
-    auto nowPos = wholePath.front();
-    auto nextPos = wholePath.at(1);
-    int nextDir = getDirWithPath(nowPos, nextPos);
-    // 把当前位置弹出
-    wholePath.pop_front();
-    printf("move %d %d\n", id , nextDir);
-
-    flowLogger.log(nowTime, "move {0} {1}", id, nextDir);
-}
 
 void Robot::action() {
     flowLogger.log(nowTime, "action {0}", id);
-    robotLogger.log(nowTime, "ac id={},bring={},havePath={},pathSize={}", id, bring, havePath, wholePath.size());
-
+    // robotLogger.log(nowTime, "ac id={},bring={},havePath={},pathSize={}", id, bring, havePath, wholePath.size());
+    robotLogger.log(nowTime, "id={},status={},bring={},pos=({},{}),havePath={},pathSize={}", id, status, bring, pos.x, pos.y, havePath, wholePath.size());
     // 如果机器人被撞到了
     if (!status) return;    
     // 没走到，还在走
@@ -79,7 +64,7 @@ void Robot::action() {
             if (toShip->berthId != -1) {
                 toShip->capacity++;
                 toShip->waitTime = nowTime + berths[toShip->berthId]->velocity;
-                robotLogger.log(nowTime, "toShip->capacity {0}", toShip->capacity);
+                // robotLogger.log(nowTime, "toShip->capacity {0}", toShip->capacity);
             }
         }
 
@@ -89,9 +74,9 @@ void Robot::action() {
     // 机器人现在应该是没事干
     // 找当前机器人在不碰撞前提下的所有路，路长存在disWithTime，前序点存在preWithTime
     auto beginSolveTime = high_resolution_clock::now();
-    solveGridWithTime(pos);
+    solveGridWithTime(pos, id);
     auto endSolveTime = high_resolution_clock::now();
-    pathLogger.log(nowTime, "rId={0}solveGridWithTime time={1}", id, duration_cast<microseconds>(endSolveTime - beginSolveTime).count());
+    // pathLogger.log(nowTime, "rId={0}solveGridWithTime time={1}", id, duration_cast<microseconds>(endSolveTime - beginSolveTime).count());
 
     if (bring == 0) {
         // 机器人没有货物，找一个最近的可达的货物
@@ -119,27 +104,12 @@ void Robot::action() {
                 targetItem = i;
             }
             i++;
-
-            /*
-            if (grids[i->pos.x][i->pos.y]->gridDir == nullptr) grids[i->pos.x][i->pos.y]->gridDir = sovleGrid(i->pos);
-            path->pathDir = grids[i->pos.x][i->pos.y]->gridDir;
-            // 如果到哪里的时间超过了货物的时间 或者 不可达
-            auto length = (std::abs(pos.x - i->pos.x) + std::abs(pos.y - i->pos.y));
-            if (path->pathDir->isVisited(pos.x, pos.y) == false || length + nowTime + 3 > i->beginTime + Item_Continue_Time) {
-                delete path;
-                path = nullptr;
-                i++;
-                continue;
-            }
-            bringTimeLimit = i->beginTime + Item_Continue_Time;
-            unsolvedItems.erase(i++);
-            */
         }
 
 
         if (minDis != 0x3f3f3f3f && targetItem != unsolvedItems.end()) {
             int targetItemIndex = std::distance(unsolvedItems.begin(), targetItem);
-            flowLogger.log(nowTime, "toItem {0}", targetItemIndex);
+            flowLogger.log(nowTime, "rid={},toItem={}", id, targetItemIndex);
 
             wholePath = findPathWithTime(pos, targetItem->pos);
             bringTimeLimit = targetItem->beginTime + Item_Continue_Time;
@@ -175,18 +145,6 @@ void Robot::action() {
                     targetShip = ship;
                 }
 
-                /*
-                path = new Path(pos, berths[ship->berthId]->usePos[ship->id % 2], 1);
-                path->pathDir = berths[ship->berthId]->usePosDir[ship->id % 2];
-                if (path->pathDir->isVisited(pos.x, pos.y) == false) {
-                    delete path;
-                    path = nullptr;
-                    continue;
-                }
-                toShip = ship;
-                flowLogger.log(nowTime, "toShip {0}", toShip->id);
-                break;
-                */
             }
         }
         
@@ -200,7 +158,31 @@ void Robot::action() {
             addPathToAllPath(wholePath, id);
         }
     }
+
+    if (wholePath.size() == 0) {
+        robotLogger.log(nowTime, "noPath id={},bring={},havePath={},pathSize={}", id, bring, havePath, wholePath.size());
+        havePath = false;
+        updateFixPos(pos, id);
+    }
 }
+
+void Robot::move() {
+    // 如果机器人被撞到了
+    if (!status) return;
+    // 只要路径小于2，就说明无论如何不用走
+    if (wholePath.size() < 2) return;
+    robotLogger.log(nowTime, "id={},bring={},havePath={},pathSize={},from=({},{}),to=({},{}),status={}", id, bring, havePath, wholePath.size(), wholePath.front().x, wholePath.front().y, wholePath.back().x, wholePath.back().y, status);
+    auto nowPos = wholePath.front();
+    auto nextPos = wholePath.at(1);
+    int nextDir = getDirWithPath(nowPos, nextPos);
+    // 把当前位置弹出
+    wholePath.pop_front();
+    printf("move %d %d\n", id , nextDir);
+
+    flowLogger.log(nowTime, "move {0} {1}", id, nextDir);
+}
+
+
 // first 表示机器人的目标位置, second 表示机器人原始位置
 void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
 }
