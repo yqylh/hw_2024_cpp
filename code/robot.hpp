@@ -7,6 +7,7 @@
 #include "item.hpp"
 #include "ship.hpp"
 #include "berth.hpp"
+#include "berth_centre.hpp"
 #include "path.hpp"
 
 struct Robot{
@@ -15,7 +16,8 @@ struct Robot{
     int status; // 机器人的状态 0表示寄了 1 表示正常运行
     int bring; // 机器人带的货物 0 表示没有货物 1 表示有货物
     int bringTimeLimit; // 机器人到达带货物的时间
-    Ship *toShip; // 机器人所在的船的 id
+    // Ship *toShip; // 机器人所在的船的 id
+    int choosed_berth_id;
     Direction *robotDir; // 机器人到达每个点的方向
     bool havePath;
     std::deque<Pos> wholePath; // 机器人的路径，front为当前位置
@@ -27,7 +29,7 @@ struct Robot{
         this->pos = Pos(x, y);
         this->status = 1;
         this->bring = 0;
-        this->toShip = nullptr;
+        this->choosed_berth_id = -1;
         this->robotDir = nullptr;
         this->havePath = false;
         this->wholePath.clear();
@@ -61,9 +63,10 @@ void Robot::action() {
             printf("pull %d\n", id);
             flowLogger.log(nowTime, "pull {0}", id);
             bring = 0;
-            if (toShip->berthId != -1) {
-                toShip->capacity++;
-                toShip->waitTime = nowTime + berths[toShip->berthId]->velocity;
+            if (choosed_berth_id != -1) {
+                berth_center->declare_robot_pull_good(choosed_berth_id);
+                // toShip->capacity++;
+                // toShip->waitTime = nowTime + berths[toShip->berthId]->velocity;
                 // robotLogger.log(nowTime, "toShip->capacity {0}", toShip->capacity);
             }
         }
@@ -121,40 +124,61 @@ void Robot::action() {
     if (bring == 1) {
         // 机器人有货物
         int minDis = 0x3f3f3f3f;
-        auto targetShip = ships[0];
+        Pos choosed_berth_pos = Pos(-1,-1);
 
-        for (auto & ship : ships) {
-            if (ship->id != id % 5 && ship->id != shipNum) {
-                continue;
-            }
-            if (ship->status == 1 && ship->berthId != -1 && ship->capacity != MAX_Capacity) {
-                // 机器人有货物，找一个最近的可达的泊位
-                Pos nowShipPos = berths[ship->berthId]->usePos[ship->id % 2];
-                // 判断是否可达
-                if (disWithTime[nowShipPos.x][nowShipPos.y] == 0x3f3f3f3f) {
-                    continue;
-                }
-                /*
-                // 判断是否超时
-                if (nowTime + disWithTime[nowShipPos.x][nowShipPos.y] + 3 > ship->waitTime) {
-                    continue;
-                }
-                */
-                if (disWithTime[nowShipPos.x][nowShipPos.y] < minDis) {
-                    minDis = disWithTime[nowShipPos.x][nowShipPos.y];
-                    targetShip = ship;
-                }
+        float* berth_level_list = berth_center->call_robot_choose_berth();
 
+        for (int i = 0; i < MAX_Berth_Num;i++){
+            Berth* now_berth = berths[i];
+            for(Pos sub_berths : now_berth->usePos){
+                    berthLogger.log(nowTime, "rid={},bid={},sub_berths=({},{}),berth_level_list={},disWithTime={}", id, i, sub_berths.x, sub_berths.y, berth_level_list[i], disWithTime[sub_berths.x][sub_berths.y]);
+                    if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
+                    
+                    if (disWithTime[sub_berths.x][sub_berths.y] + berth_level_list[i]< minDis){
+                        minDis = disWithTime[sub_berths.x][sub_berths.y];
+                        choosed_berth_pos = sub_berths;
+                        choosed_berth_id = i;
+                    }   
             }
         }
+        berthLogger.log(nowTime, "find berth, rid={},choosed_berth_pos=({},{}),minDis={}", id, choosed_berth_pos.x, choosed_berth_pos.y, minDis);
+
+        // auto targetShip = ships[0];
+
+        // for (auto & ship : ships) {
+        //     if (ship->id != id % 5 && ship->id != shipNum) {
+        //         continue;
+        //     }
+        //     if (ship->status == 1 && ship->berthId != -1 && ship->capacity != MAX_Capacity) {
+        //         // 机器人有货物，找一个最近的可达的泊位
+        //         // Pos nowShipPos = berths[ship->berthId]->usePos[ship->id % 2];
+                
+        //         // 判断是否可达
+        //         if (disWithTime[nowShipPos.x][nowShipPos.y] == 0x3f3f3f3f) {
+        //             continue;
+        //         }
+        //         /*
+        //         // 判断是否超时
+        //         if (nowTime + disWithTime[nowShipPos.x][nowShipPos.y] + 3 > ship->waitTime) {
+        //             continue;
+        //         }
+        //         */
+        //         if (disWithTime[nowShipPos.x][nowShipPos.y] < minDis) {
+        //             minDis = disWithTime[nowShipPos.x][nowShipPos.y];
+        //             targetShip = ship;
+        //         }
+
+        //     }
+        // }
         
         if (minDis != 0x3f3f3f3f) {
-            toShip = targetShip;
+            // toShip = targetShip;
             
-            auto targetPos = berths[targetShip->berthId]->usePos[targetShip->id % 2];
-            flowLogger.log(nowTime, "rid={},toShip={},targetPos=({},{}),ship->berthId={}", id, toShip->id, targetPos.x, targetPos.y, toShip->berthId);
-            wholePath = findPathWithTime(pos, targetPos);
+            // auto targetPos = berths[targetShip->berthId]->usePos[targetShip->id % 2];
+            // flowLogger.log(nowTime, "rid={},toShip={},targetPos=({},{}),ship->berthId={}", id, toShip->id, choosed_berth_pos.x, choosed_berth_pos.y, toShip->berthId);
+            wholePath = findPathWithTime(pos, choosed_berth_pos);
             havePath = true;
+            berth_center->declare_robot_choose_berth(choosed_berth_id);
             addPathToAllPath(wholePath, id);
         }
     }
@@ -194,6 +218,87 @@ void solveRobot() {
         robots[i]->robotDir = sovleGrid(robots[i]->pos);
         grids[robots[i]->pos.x][robots[i]->pos.y]->gridDir = robots[i]->robotDir;
     }
+}
+
+void solveCollision() {
+    // 记录 friends
+    std::vector<std::vector<int>> friends(MAX_Robot_Num + 1, std::vector<int>(0));
+    std::unordered_set<Pos> robotPos;
+    // 计算每个节点的 friend 的 id
+    for (int i = 0; i <= robotNum; i++) {
+        robotPos.insert(robots[i]->pos);
+        for (int j = i + 1; j <= robotNum; j++) {
+            if (robots[i]->pos.length(robots[j]->pos) <= 2) {
+                friends[i].push_back(j);
+                friends[j].push_back(i);
+            }
+        }
+    }
+    // 记录周围的空闲度
+    int free[MAX_Robot_Num + 1] = {0};
+    for (int i = 0; i <= robotNum; i++) {
+        for (int j = 0; j < 4; j++) {
+            auto nextPos = robots[i]->pos + dir[j];
+            if (robotPos.find(nextPos) != robotPos.end()) continue;
+            if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
+            free[i]++;
+        }
+    }
+    // 使用Lambda表达式作为比较函数
+    auto compare = [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
+        if (a.second == b.second) {
+            int ida = a.first, idb = b.first;
+            if (robots[ida]->pos.x == robots[idb]->pos.x) {
+                return robots[ida]->pos.y < robots[idb]->pos.y;
+            } else {
+                return robots[ida]->pos.x < robots[idb]->pos.x;
+            }
+        } else {
+            return a.second < b.second;
+        }
+    };
+    // 初始化set，指定Lambda表达式作为比较器
+    std::set<std::pair<int, int>, decltype(compare)> mySet(compare);
+    // 按照 free 排序    id   free. 如果 free 相同按照 x y 排序
+    for (int i = 0; i <= robotNum; i++) {
+        mySet.insert(std::make_pair(i, free[i]));
+    }
+    /**
+     * 1. 首先找到没计算的点中空闲度最小的点
+     * 2. 然后找到它的邻居 优先距离 1,其次距离 2,然后将其删除
+     * 3. 重复 1 2 步骤
+    */
+    std::unordered_map<int, std::vector<int>> group; group.clear();
+    while (!mySet.empty()) {
+        auto it = mySet.begin();
+        int u = it->first;
+        mySet.erase(it);
+        group[u] = std::vector<int>();
+        std::queue<int> q;
+        while (!q.empty()) {
+            auto top = q.front();
+            q.pop();
+            group[u].push_back(top);
+            for (auto & item : mySet) if (item.first == top) {
+                mySet.erase(item);
+                break;
+            }
+            for (auto &frd : friends[top]) {
+                if (robots[top]->pos.length(robots[frd]->pos) == 1) q.push(frd);
+            }
+            for (auto &frd : friends[top]) {
+                if (robots[top]->pos.length(robots[frd]->pos) == 2) q.push(frd);
+            }
+        }
+    }
+    // 按组进行碰撞检测
+    std::unordered_map<Pos, Pos> nextPos; nextPos.clear();
+    for (auto & g : group) {
+        for (auto & i : g.second) {
+            robots[i]->checkCollision(nextPos);
+        }
+    }
+    return;
 }
 
 #endif

@@ -104,10 +104,10 @@ std::list<Pos> *findPath(Pos begin, Pos end) {
     return path;
 }
 
-Pos _arr[40010];
 Direction * sovleGrid(Pos origin) {
     Direction * result = new Direction;
     result->setVisited(origin.x, origin.y);
+    Pos _arr[40010];
     int start = 0, end = 0;
     _arr[end++] = origin;
     while (start < end) {
