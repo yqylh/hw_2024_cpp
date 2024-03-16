@@ -37,16 +37,19 @@ struct Direction {
 
 struct Grid {
     Pos pos; // 位置
-    int type; // 0->空地 1->海洋 2->障碍物 3->泊位
+    int type; // 0->空地 1->海洋 2->障碍物 3->泊位 10->机器人
+    bool robotOnIt;
     Direction *gridDir; // 用来导航从起点到终点的路径
     Grid(){
         this->pos = Pos(-1, -1);
         this->type = -1;
         this->gridDir = nullptr;
+        this->robotOnIt = false;
     }
     Grid(int x, int y, int type) : type(type){
         this->pos = Pos(x, y);
         this->gridDir = nullptr;
+        this->robotOnIt = false;
     }
 };
 
@@ -103,6 +106,7 @@ Pos _arr[40010];
 Direction * sovleGrid(Pos origin) {
     Direction * result = new Direction;
     result->setVisited(origin.x, origin.y);
+    Pos _arr[40010];
     int start = 0, end = 0;
     _arr[end++] = origin;
     while (start < end) {

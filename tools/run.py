@@ -16,9 +16,9 @@ elif sys.platform.startswith('darwin'):
 def setup_args():
     config = {}
     parser = argparse.ArgumentParser(description='Upload a file to the server')
-    parser.add_argument('--stdout', '-s', nargs='?',type=str,default="False", help='File name to upload')
+    parser.add_argument('--stdout', '-s', nargs='?',type=str,default="1", help='File name to upload')
     parser.add_argument('--file_name', '-f', nargs='?',type=str,default=None, help='File name to upload')
-    parser.add_argument('--debug', '-d', nargs='?',type=str,default="False", help='Destination on the server')
+    parser.add_argument('--debug', '-d', nargs='?',type=str,default="1", help='Destination on the server')
     parser.add_argument('--map', '-m', nargs='?',type=str,default='map1.txt', help='Map to use')
     parser.add_argument('--random_seed', nargs='?',type=int,default=123, help='Random seed to use')
     args = parser.parse_args()
@@ -30,11 +30,43 @@ def setup_args():
     config['stdout'] = (args.stdout == 'True' or args.stdout == 'true' or args.stdout == '1')
     return argparse.Namespace(**config)
 
+def run_all(args):
+    mapList = os.listdir('../allMaps')
+    resList = []
+    for map in mapList:
+        args.map = map
+        res = Do_cmd(args)
+        resList.append(res)
+    
+    for i in range(len(mapList)):
+        print(mapList[i], resList[i])
+
+def del_files_win():
+    if os.path.isfile('main.exe'):
+        remove_file('main.exe')
+    if os.path.exists('replay'):
+        os.rmdir('replay')
+
+def del_files_linux():
+    if os.path.isfile('main'):
+        os.remove('main')
+    if os.path.exists('main.dSYM'):
+        shutil.rmtree('main.dSYM')
+    if os.path.exists('replay'):
+        os.rmdir('replay')
+
+def del_files():
+    if system == 'win':
+        del_files_win()
+    else:
+        del_files_linux()
+
 def Do_cmd(args):
     if system == 'win':
-        win_cmd(args)
+        res = win_cmd(args)
     else:
-        linux_cmd(args)
+        res = linux_cmd(args)
+    return res
 
 def remove_file(file_path, attempts=10):
     for i in range(attempts):
@@ -69,20 +101,19 @@ def win_cmd(args):
             with open('../log/judger_output.txt', 'w') as f:
                 f.write("stdout:")
                 f.write(stdout.decode('utf-8'))
+            print(stdout.decode('utf-8'))
         
         if stderr:
             with open('../log/judger_output.txt', 'a') as f:
                 f.write("stderr:")
                 f.write(stderr.decode('utf-8'))
-    
+                
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
             shutil.move('replay/' + files, '../judge/replay/' + files)
+            
+    return stdout.decode('utf-8')
     # sleep(1)
-    if os.path.isfile('main.exe'):
-        remove_file('main.exe')
-    if os.path.exists('replay'):
-        os.rmdir('replay')
 
 
 def linux_cmd(args):
@@ -103,21 +134,17 @@ def linux_cmd(args):
             with open('../log/judger_output.txt', 'w') as f:
                 f.write("stdout:")
                 f.write(stdout.decode('utf-8'))
+            print(stdout.decode('utf-8'))
         
         if stderr:
             with open('../log/judger_output.txt', 'a') as f:
                 f.write("stderr:")
                 f.write(stderr.decode('utf-8'))
-            
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
             shutil.move('./replay/' + files, '../judge/replay/' + files)
-    if os.path.isfile('main'):
-        os.remove('main')
-    if os.path.exists('main.dSYM'):
-        shutil.rmtree('main.dSYM')
-    if os.path.exists('replay'):
-        os.rmdir('replay')
+            
+    return stdout.decode('utf-8')   
 
 def compile_fmt():
     fmt_lib_path = "../dcode/libfmt.a"
@@ -149,9 +176,9 @@ def main():
     try:
         os.chdir("../code")
         if system == 'win' or system == 'linux':
-            cmd = "g++ main.cpp -o main -std=c++17 -O3"
+            cmd = "g++ main.cpp -o main -std=c++17 -O2"
         else:
-            cmd = "g++-13 main.cpp -o main -std=c++17 -O3"
+            cmd = "g++-13 main.cpp -o main -std=c++17 -O2"
             
         if args.debug:
             compile_fmt()
@@ -170,13 +197,24 @@ def main():
         return
 
     try:
-        Do_cmd(args)
+        if args.map == 'all':
+            run_all(args)
+        else:
+            Do_cmd(args)
     except Exception as e:
         print("Run failed")
         print(e)
         return
-    
     print("Run success")
 
+
+    try:
+        del_files()
+    except Exception as e:
+        print("Delete failed")
+        print(e)
+        return
+    print("Delete success")
+    
 if __name__ == "__main__":
     main()

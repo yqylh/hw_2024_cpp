@@ -1,1 +1,1 @@
-python run.py --debug True --map map1.txt --random_seed 123
+python run.py --debug False -s False --map map1.txt --random_seed 123

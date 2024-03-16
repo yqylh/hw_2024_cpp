@@ -11,8 +11,8 @@ struct Berth {
     std::vector<Direction *> usePosDir; // 使用的位置 任何节点到这个位置的下一步方向
     int time; // 运输到虚拟点的时间  
     int velocity; // 装载速度
-    int shipId; // 表示当前泊位上的船的 id 如果没有则为-1
     //上面的是原始值，别改
+    std::vector<int> shipId; // 表示当前泊位上的船的 id,可能有多个,用empty()判断是否有船
     bool selected; // 表示当前泊位是否被选中
     int goodsNum; // 表示当前泊位上的货物数量
     int on_way_ship;
@@ -20,7 +20,6 @@ struct Berth {
     int waitting_ship;
     Berth(int id, int x, int y, int time, int velocity) : id(id), time(time), velocity(velocity) {
         this->pos = Pos(x, y);
-        shipId = -1;
         selected = false;
         goodsNum = 0;
         on_way_ship = 0;
