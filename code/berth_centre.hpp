@@ -26,6 +26,8 @@ struct Berth_center {
     Berth **allberths = berths;
     Ship **allships = ships;
     float berth_want_goods_level[MAX_Berth_Num]; //表示正常货物需求等级 0-?越低越急
+    float berth_want_ship_level[MAX_Berth_Num]; //表示正常船只需求等级 0-?越低越急
+
 
     int bert_velocitys[MAX_Berth_Num];
     int bert_load_start_times[MAX_Berth_Num];
@@ -36,6 +38,7 @@ struct Berth_center {
     std::vector<int> sortted_bert_by_time = std::vector<int>(MAX_Berth_Num);
     std::vector<int> sortted_bert_by_velocity = std::vector<int>(MAX_Berth_Num);
     std::vector<int> sortted_bert_fix_times = std::vector<int>(MAX_Berth_Num);
+    std::vector<int> sortted_berth_want_goods_level = std::vector<int>(MAX_Berth_Num);
 
     void init_doing(){
         /*
@@ -44,8 +47,14 @@ struct Berth_center {
         //初始化各种参数
         for (int i = 0; i < MAX_Berth_Num; i++){
             berth_want_goods_level[i] = 15000.0;
+            berth_want_ship_level[i] = 15000.0;
             bert_load_finish_times[i] = 0;
             bert_load_start_times[i] = 0;
+
+            sortted_bert_by_time[i] = i;
+            sortted_bert_by_velocity[i] = i;
+            sortted_bert_fix_times[i] = i;
+            sortted_berth_want_goods_level[i] = i;
         }
         for (int i = 0; i < MAX_Berth_Num; i++){
             bert_velocitys[i] = allberths[i]->velocity;
@@ -71,7 +80,7 @@ struct Berth_center {
         }
     }
 
-    void get_berth_want_goods_level(){
+    void cal_berth_want_goods_level(){
         //按泊位多，船少计算，计算每个泊位对机器人的需求等级
         for (int i = 0; i < MAX_Berth_Num; i++){
             if (allberths[i]->waitting_ship != 0 && //有船(可能不止一只)
@@ -80,16 +89,46 @@ struct Berth_center {
                 berth_want_goods_level [i] = 0; //急需货物，快来！
                 continue;
             }
-            int remaining_shipment = (allberths[i]->goodsNum +allberths[i]->on_way_robot)/ MAX_Capacity; //剩余运输次数,货物包括已经在泊位上的和机器人手上的
-            berth_want_goods_level[i] = bert_fix_times[i] * remaining_shipment;
+            float remaining_shipment = (allberths[i]->goodsNum + allberths[i]->on_way_robot) / float(MAX_Capacity); //剩余运输次数,货物包括已经在泊位上的和机器人手上的
+            berth_want_goods_level[i] = bert_fix_times[i] * floor(remaining_shipment); //剩余运输次数越多，需求等级越低
+        }
+        std::sort(sortted_berth_want_goods_level.begin(), sortted_berth_want_goods_level.end(), [&](const int& a, const int& b) {
+            return berth_want_goods_level[a] < berth_want_goods_level[b]; // 按需求等级升序排列
+        });
+    }
+
+    void cal_berth_want_ship_level(){
+        for (int i = 0; i < MAX_Berth_Num; i++){
+            float remaining_shipment = (allberths[i]->goodsNum + allberths[i]->on_way_robot) / float(MAX_Capacity); //剩余运输次数,货物包括已经在泊位上的和机器人手上的
+            berth_want_ship_level[i] = bert_fix_times[i] * remaining_shipment; //剩余运输次数越多，需求等级越低
+            
         }
     }
 
-    int chose_bertch(int robot_id){
+    int ship_choose_berth(){
+        //用于指引船只进入最佳的泊位
+        cal_berth_want_ship_level();
+        int best_bert_id = -1;
+        int best_fixed_level = 15000;
+        for (int i = 0; i < MAX_Berth_Num; i++){
+            int refixed_level = berth_want_ship_level[i] + bert_fix_times[i];
+            if (refixed_level < best_fixed_level){
+                best_fixed_level = refixed_level;
+                best_bert_id = i;
+            }
+        }
+        return best_bert_id;
+    }
+
+    int robot_choose_berth(int robot_id){
+        /* !!! 废弃代码 !!!*/
+        /* !!! 废弃代码 !!!*/
+        /* !!! 废弃代码 !!!*/
+
         /*用于指引机器人来到最佳的泊位
         使用: bert_id1，pos_id1,bert_id2,pos_id2 = chose_bertch(robot_id)
         bert_id1，pos_id1,bert_id2,pos_id2分别代表最佳位置和次佳位置,可供机器人寻路时自行选择。*/
-        get_berth_want_goods_level();
+        cal_berth_want_goods_level();
         Pos robot_pos = robots[robot_id]->pos;
 
         int best_bert_id = -1, second_bert_id = -1;
@@ -102,7 +141,7 @@ struct Berth_center {
             int min_length = 10000, min_id = -1;
             int id = 0;
             // bugs
-            for (auto & dir : berths[i]->usePosDir) {
+            for (Direction* & dir : berths[i]->usePosDir) {
                 if (dir[robot_pos.x][robot_pos.y].length < min_length){
                     min_length = dir[robot_pos.x][robot_pos.y].length;
                     min_id = id;
