@@ -4,10 +4,10 @@
 #include "config.hpp"
 struct Direction {
     std::bitset<BitsetSize> visited; // 用于记录是否访问过
-    std::bitset<BitsetSize * 2> dir; // 用于记录方向 00 表示右移一格 01 表示左移一格 10 表示上移一格 11 表示下移一格
+    std::bitset<BitsetSize * 2> dirNext; // 用于记录方向 00 表示右移一格 01 表示左移一格 10 表示上移一格 11 表示下移一格
     Direction(){
         visited.reset();
-        dir.reset();
+        dirNext.reset();
     }
     int getVisitedIndex(int x, int y) {
         return x * MAX_Col_Length + y;
@@ -23,14 +23,14 @@ struct Direction {
     }
     void setDir(int x, int y, int d) {
         int index = getDirIndex(x, y);
-        if (d & 1) dir[index] = 1;
-        if (d & 2) dir[index + 1] = 1;
+        if (d & 1) dirNext[index] = 1;
+        if (d & 2) dirNext[index + 1] = 1;
     }
     int getDir(int x, int y) {
         int ans = 0;
         int index = getDirIndex(x, y);
-        if (dir[index] == 1) ans += 1;
-        if (dir[index + 1] == 1) ans += 2;
+        if (dirNext[index] == 1) ans += 1;
+        if (dirNext[index + 1] == 1) ans += 2;
         return ans;
     }
 };

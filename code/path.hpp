@@ -42,7 +42,7 @@ void solveGridWithTime(Pos begin, int nowRobotId) {
         if (start == 40010) start = 0;
 
         if (lastSeenDis != disWithTime[now.x][now.y]) {
-            pathLogger.log(nowTime, "lastSeen={},nowDis={}", lastSeenDis, disWithTime[now.x][now.y]);
+            // pathLogger.log(nowTime, "lastSeen={},nowDis={}", lastSeenDis, disWithTime[now.x][now.y]);
             // remove last robot
             if (lastSeenDis != -1 and lastSeenDis < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis]) {
