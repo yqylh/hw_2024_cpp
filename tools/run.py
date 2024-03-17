@@ -38,7 +38,8 @@ def run_all(args):
         args.map = map
         res = Do_cmd(args)
         resList.append(res)
-    
+    # 对 mapList 和 resList 进行排序
+    mapList, resList = (list(t) for t in zip(*sorted(zip(mapList, resList))))
     for i in range(len(mapList)):
         print(mapList[i], resList[i])
 
