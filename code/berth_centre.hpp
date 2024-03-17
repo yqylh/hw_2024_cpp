@@ -56,6 +56,14 @@ public:
     }
     void solve_robot_berth(std::vector<Pos> robot_pos) {
         for (int i = 0; i < MAX_Robot_Num; i++) robot_choose_berth[i] = -1;
+        for (int i = 0; i < MAX_Berth_Num; i++) {
+            for (int j = 0; j < MAX_Robot_Num; j++) {
+                if (berths[i]->disWithTime[robot_pos[j].x][robot_pos[j].y] != 0x3f3f3f3f) {
+                    centerLogger.log(nowTime, "berth{0} could reach by robot{1}", i, j);
+                }
+            }
+        }
+
         // 对于每个泊位
         for (int i = 0; i < MAX_Ship_Num; i++) {
             // 获取泊位 id
@@ -78,9 +86,10 @@ public:
         // 可能有些机器人没有选择到泊位,因为地图是分散的
         for (int i = 0; i < MAX_Robot_Num; i++) {
             if (robot_choose_berth[i] == -1) {
-                for (int i = 0; i < MAX_Ship_Num; i++) {
-                    if (berths[i]->disWithTime[robot_pos[i].x][robot_pos[i].y] != 0x3f3f3f3f) {
-                        robot_choose_berth[i] = i;
+                for (int j = 0; j < MAX_Ship_Num; j++) {
+                    auto berth_id = sortted_bert_by_one_round_time[j];
+                    if (berths[berth_id]->disWithTime[robot_pos[i].x][robot_pos[i].y] != 0x3f3f3f3f) {
+                        robot_choose_berth[i] = berth_id;
                         break;
                     }
                 }
