@@ -16,3 +16,4 @@ code/output.txt
 main.dSYM
 *.rep
 __pycache__
+my_map.txt
