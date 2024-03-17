@@ -34,20 +34,43 @@ void solveGridWithTime(Pos begin, int nowRobotId) {
     int end = 0;
     queue[end++] = begin;
     disWithTime[begin.x][begin.y] = 0;
+
+    int lastSeenDis = -1;
+
     while (start != end) {
         Pos now = queue[start++];
         if (start == 40010) start = 0;
 
-        if (disWithTime[now.x][now.y] < allPath.size()) {
-            for (Pos tar : allPath[disWithTime[now.x][now.y]]) {
-                if (tar.x == -1) continue;
-                grids[tar.x][tar.y]->robotOnIt = true;
+        if (lastSeenDis != disWithTime[now.x][now.y]) {
+            pathLogger.log(nowTime, "lastSeen={},nowDis={}", lastSeenDis, disWithTime[now.x][now.y]);
+            // remove last robot
+            if (lastSeenDis != -1 and lastSeenDis < allPath.size()) {
+                for (Pos tar : allPath[lastSeenDis]) {
+                    if (tar.x == -1) continue;
+                    grids[tar.x][tar.y]->robotOnIt = false;
+                }
             }
-        }
-        if (disWithTime[now.x][now.y] + 1 < allPath.size()) {
-            for (Pos tar : allPath[disWithTime[now.x][now.y] + 1]) {
-                if (tar.x == -1) continue;
-                grids[tar.x][tar.y]->robotOnIt = true;
+            if (lastSeenDis != -1 and lastSeenDis + 1 < allPath.size()) {
+                for (Pos tar : allPath[lastSeenDis + 1]) {
+                    if (tar.x == -1) continue;
+                    grids[tar.x][tar.y]->robotOnIt = false;
+                }
+            }
+            
+            lastSeenDis = disWithTime[now.x][now.y];
+
+            // add new robot
+            if (lastSeenDis < allPath.size()) {
+                for (Pos tar : allPath[disWithTime[now.x][now.y]]) {
+                    if (tar.x == -1) continue;
+                    grids[tar.x][tar.y]->robotOnIt = true;
+                }
+            }
+            if (lastSeenDis + 1 < allPath.size()) {
+                for (Pos tar : allPath[disWithTime[now.x][now.y] + 1]) {
+                    if (tar.x == -1) continue;
+                    grids[tar.x][tar.y]->robotOnIt = true;
+                }
             }
         }
 
@@ -63,20 +86,20 @@ void solveGridWithTime(Pos begin, int nowRobotId) {
             preWithTime[next.x][next.y] = now;
         }
 
-        // must be a valid grid, right? since it is reachable from begin
-        if (disWithTime[now.x][now.y] < allPath.size()) {
-            for (Pos tar : allPath[disWithTime[now.x][now.y]]) {
-                if (tar.x == -1) continue;
-                grids[tar.x][tar.y]->robotOnIt = false;
-            }
-        }
-        if (disWithTime[now.x][now.y] + 1 < allPath.size()) {
-            for (Pos tar : allPath[disWithTime[now.x][now.y] + 1]) {
-                if (tar.x == -1) continue;
-                grids[tar.x][tar.y]->robotOnIt = false;
-            }
-        }
 
+    }
+
+    if (lastSeenDis != -1 and lastSeenDis < allPath.size()) {
+        for (Pos tar : allPath[lastSeenDis]) {
+            if (tar.x == -1) continue;
+            grids[tar.x][tar.y]->robotOnIt = false;
+        }
+    }
+    if (lastSeenDis != -1 and lastSeenDis + 1 < allPath.size()) {
+        for (Pos tar : allPath[lastSeenDis + 1]) {
+            if (tar.x == -1) continue;
+            grids[tar.x][tar.y]->robotOnIt = false;
+        }
     }
 
     for (int i = 0; i < fixPos.size(); i++) {
