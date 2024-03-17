@@ -84,8 +84,15 @@ class MapEditor:
     def cell_choose(self, event):
         if self.choose_type == 0:
             grid_x, grid_y = event.x // self.cell_size, event.y // self.cell_size
-            result[grid_y][grid_x] = self.now_type
-            self.canvas.create_rectangle(grid_x*self.cell_size, grid_y*self.cell_size, (grid_x+1)*self.cell_size, (grid_y+1)*self.cell_size, fill=self.rgbtofill(self.now_color), outline="gray")
+            if self.now_type != 3:
+                result[grid_y][grid_x] = self.now_type
+                self.canvas.create_rectangle(grid_x*self.cell_size, grid_y*self.cell_size, (grid_x+1)*self.cell_size, (grid_y+1)*self.cell_size, fill=self.rgbtofill(self.now_color), outline="gray")
+            else:
+                for i in range(grid_x, grid_x+4):
+                    for j in range(grid_y, grid_y+4):
+                        if 0 <= i < self.map_width and 0 <= j < self.map_height:
+                            result[j][i] = self.now_type
+                            self.canvas.create_rectangle(i*self.cell_size, j*self.cell_size, (i+1)*self.cell_size, (j+1)*self.cell_size, fill=self.rgbtofill(self.now_color), outline="gray")
 
     def cell_remove(self, event):
         if self.choose_type == 0:
