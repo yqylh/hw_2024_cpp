@@ -54,6 +54,45 @@ public:
         first_frame_doing();
         is_init = true;
     }
+    void solve_robot_berth(std::vector<Pos> robot_pos) {
+        for (int i = 0; i < MAX_Robot_Num; i++) robot_choose_berth[i] = -1;
+        // 对于每个泊位
+        for (int i = 0; i < MAX_Ship_Num; i++) {
+            // 获取泊位 id
+            auto berth_id = sortted_bert_by_one_round_time[i];
+            std::vector<std::pair<int, int>> robot_dis;
+            // 排序机器人到泊位的距离
+            for (int j = 0; j < MAX_Robot_Num; j++) if (robot_choose_berth[j] == -1) {
+                robot_dis.push_back(std::make_pair(j, berths[berth_id]->disWithTime[robot_pos[j].x][robot_pos[j].y]));
+            }
+            std::sort(robot_dis.begin(), robot_dis.end(), [&](const std::pair<int, int>& a, const std::pair<int, int>& b) {
+                return a.second < b.second;
+            });
+            // 选择距离最近的两个机器人
+            for (int j = 0; j < 2; j++) {
+                if (robot_dis[j].second != 0x3f3f3f3f) {
+                    robot_choose_berth[robot_dis[j].first] = berth_id;
+                }
+            }
+        }
+        // 可能有些机器人没有选择到泊位,因为地图是分散的
+        for (int i = 0; i < MAX_Robot_Num; i++) {
+            if (robot_choose_berth[i] == -1) {
+                for (int i = 0; i < MAX_Ship_Num; i++) {
+                    if (berths[i]->disWithTime[robot_pos[i].x][robot_pos[i].y] != 0x3f3f3f3f) {
+                        robot_choose_berth[i] = i;
+                        break;
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < MAX_Robot_Num; i++) {
+            centerLogger.log(nowTime, "robot_choose_berth: {0} {1}", i, robot_choose_berth[i]);
+        }
+    }
+    int get_robot_berth(int id) {
+        return robot_choose_berth[id];
+    }
 
 
 private:
@@ -69,12 +108,81 @@ private:
     int bert_load_finish_times[MAX_Berth_Num]; //运输到虚拟点的剩余时间
     int bert_times[MAX_Berth_Num]; //运输到虚拟点的时间
     int bert_fix_times[MAX_Berth_Num]; //运输到虚拟点的 “修正时间”（即运输到虚拟点的时间+船只装货时间）
+    int robot_choose_berth[MAX_Robot_Num]; //机器人选择的泊位
 
-    std::vector<int> sortted_bert_by_time = std::vector<int>(MAX_Berth_Num);
+    std::vector<int> sortted_bert_by_one_round_time = std::vector<int>(MAX_Berth_Num);
     std::vector<int> sortted_bert_by_velocity = std::vector<int>(MAX_Berth_Num);
     std::vector<int> sortted_bert_fix_times = std::vector<int>(MAX_Berth_Num);
     std::vector<int> sortted_berth_want_goods_level = std::vector<int>(MAX_Berth_Num);
-
+    /**
+     * 用来查找每个机器人私有的区域
+    */
+    void find_private_space() {
+        // 每个机器人的私有区域 的路径长度
+        std::vector<int> berth_onwer_space[MAX_Berth_Num];
+        // 空地大小
+        int ground_num = 0;
+        for (int x = 0; x < MAX_Line_Length; x++) {
+            for (int y = 0; y < MAX_Col_Length; y++) {
+                // 排除障碍物和海洋
+                if (grids[x][y]->type == 1 || grids[x][y]->type == 2) continue;
+                ground_num++;
+                std::vector<int> owner;
+                int min_num = INT_MAX;
+                for (int i = 0; i < MAX_Berth_Num; i++) {
+                    if (berths[i]->disWithTime[x][y] < min_num) {
+                        min_num = berths[i]->disWithTime[x][y];
+                        owner.clear();
+                        owner.push_back(i);
+                    } else if (berths[i]->disWithTime[x][y] == min_num) {
+                        owner.push_back(i);
+                    }
+                }
+                for (auto &i : owner) {
+                    berth_onwer_space[i].push_back(min_num);
+                }
+            }
+        }
+        // 每个泊位的平均私有区域长度
+        double avg_onwer_space_length[MAX_Berth_Num];
+        // 独享区域生成 max_capacity 需要的时间
+        double create_time[MAX_Berth_Num];
+        // 计算这俩值
+        for (int i = 0; i < MAX_Berth_Num; i++) {
+            double sum = 0;
+            for (auto &len : berth_onwer_space[i]) {
+                sum += len;
+            }
+            avg_onwer_space_length[i] = sum / berth_onwer_space[i].size();
+            // 每帧平均生成 5 个物品 每帧该地区生成(avg_onwer_space_length[i] / ground_num * 5)个物品,一共需要下面的时间才能生成完.
+            create_time[i] = MAX_Capacity / (avg_onwer_space_length[i] / ground_num * 5.0);
+        }
+        // 计算一个港口一轮需要的时间
+        double one_round_time[MAX_Berth_Num];
+        for (int i = 0; i < MAX_Berth_Num; i++) {
+            // 一个机器人平均一个物品需要的时间
+            double robot_running_time = avg_onwer_space_length[i] * 2;
+            // 两个机器人运输完一船货物需要的时间
+            double ship_waiting_time = robot_running_time * MAX_Capacity / 2.0;
+            // 如果拉满一船需要的时间比生成时间长，那么需要重新计算拉满一船的时间 也就是创建完最后一个再加上机器人运行的时间
+            if (ship_waiting_time < create_time[i]) {
+                ship_waiting_time = create_time[i] + robot_running_time;
+            }
+            // 最后两个货物还需要 1~2 帧放到船上
+            ship_waiting_time += 2.0 / bert_velocitys[i];
+            // 如果运输一船货物需要的时间没有搬运的时间长,那么更新为 一个机器人拉过去的时间 + 全部的搬运时间
+            if (ship_waiting_time < double(MAX_Capacity) / bert_velocitys[i]) {
+                ship_waiting_time = double(MAX_Capacity) / bert_velocitys[i] + robot_running_time;
+            }
+            // 来回虚拟点的时间 + 船只等待的时间
+            one_round_time[i] = bert_times[i] * 2 + ship_waiting_time;
+        }
+        // 排序港口的优先级
+        std::sort(sortted_bert_by_one_round_time.begin(), sortted_bert_by_one_round_time.end(), [&](const int& a, const int& b) {
+            return one_round_time[a] < one_round_time[b]; // 按时间升序排列
+        });
+        centerLogger.log(nowTime, "sortted_bert_by_one_round_time: {0} {1} {2} {3} {4}", sortted_bert_by_one_round_time[0], sortted_bert_by_one_round_time[1], sortted_bert_by_one_round_time[2], sortted_bert_by_one_round_time[3], sortted_bert_by_one_round_time[4]);
+    }
     void init_doing(){
         /*
         todo: 这里应该有些不必要的变量，记得优化掉
@@ -86,7 +194,7 @@ private:
             bert_load_finish_times[i] = 0;
             bert_load_start_times[i] = 0;
 
-            sortted_bert_by_time[i] = i;
+            sortted_bert_by_one_round_time[i] = i;
             sortted_bert_by_velocity[i] = i;
             sortted_bert_fix_times[i] = i;
             sortted_berth_want_goods_level[i] = i;
@@ -96,24 +204,22 @@ private:
             bert_times[i] = allberths[i]->time;
             bert_fix_times[i] = bert_times[i] + MAX_Capacity / bert_velocitys[i]; //运输到虚拟点的时间+船只装货时间
         }
-        std::sort(sortted_bert_by_time.begin(), sortted_bert_by_time.end(), [&](const int& a, const int& b) {
-            return bert_times[a] < bert_times[b]; // 按时间升序排列
-        });
         std::sort(sortted_bert_by_velocity.begin(), sortted_bert_by_velocity.end(), [&](const int& a, const int& b) {
             return bert_velocitys[a] > bert_velocitys[b]; // 按装填速度升序排列
         });
         std::sort(sortted_bert_fix_times.begin(), sortted_bert_fix_times.end(), [&](const int& a, const int& b) {
             return bert_fix_times[a] < bert_fix_times[b]; // 按修正时间升序排列
         });
+        find_private_space();
         bcenterlogger.log(nowTime, "init_done");
     }
     
     void first_frame_doing(){
         //指引初始状态的船只进入泊位，能不能放到init_doing里？
         for (int i = 0; i < MAX_Ship_Num; i++){
-            allships[i]->go_berth(sortted_bert_by_time[i]); // 指引船只进入泊位, 优先级按时间升序排列
-            declare_ship(sortted_bert_by_time[i], i);
-            allberths[sortted_bert_by_time[i]]->on_way_ship++;
+            allships[i]->go_berth(sortted_bert_by_one_round_time[i]); // 指引船只进入泊位, 优先级按时间升序排列
+            declare_ship(sortted_bert_by_one_round_time[i], i);
+            allberths[sortted_bert_by_one_round_time[i]]->on_way_ship++;
         }
     }
 
@@ -143,19 +249,20 @@ private:
         }
     }
 
-    int ship_choose_berth(){
+    int ship_choose_berth(int id){
         //用于指引船只进入最佳的泊位
-        cal_berth_want_ship_level();
-        int best_bert_id = -1;
-        int best_fixed_level = 15000;
-        for (int i = 0; i < MAX_Berth_Num; i++){
-            int refixed_level = berth_want_ship_level[i] + bert_fix_times[i];
-            if (refixed_level < best_fixed_level){
-                best_fixed_level = refixed_level;
-                best_bert_id = i;
-            }
-        }
-        return best_bert_id;
+        // cal_berth_want_ship_level();
+        // int best_bert_id = -1;
+        // int best_fixed_level = 15000;
+        // for (int i = 0; i < MAX_Berth_Num; i++){
+        //     int refixed_level = berth_want_ship_level[i] + bert_fix_times[i];
+        //     if (refixed_level < best_fixed_level){
+        //         best_fixed_level = refixed_level;
+        //         best_bert_id = i;
+        //     }
+        // }
+        // return best_bert_id;
+        return sortted_bert_by_one_round_time[id];
     }
 
     int bert_ship_goods_check(int bert_id){
@@ -255,7 +362,7 @@ private:
         }
         else if (allships[i]->berthId == -1){
             //送货完毕,重新找泊位
-            int best_bert_id = ship_choose_berth();
+            int best_bert_id = ship_choose_berth(i);
             declare_ship(best_bert_id, i);
             allships[i]->go_berth(best_bert_id);
             shipLogger.log(nowTime, "centre command ship{0} to berth{1}", i, best_bert_id);

@@ -100,26 +100,27 @@ void Robot::action() {
         double value = 0;
         int minDis = 0x3f3f3f3f;
         auto targetItem = unsolvedItems.end();
-
-        for (auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
+        choosed_berth_id = berth_center->get_robot_berth(id);
+        if (choosed_berth_id != -1) for (auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
             if (i->checkDead()) {
                 unsolvedItems.erase(i++);
                 continue;
             }
-
+            auto toItemDis = disWithTime[i->pos.x][i->pos.y];
+            auto toBertDis = berths[choosed_berth_id]->disWithTime[i->pos.x][i->pos.y];
             // 判断是否可达
-            if (disWithTime[i->pos.x][i->pos.y] == 0x3f3f3f3f) {
+            if (toItemDis == 0x3f3f3f3f) {
                 i++;
                 continue;
             }
             // 判断是否超时
-            if (nowTime + disWithTime[i->pos.x][i->pos.y] + 3 > i->beginTime + Item_Continue_Time) {
+            if (nowTime + toItemDis + 3 > i->beginTime + Item_Continue_Time) {
                 i++;
                 continue;
             }
-            auto tempValue = double(i->value) / disWithTime[i->pos.x][i->pos.y];
+            auto tempValue = double(i->value) / (toItemDis + toBertDis);
             if (tempValue > value){
-                minDis = disWithTime[i->pos.x][i->pos.y];
+                minDis = toItemDis;
                 targetItem = i;
                 value = tempValue;
             }
@@ -138,32 +139,24 @@ void Robot::action() {
         }
     } 
     if (bring == 1) {
-        // 机器人有货物
-        int minDis = 0x3f3f3f3f;
-        Pos choosed_berth_pos = Pos(-1,-1);
-
-        float* berth_level_list = berth_center->call_robot_choose_berth();
-
-        for (int i = 0; i < MAX_Berth_Num;i++){
-            Berth* now_berth = berths[i];
+        choosed_berth_id = berth_center->get_robot_berth(id);
+        if (choosed_berth_id != -1) {
+            Berth* now_berth = berths[choosed_berth_id];
+            Pos choosed_berth_pos = Pos(-1,-1);
+            int minDis = 0x3f3f3f3f;
             for(Pos sub_berths : now_berth->usePos){
-                berthLogger.log(nowTime, "rid={},bid={},sub_berths=({},{}),berth_level_list={},disWithTime={}", id, i, sub_berths.x, sub_berths.y, berth_level_list[i], disWithTime[sub_berths.x][sub_berths.y]);
                 if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
-                
-                if (disWithTime[sub_berths.x][sub_berths.y] + berth_level_list[i]< minDis){
+                if (disWithTime[sub_berths.x][sub_berths.y]< minDis){
                     minDis = disWithTime[sub_berths.x][sub_berths.y];
                     choosed_berth_pos = sub_berths;
-                    choosed_berth_id = i;
                 }   
             }
-        }
-        berthLogger.log(nowTime, "find berth, rid={},choosed_berth_pos=({},{}),minDis={}", id, choosed_berth_pos.x, choosed_berth_pos.y, minDis);
-        
-        if (minDis != 0x3f3f3f3f) {
-            wholePath = findPathWithTime(pos, choosed_berth_pos);
-            havePath = true;
-            berth_center->declare_robot_choose_berth(choosed_berth_id);
-            addPathToAllPath(wholePath, id);
+            if (minDis != 0x3f3f3f3f) {
+                wholePath = findPathWithTime(pos, choosed_berth_pos);
+                havePath = true;
+                berth_center->declare_robot_choose_berth(choosed_berth_id);
+                addPathToAllPath(wholePath, id);
+            }
         }
     }
 

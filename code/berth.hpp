@@ -1,7 +1,7 @@
 #ifndef __BERTH_H__
 #define __BERTH_H__
 #include "config.hpp"
-#include "grid.hpp"
+#include "path.hpp"
 #include <vector>
 
 struct Berth {
@@ -11,6 +11,7 @@ struct Berth {
     std::vector<Direction *> usePosDir; // 使用的位置 任何节点到这个位置的下一步方向
     int time; // 运输到虚拟点的时间  
     int velocity; // 装载速度
+    int disWithTime[MAX_Line_Length + 1][MAX_Col_Length + 1];
     //上面的是原始值，别改
     std::vector<int> shipId; // 表示当前泊位上的船的 id,可能有多个,用empty()判断是否有船
     bool selected; // 表示当前泊位是否被选中
@@ -81,6 +82,12 @@ void solveBerth() {
         for (auto & pos : berths[i]->usePos) {
             pos2berth[pos] = berths[i];
             berths[i]->usePosDir.push_back(sovleGrid(pos));
+        }
+        solveGridWithTime(berths[i]->pos, -1);
+        for (int j = 0; j < MAX_Line_Length; j++) {
+            for (int k = 0; k < MAX_Col_Length; k++) {
+                berths[i]->disWithTime[j][k] = disWithTime[j][k];
+            }
         }
     }
 }

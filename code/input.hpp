@@ -45,7 +45,13 @@ void inputMap(){
     shipNum = MAX_Ship_Num - 1;
     solveBerth();
     solveRobot();
-    solveAllGrid();
+    // solveAllGrid();
+    berth_center->do_first_frame();
+    { // 因为要实现 header_only 的特性, center 和 robot不能互相引用, 所以只能在这里初始化
+        std::vector<Pos> robot_pos;
+        for (int i = 0; i <= robotNum; i++) robot_pos.push_back(robots[i]->pos);
+        berth_center->solve_robot_berth(robot_pos);
+    }
     srand(time(0));
     puts("OK");
     fflush(stdout);
@@ -79,8 +85,7 @@ bool inputFrame() {
 void solveFrame() {
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
 
-    if (berth_center->is_init == false) berth_center->do_first_frame();
-    else berth_center->call_ship_and_berth_check();
+    berth_center->call_ship_and_berth_check();
     
     bcenterlogger.log(nowTime, "ship_and_berth_check_ok");
 
