@@ -27,6 +27,10 @@ struct Ship {
         printf("ship %d %d\n", id, berthId);
         shipLogger.log(nowTime, "ship{0} move to berth{1} 移动时间 {2}", id, berthId, berths[berthId]->time);
     }
+    void move_berth(int new_berthId){
+        shipLogger.log(nowTime, "ship{0} move from berth{1} to berth{2} 移动时间 :500", id, berthId, new_berthId);
+        printf("ship %d %d\n", id, new_berthId);
+    }
 };
 
 Ship *ships[MAX_Ship_Num];

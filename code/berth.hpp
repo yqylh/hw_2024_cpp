@@ -19,6 +19,7 @@ struct Berth {
     int on_way_ship;
     int on_way_robot;
     int waitting_ship;
+    int ship_wait_start_time;
     Berth(int id, int x, int y, int time, int velocity) : id(id), time(time), velocity(velocity) {
         this->pos = Pos(x, y);
         selected = false;
@@ -26,6 +27,7 @@ struct Berth {
         on_way_ship = 0;
         on_way_robot = 0;
         waitting_ship = 0;
+        ship_wait_start_time =0;
     }
     void findUsePos() {
         usePos.clear();

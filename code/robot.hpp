@@ -125,6 +125,33 @@ void Robot::action() {
                 value = tempValue;
             }
             i++;
+        }else{
+            // 如果没有选择港口,那么先退化到shc方案
+            for(auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
+                if (i->checkDead()) {
+                    unsolvedItems.erase(i++);
+                    continue;
+                }
+                auto toItemDis = disWithTime[i->pos.x][i->pos.y];
+                // auto toBertDis = berths[choosed_berth_id]->disWithTime[i->pos.x][i->pos.y];
+                // 判断是否可达
+                if (toItemDis == 0x3f3f3f3f) {
+                    i++;
+                    continue;
+                }
+                // 判断是否超时
+                if (nowTime + toItemDis + 3 > i->beginTime + Item_Continue_Time) {
+                    i++;
+                    continue;
+                }
+                auto tempValue = double(i->value) / (toItemDis);
+                if (tempValue > value){
+                    minDis = toItemDis;
+                    targetItem = i;
+                    value = tempValue;
+                }
+                i++;
+            }
         }
 
         if (minDis != 0x3f3f3f3f && targetItem != unsolvedItems.end()) {
@@ -152,10 +179,43 @@ void Robot::action() {
                 }   
             }
             if (minDis != 0x3f3f3f3f) {
+                //注意到由于选择港口的原因,上述不可能找不到位置,这一个判断是必定为 True 的
                 wholePath = findPathWithTime(pos, choosed_berth_pos);
                 havePath = true;
                 berth_center->declare_robot_choose_berth(choosed_berth_id);
                 addPathToAllPath(wholePath, id);
+            }
+        }
+        else {
+            // 如果没有选择港口,那么先退化到shc方案
+            float* berth_level = berth_center->call_robot_choose_berth();
+
+            float min_level = 1e9;
+            for (int i = 0; i < MAX_Berth_Num; i++) {
+                if (berth_level[i] < min_level && disWithTime[berths[i]->pos.x][berths[i]->pos.y] != 0x3f3f3f3f) {
+                    min_level = berth_level[i];
+                    choosed_berth_id = i;
+                }
+            }
+            if (choosed_berth_id != -1) {
+                Berth* now_berth = berths[choosed_berth_id];
+                Pos choosed_berth_pos = Pos(-1,-1);
+                int minDis = 0x3f3f3f3f;
+                for(Pos sub_berths : now_berth->usePos){
+                    if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
+                    if (disWithTime[sub_berths.x][sub_berths.y]< minDis){
+                        minDis = disWithTime[sub_berths.x][sub_berths.y];
+                        choosed_berth_pos = sub_berths;
+                    }   
+                }
+                if (minDis != 0x3f3f3f3f) {
+                    //注意到这里真可能不可达
+                    wholePath = findPathWithTime(pos, choosed_berth_pos);
+                    havePath = true;
+                    berth_center->declare_robot_choose_berth(choosed_berth_id);
+                    addPathToAllPath(wholePath, id);
+                    centerLogger.log(nowTime, "rool back :rid={0},choosed_berth_id={1}", id, choosed_berth_id);
+                }
             }
         }
     }

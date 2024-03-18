@@ -57,6 +57,14 @@ public:
     }
     void solve_robot_berth() {
         for (int i = 0; i < MAX_Robot_Num; i++) robot_choose_berth[i] = -1;
+        for (int i = 0; i < MAX_Berth_Num; i++) {
+            for (int j = 0; j < MAX_Robot_Num; j++) {
+                if (berths[i]->disWithTime[robot_pos[j].x][robot_pos[j].y] != 0x3f3f3f3f) {
+                    centerLogger.log(nowTime, "berth{0} could reach by robot{1}", i, j);
+                }
+            }
+        }
+
         // 对于每个泊位
         for (int i = 0; i < MAX_Ship_Num; i++) {
             // 获取泊位 id
@@ -251,6 +259,7 @@ private:
         }
         centerLogger.log(nowTime, "sortted_bert_by_one_round_time: {0} {1} {2} {3} {4}", sortted_bert_by_one_round_time[0], sortted_bert_by_one_round_time[1], sortted_bert_by_one_round_time[2], sortted_bert_by_one_round_time[3], sortted_bert_by_one_round_time[4]);
     }
+    
     void init_doing(){
         /*
         todo: 这里应该有些不必要的变量，记得优化掉
@@ -342,6 +351,7 @@ private:
                 bert_load_finish_times[bert_id] = nowTime + allberths[bert_id]->goodsNum / bert_velocitys[bert_id] + 1;
             }
             if (allberths[bert_id]->goodsNum > 0){
+                allberths[bert_id]->ship_wait_start_time = nowTime;
                 if (bert_load_finish_times[bert_id] < nowTime){
                     allships[allberths[bert_id]->shipId[0]]->capacity += allberths[bert_id]->goodsNum;
                     allberths[bert_id]->goodsNum = 0;
@@ -368,6 +378,7 @@ private:
     void declare_ship(int bert_id,int ship_id){
         allberths[bert_id]->on_way_ship++;
         allberths[bert_id]->shipId.push_back(ship_id);
+        allberths[bert_id]->ship_wait_start_time = nowTime + allberths[bert_id]->time;
     }
 
     void declare_robot(int bert_id){
@@ -376,6 +387,43 @@ private:
 
     void ship_declare_go(int bert_id){
         allberths[bert_id]->on_way_ship--;
+        allberths[bert_id]->shipId.clear();
+    }
+
+    void ship_rechange(int bert_id){
+        // ship_declare_go(bert_id);
+        cal_berth_want_ship_level();
+        int this_ship_id = allberths[bert_id]->shipId[0];
+        allberths[bert_id]->on_way_ship--;
+        allberths[bert_id]->shipId.clear();
+        int best_bert_id = -1;
+        int best_fixed_level = 15000;
+        for (int i = 0; i < MAX_Berth_Num; i++){
+            int refixed_level = berth_want_ship_level[i];
+            bcenterlogger.log(nowTime, "berth {} :refixed_level: {}", i, refixed_level);
+            if (refixed_level < best_fixed_level){
+                best_fixed_level = refixed_level;
+                best_bert_id = i;
+            }
+        }//重新找一个被堆了大量货物的泊位
+        bcenterlogger.log(nowTime, "ship{0} rechange to berth {1}", this_ship_id, best_bert_id);
+
+        for (int i = 0; i < MAX_Robot_Num; i++){
+            if (robot_choose_berth[i] == -1){ //找到没有被指引的机器人,指引他们去该泊位
+                robot_choose_berth[i] = best_bert_id;
+                sortted_bert_by_one_round_time[this_ship_id] = best_bert_id;
+            }
+        }
+        allberths[best_bert_id]->on_way_ship++;
+        allberths[best_bert_id]->shipId.push_back(this_ship_id);
+        allberths[best_bert_id]->ship_wait_start_time = nowTime + 500;
+        allships[this_ship_id]->move_berth(best_bert_id);
+        if(!allberths[bert_id]->shipId.empty()){
+            bcenterlogger.log(nowTime, "ship{0} rechange to berth{1} fail", this_ship_id, best_bert_id);
+            for(auto i : allberths[bert_id]->shipId){
+                bcenterlogger.log(nowTime, "ship{0} still on berth{1}", i, bert_id);
+            }
+        }
     }
 
     void pull_good(int bert_id){
