@@ -48,22 +48,15 @@ public:
         pull_good(bert_id);
     }
 
-    void do_first_frame(){
+    void do_first_frame(std::vector<Pos> pos){
+        this->robot_pos = pos;
         /* 初始化，指引船只进入泊位 */
         init_doing();
         first_frame_doing();
         is_init = true;
     }
-    void solve_robot_berth(std::vector<Pos> robot_pos) {
+    void solve_robot_berth() {
         for (int i = 0; i < MAX_Robot_Num; i++) robot_choose_berth[i] = -1;
-        for (int i = 0; i < MAX_Berth_Num; i++) {
-            for (int j = 0; j < MAX_Robot_Num; j++) {
-                if (berths[i]->disWithTime[robot_pos[j].x][robot_pos[j].y] != 0x3f3f3f3f) {
-                    centerLogger.log(nowTime, "berth{0} could reach by robot{1}", i, j);
-                }
-            }
-        }
-
         // 对于每个泊位
         for (int i = 0; i < MAX_Ship_Num; i++) {
             // 获取泊位 id
@@ -118,7 +111,7 @@ private:
     int bert_times[MAX_Berth_Num]; //运输到虚拟点的时间
     int bert_fix_times[MAX_Berth_Num]; //运输到虚拟点的 “修正时间”（即运输到虚拟点的时间+船只装货时间）
     int robot_choose_berth[MAX_Robot_Num]; //机器人选择的泊位
-
+    std::vector<Pos> robot_pos;
     std::vector<int> sortted_bert_by_one_round_time = std::vector<int>(MAX_Berth_Num);
     std::vector<int> sortted_bert_by_velocity = std::vector<int>(MAX_Berth_Num);
     std::vector<int> sortted_bert_fix_times = std::vector<int>(MAX_Berth_Num);
@@ -127,6 +120,38 @@ private:
      * 用来查找每个机器人私有的区域
     */
     void find_private_space() {
+        // 每个泊位的可以接触到多少机器人
+        int berth_can_reach_robot[MAX_Berth_Num] = {0};
+        for (int i = 0; i < MAX_Berth_Num; i++) {
+            for (int j = 0; j < MAX_Robot_Num; j++) {
+                if (berths[i]->disWithTime[robot_pos[j].x][robot_pos[j].y] != 0x3f3f3f3f) {
+                    centerLogger.log(nowTime, "berth{0} could reach by robot{1}", i, j);
+                    berth_can_reach_robot[i]++;
+                }
+            }
+        }
+        std::vector<std::vector<int> > group;
+        int is_grouped[MAX_Berth_Num];
+        for (int i = 0; i < MAX_Berth_Num; i++) is_grouped[i] = -1;
+        for (int i = 0; i < MAX_Berth_Num; i++) {
+            if (is_grouped[i] != -1) continue;
+            is_grouped[i] = i;
+            group.push_back(std::vector<int>());
+            group.back().push_back(i);
+            for (int j = i + 1; j < MAX_Berth_Num; j++) {
+                if (is_grouped[j] != -1) continue;
+                if (berths[i]->disWithTime[berths[j]->pos.x][berths[j]->pos.y] != 0x3f3f3f3f) {
+                    group.back().push_back(j);
+                    is_grouped[j] = i;
+                }
+            }
+        }
+        for (int i = 0; i < group.size(); i++) {
+            centerLogger.log(nowTime, "group{}:", i);
+            for (int j = 0; j < group[i].size(); j++) {
+                centerLogger.log(nowTime, "    {}", group[i][j]);
+            }
+        }
         // 每个机器人的私有区域 的路径长度
         std::vector<int> berth_onwer_space[MAX_Berth_Num];
         // 空地大小
@@ -137,7 +162,8 @@ private:
                 if (grids[x][y]->type == 1 || grids[x][y]->type == 2) continue;
                 ground_num++;
                 std::vector<int> owner;
-                int min_num = INT_MAX;
+                // 我们只考虑 150 帧内的情况
+                int min_num = 150;
                 for (int i = 0; i < MAX_Berth_Num; i++) {
                     if (berths[i]->disWithTime[x][y] < min_num) {
                         min_num = berths[i]->disWithTime[x][y];
@@ -156,15 +182,16 @@ private:
         double avg_onwer_space_length[MAX_Berth_Num];
         // 独享区域生成 max_capacity 需要的时间
         double create_time[MAX_Berth_Num];
-        // 计算这俩值
         for (int i = 0; i < MAX_Berth_Num; i++) {
             double sum = 0;
             for (auto &len : berth_onwer_space[i]) {
                 sum += len;
             }
             avg_onwer_space_length[i] = sum / berth_onwer_space[i].size();
-            // 每帧平均生成 5 个物品 每帧该地区生成(avg_onwer_space_length[i] / ground_num * 5)个物品,一共需要下面的时间才能生成完.
-            create_time[i] = MAX_Capacity / (avg_onwer_space_length[i] / ground_num * 5.0);
+            // 每帧平均生成 5 个物品 每帧该地区生成(avg_onwer_space_length[i] / ground_num * 5)个物品,一共需要下面的时间才能生成完. ? berth_onwer_space[i].size()
+            create_time[i] = MAX_Capacity / (avg_onwer_space_length[i] / double(ground_num) * 5.0);
+            centerLogger.log(nowTime, "berth{}: avg_onwer_space_length: {} create_time: {}", i, avg_onwer_space_length[i], create_time[i]);
+            // 这个 bug 导致 create_time 极大,远超了其他参数, 而create_time只取决于avg_onwer_space_length,也就是平均路径长度,所以这个 bug 的反应了平均路径长度
         }
         // 计算一个港口一轮需要的时间
         double one_round_time[MAX_Berth_Num];
@@ -172,7 +199,7 @@ private:
             // 一个机器人平均一个物品需要的时间
             double robot_running_time = avg_onwer_space_length[i] * 2;
             // 两个机器人运输完一船货物需要的时间
-            double ship_waiting_time = robot_running_time * MAX_Capacity / 2.0;
+            double ship_waiting_time = robot_running_time * MAX_Capacity / ((berth_can_reach_robot[i] > 3) ? 2 : berth_can_reach_robot[i]);
             // 如果拉满一船需要的时间比生成时间长，那么需要重新计算拉满一船的时间 也就是创建完最后一个再加上机器人运行的时间
             if (ship_waiting_time < create_time[i]) {
                 ship_waiting_time = create_time[i] + robot_running_time;
@@ -190,6 +217,38 @@ private:
         std::sort(sortted_bert_by_one_round_time.begin(), sortted_bert_by_one_round_time.end(), [&](const int& a, const int& b) {
             return one_round_time[a] < one_round_time[b]; // 按时间升序排列
         });
+        for (int i = 0; i < MAX_Berth_Num; i++) {
+            centerLogger.log(nowTime, "one_round_time: {0} {1}", sortted_bert_by_one_round_time[i], one_round_time[sortted_bert_by_one_round_time[i]]);
+        }
+        int temp[MAX_Berth_Num];
+        int group_selected[MAX_Berth_Num] = {0};
+        bool selected[MAX_Berth_Num] = {0};
+        int selected_num = 0;
+        int group_num = 1;
+        
+        while (selected_num < MAX_Ship_Num) {
+            for (int i = 0; i < MAX_Berth_Num; i++) {
+                auto ordered_id = sortted_bert_by_one_round_time[i];
+                if (selected[ordered_id]) continue;
+                if (group_selected[is_grouped[ordered_id]] >= group_num) continue;
+                //!!todo:还需要判断是不是太差了
+                temp[selected_num++] = ordered_id;
+                selected[ordered_id] = true;
+                group_selected[is_grouped[ordered_id]]++;
+                if (selected_num >= MAX_Ship_Num) break;
+            }
+            group_num++;
+            if (group_num > 5) break;
+        }
+        for (int i = 0; i < MAX_Berth_Num; i++) {
+            auto ordered_id = sortted_bert_by_one_round_time[i];
+            if (!selected[ordered_id]) {
+                temp[selected_num++] = ordered_id;
+            }
+        }
+        for (int i = 0; i < MAX_Berth_Num; i++) {
+            sortted_bert_by_one_round_time[i] = temp[i];
+        }
         centerLogger.log(nowTime, "sortted_bert_by_one_round_time: {0} {1} {2} {3} {4}", sortted_bert_by_one_round_time[0], sortted_bert_by_one_round_time[1], sortted_bert_by_one_round_time[2], sortted_bert_by_one_round_time[3], sortted_bert_by_one_round_time[4]);
     }
     void init_doing(){

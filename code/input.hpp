@@ -46,11 +46,11 @@ void inputMap(){
     solveBerth();
     solveRobot();
     // solveAllGrid();
-    berth_center->do_first_frame();
     { // 因为要实现 header_only 的特性, center 和 robot不能互相引用, 所以只能在这里初始化
         std::vector<Pos> robot_pos;
         for (int i = 0; i <= robotNum; i++) robot_pos.push_back(robots[i]->pos);
-        berth_center->solve_robot_berth(robot_pos);
+        berth_center->do_first_frame(robot_pos);
+        berth_center->solve_robot_berth();
     }
     srand(time(0));
     puts("OK");
