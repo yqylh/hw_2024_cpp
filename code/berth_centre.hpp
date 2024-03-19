@@ -459,10 +459,11 @@ private:
                     bcenterlogger.log(nowTime, "have ship!");
                     bcenterlogger.log(nowTime, "ship on berth: {0}", allberths[i]->shipId[0]);
                     bcenterlogger.log(nowTime, "leftCapacity: {0}", allships[allberths[i]->shipId[0]]->leftCapacity());
+
                     ship_declare_go(i);
                     allships[allberths[i]->shipId[0]]->go(i);
+                    
                     bcenterlogger.log(nowTime, "ship{0} go", allberths[i]->shipId[0]);
-                    allships[allberths[i]->shipId[0]]->capacity = 0;
                 }
             }
             bcenterlogger.log(nowTime, "berth: {0} ok", i);
@@ -470,20 +471,27 @@ private:
         bcenterlogger.log(nowTime, "berth_check ok");
     }
 
-    void normal_ship_check(int shipId){
+    void normal_ship_check(int shipId) {
         bcenterlogger.log(nowTime, "ship: {0}", shipId);
-        if (allships[shipId]->status == 0){
+        if (allships[shipId]->status == 0) {
             //运输中，不做处理
             return;
-        }
-        else if (allships[shipId]->berthId == -1){
-            //送货完毕,重新找泊位
-            int best_bert_id = ship_choose_berth(shipId);
-            declare_ship(best_bert_id, shipId);
-            allships[shipId]->go_berth(best_bert_id);
-            shipLogger.log(nowTime, "centre command ship{0} to berth{1}", shipId, best_bert_id);
-        }
-        else if (allships[shipId]->berthId == 2){
+        } else if (allships[shipId]->status == 1) {
+            if (allships[shipId]->berthId == -1) {
+                // 送货完毕,重新找泊位
+                allships[shipId]->capacity = 0;
+
+                int best_bert_id = ship_choose_berth(shipId);
+                declare_ship(best_bert_id, shipId);
+                allships[shipId]->go_berth(best_bert_id);
+                
+                shipLogger.log(nowTime, "centre command ship{0} to berth{1}", shipId, best_bert_id);
+            } else {
+                // 装货中
+                
+                return;
+            }
+        } else if (allships[shipId]->status == 2) {
             //排队的,等会处理
             return;
         }
