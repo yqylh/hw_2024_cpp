@@ -20,9 +20,9 @@ std::deque<std::vector<Pos>> allPath;
 std::vector<Pos> fixPos(MAX_Robot_Num, Pos(-1, -1));
 Pos _queueRobot[40010];
 
-void solveGridWithTime(Pos begin, int nowRobotId) {
+void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
     memset(disWithTime, 0x3f, sizeof(disWithTime));
-    memset(preWithTime, 0, sizeof(preWithTime));
+    memset(preWithTime, 0xff, sizeof(preWithTime));
     
     for (int i = 0; i < fixPos.size(); i++) {
         if (fixPos[i].x != -1 and i != nowRobotId) {
@@ -32,8 +32,8 @@ void solveGridWithTime(Pos begin, int nowRobotId) {
 
     int start = 0;
     int end = 0;
-    _queueRobot[end++] = begin;
-    disWithTime[begin.x][begin.y] = 0;
+    _queueRobot[end++] = beginPos;
+    disWithTime[beginPos.x][beginPos.y] = beginFrame;
 
     int lastSeenDis = -1;
 
@@ -41,6 +41,22 @@ void solveGridWithTime(Pos begin, int nowRobotId) {
         Pos now = _queueRobot[start++];
         if (start == 40010) start = 0;
 
+        /*
+        if (disWithTime[now.x][now.y] < allPath.size()) {
+            for (Pos tar : allPath[disWithTime[now.x][now.y]]) {
+                if (tar.x == -1) continue;
+                grids[tar.x][tar.y]->robotOnIt = true;
+            }
+        }
+        if (disWithTime[now.x][now.y] + 1 < allPath.size()) {
+            for (Pos tar : allPath[disWithTime[now.x][now.y] + 1]) {
+                if (tar.x == -1) continue;
+                grids[tar.x][tar.y]->robotOnIt = true;
+            }
+        }
+        */
+
+        
         if (lastSeenDis != disWithTime[now.x][now.y]) {
             // pathLogger.log(nowTime, "lastSeen={},nowDis={}", lastSeenDis, disWithTime[now.x][now.y]);
             // remove last robot
@@ -61,19 +77,19 @@ void solveGridWithTime(Pos begin, int nowRobotId) {
 
             // add new robot
             if (lastSeenDis < allPath.size()) {
-                for (Pos tar : allPath[disWithTime[now.x][now.y]]) {
+                for (Pos tar : allPath[lastSeenDis]) {
                     if (tar.x == -1) continue;
                     grids[tar.x][tar.y]->robotOnIt = true;
                 }
             }
             if (lastSeenDis + 1 < allPath.size()) {
-                for (Pos tar : allPath[disWithTime[now.x][now.y] + 1]) {
+                for (Pos tar : allPath[lastSeenDis + 1]) {
                     if (tar.x == -1) continue;
                     grids[tar.x][tar.y]->robotOnIt = true;
                 }
             }
         }
-
+        
 
         for (int i = 0; i < 4; i++) {
             Pos next = now + dir[i];
@@ -85,10 +101,22 @@ void solveGridWithTime(Pos begin, int nowRobotId) {
             disWithTime[next.x][next.y] = disWithTime[now.x][now.y] + 1;
             preWithTime[next.x][next.y] = now;
         }
-
-
+        /*
+        if (disWithTime[now.x][now.y] < allPath.size()) {
+            for (Pos tar : allPath[disWithTime[now.x][now.y]]) {
+                if (tar.x == -1) continue;
+                grids[tar.x][tar.y]->robotOnIt = false;
+            }
+        }
+        if (disWithTime[now.x][now.y] + 1 < allPath.size()) {
+            for (Pos tar : allPath[disWithTime[now.x][now.y] + 1]) {
+                if (tar.x == -1) continue;
+                grids[tar.x][tar.y]->robotOnIt = false;
+            }
+        }
+        */
     }
-
+    
     if (lastSeenDis != -1 and lastSeenDis < allPath.size()) {
         for (Pos tar : allPath[lastSeenDis]) {
             if (tar.x == -1) continue;
@@ -101,20 +129,13 @@ void solveGridWithTime(Pos begin, int nowRobotId) {
             grids[tar.x][tar.y]->robotOnIt = false;
         }
     }
-
+    
     for (int i = 0; i < fixPos.size(); i++) {
         if (fixPos[i].x != -1 and i != nowRobotId) {
             grids[fixPos[i].x][fixPos[i].y]->robotOnIt = false;
         }
     }
-    /*
-    auto now = end;
-    while (!(now == begin)) {
-        path->push_back(now);
-        now = _pre[now.x][now.y];
-    }
-    std::reverse(path->begin(), path->end());
-    */
+
     return;
 }
 
@@ -152,14 +173,18 @@ int getDirWithPath(Pos now, Pos next) {
     }
 }
 
-std::deque<Pos> findPathWithTime(Pos begin, Pos end) {
+std::deque<Pos> findPathWithTime(Pos beginPos, Pos endPos) {
     std::deque<Pos> path;
-    auto now = end;
-    while (!(now == begin)) {
+    auto now = endPos;
+    while (!(now == beginPos)) {
+        if (now.x < 0 or now.y < 0) {
+            path.clear();
+            return path;
+        }
         path.push_back(now);
         now = preWithTime[now.x][now.y];
     }
-    path.push_back(begin);
+    path.push_back(beginPos);
     std::reverse(path.begin(), path.end());
     return path;
 }

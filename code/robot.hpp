@@ -13,15 +13,20 @@
 struct Robot{
     int id; // 机器人的 id
     Pos pos; // 机器人的位置
+
     int status; // 机器人的状态 0表示寄了 1 表示正常运行
     int bring; // 机器人带的货物 0 表示没有货物 1 表示有货物
     int bringTimeLimit; // 机器人到达带货物的时间
     int choosed_berth_id; // 机器人选择的泊位
+
     Direction *robotDir; // 机器人到达每个点的方向
     int lastWeak; // 上一次的弱智时间
     Pos lastWeakPos; // 上一次的弱智位置
+    
     bool havePath;
     std::deque<Pos> wholePath; // 机器人的路径，front为当前位置
+    Pos tarItemPos;
+
     Robot() {
         this->id = -1;
     }
@@ -36,72 +41,99 @@ struct Robot{
         this->wholePath.clear();
         this->lastWeak = -1;
         this->lastWeakPos = Pos(-1, -1);
+        this->tarItemPos = Pos(-1, -1);
     }
     void action(); // 计算机器人的路径和生成行动
     void move(); // 生成机器人的移动指令
     void checkCollision(std::unordered_map<Pos, Pos> &otherPos);
+    std::deque<Pos> actionFindBerth(Pos beginPos, int beginFrame); // 机器人在当前pos找港口或给定item的pos找港口
+    std::deque<Pos> actionFindItem(); // 机器人在当前的pos下寻找一个item
 };
 
 
-void Robot::action() {
-    flowLogger.log(nowTime, "action {0}", id);
-    robotLogger.log(nowTime, "id={},status={},bring={},pos=({},{}),havePath={},pathSize={}", id, status, bring, pos.x, pos.y, havePath, wholePath.size());
-    // 如果机器人被撞到了
-    if (!status) {
-        wholePath.clear();
-        havePath = false;
-        updateFixPos(pos, id);
-        deletePathFromAllPath(id);
-        return;
+// beginPos是起始位置如果起始位置没有给定，则说明起始位置是机器人，否则就是item，需要从item开始求港口距离
+// beginFrame是起始时间，如果起始时间是0，则说明从机器人位置开始，否则从item开始，所有的dis都需要加上item
+// 返回值是机器人的路径，无论是从机器人开始还是从item开始
+// 如果已经找到了一段item的路径，但没有找到合适的港口，机器人会停在原地
+std::deque<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=0) {
+    
+    if (beginPos != Pos(-1, -1)) {
+        solveGridWithTime(beginPos, id, beginFrame);
+        // 从item开始求到港口的距离，在这种情况下，dis和path都是从item开始的
     }
+    // 但是港口距离的计算和第一段到item的距离无关
+    choosed_berth_id = berth_center->get_robot_berth(id);
+    int minDis = 0x3f3f3f3f;
+    
+    if (choosed_berth_id != -1) {
+        Berth* now_berth = berths[choosed_berth_id];
+        Pos choosed_berth_pos = Pos(-1,-1);
+        
+        for(Pos sub_berths : now_berth->usePos){
+            if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
+            if (disWithTime[sub_berths.x][sub_berths.y]< minDis){
+                minDis = disWithTime[sub_berths.x][sub_berths.y];
+                choosed_berth_pos = sub_berths;
+            }   
+        }
+        if (minDis != 0x3f3f3f3f) {
+            beginPos = beginPos == Pos(-1, -1) ? pos : beginPos;
 
-    if (pos != wholePath.front()) {
-        // 如果机器人的路径首位不等于当前位置，则需要重新计算路径。
-        havePath = false;
-        wholePath.clear();
-        deletePathFromAllPath(id);
-    }
-
-    // ==1 表示走到了，需要找新的路了
-    if (wholePath.size() == 1) {
-        robotLogger.log(nowTime, "reach id={},bring={},pos=({},{}),tarpos=({},{}),gridtype={}", id, bring, pos.x, pos.y, wholePath.front().x, wholePath.front().y, grids[wholePath.front().x][wholePath.front().y]->type);
-        // 机器人到达目的地
-        // 如果机器人没有货物，目的地应该是拿货物
-        if (bring == 0 && nowTime <= bringTimeLimit) {
-            printf("get %d\n", id);
-            flowLogger.log(nowTime, "get {0}", id);
-            bring = 1;
-        } else if (bring == 1 && grids[pos.x][pos.y]->type == 3) {
-            // 送货物
-            printf("pull %d\n", id);
-            flowLogger.log(nowTime, "pull {0}", id);
-            bring = 0;
-            if (choosed_berth_id != -1) {
-                berth_center->declare_robot_pull_good(choosed_berth_id);
+            auto tarPath = findPathWithTime(beginPos, choosed_berth_pos);
+            if (tarPath.size() > 0) {
+                berth_center->declare_robot_choose_berth(choosed_berth_id);
+                return tarPath;
+            } else {
+                pathLogger.log(nowTime, "rid={},toBerth={},noPath", id, choosed_berth_id);
             }
         }
+    }
+    if (minDis == 0x3f3f3f3f) {
+        // 如果没有选择港口,那么先退化到shc方案
+        float* berth_level = berth_center->call_robot_choose_berth();
 
-        wholePath.clear();
-        havePath = false;
+        float min_level = 1e9;
+        for (int i = 0; i < MAX_Berth_Num; i++) {
+            if (berth_level[i] < min_level && disWithTime[berths[i]->pos.x][berths[i]->pos.y] != 0x3f3f3f3f) {
+                min_level = berth_level[i];
+                choosed_berth_id = i;
+            }
+        }
+        if (choosed_berth_id != -1) {
+            Berth* now_berth = berths[choosed_berth_id];
+            Pos choosed_berth_pos = Pos(-1,-1);
+            int minDis = 0x3f3f3f3f;
+            for(Pos sub_berths : now_berth->usePos){
+                if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
+                if (disWithTime[sub_berths.x][sub_berths.y]< minDis){
+                    minDis = disWithTime[sub_berths.x][sub_berths.y];
+                    choosed_berth_pos = sub_berths;
+                }   
+            }
+            if (minDis != 0x3f3f3f3f) {
+                //注意到这里真可能不可达
+                auto tarPath = findPathWithTime(pos, choosed_berth_pos);
+                if (tarPath.size() > 0) {
+                    berth_center->declare_robot_choose_berth(choosed_berth_id);
+                    return tarPath;
+                }
+            }
+        }
     }
 
+    return std::deque<Pos>();
+}
 
-    // 没走到，还在走
-    if (wholePath.size() > 1) return;
+// 无论如何，调用这个函数一定是因为机器人没有货物
+std::deque<Pos> Robot::actionFindItem() {
+        
+    double value = 0;
+    int minDis = 0x3f3f3f3f;
+    auto targetItem = unsolvedItems.end();
+    choosed_berth_id = berth_center->get_robot_berth(id);
 
-    // 找当前机器人在不碰撞前提下的所有路，路长存在disWithTime，前序点存在preWithTime
-    auto beginSolveTime = high_resolution_clock::now();
-    solveGridWithTime(pos, id);
-    auto endSolveTime = high_resolution_clock::now();
-    // pathLogger.log(nowTime, "rId={0}solveGridWithTime time={1}", id, duration_cast<microseconds>(endSolveTime - beginSolveTime).count());
-
-    if (bring == 0) {
-        // 机器人没有货物，找一个最近的可达的货物
-        double value = 0;
-        int minDis = 0x3f3f3f3f;
-        auto targetItem = unsolvedItems.end();
-        choosed_berth_id = berth_center->get_robot_berth(id);
-        if (choosed_berth_id != -1) for (auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
+    if (choosed_berth_id != -1) {
+        for (auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
             if (i->checkDead()) {
                 unsolvedItems.erase(i++);
                 continue;
@@ -125,101 +157,174 @@ void Robot::action() {
                 value = tempValue;
             }
             i++;
-        }else{
-            // 如果没有选择港口,那么先退化到shc方案
-            for(auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
-                if (i->checkDead()) {
-                    unsolvedItems.erase(i++);
-                    continue;
-                }
-                auto toItemDis = disWithTime[i->pos.x][i->pos.y];
-                // auto toBertDis = berths[choosed_berth_id]->disWithTime[i->pos.x][i->pos.y];
-                // 判断是否可达
-                if (toItemDis == 0x3f3f3f3f) {
-                    i++;
-                    continue;
-                }
-                // 判断是否超时
-                if (nowTime + toItemDis + 3 > i->beginTime + Item_Continue_Time) {
-                    i++;
-                    continue;
-                }
-                auto tempValue = double(i->value) / (toItemDis);
-                if (tempValue > value){
-                    minDis = toItemDis;
-                    targetItem = i;
-                    value = tempValue;
-                }
+        }
+    }
+    if (minDis == 0x3f3f3f3f) {
+        // 如果没有选择港口,那么先退化到shc方案
+        for(auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
+            if (i->checkDead()) {
+                unsolvedItems.erase(i++);
+                continue;
+            }
+            auto toItemDis = disWithTime[i->pos.x][i->pos.y];
+            // auto toBertDis = berths[choosed_berth_id]->disWithTime[i->pos.x][i->pos.y];
+            // 判断是否可达
+            if (toItemDis == 0x3f3f3f3f) {
                 i++;
+                continue;
             }
-        }
-
-        if (minDis != 0x3f3f3f3f && targetItem != unsolvedItems.end()) {
-            int targetItemIndex = std::distance(unsolvedItems.begin(), targetItem);
-            flowLogger.log(nowTime, "rid={},toItem={}", id, targetItemIndex);
-
-            wholePath = findPathWithTime(pos, targetItem->pos);
-            bringTimeLimit = targetItem->beginTime + Item_Continue_Time;
-            unsolvedItems.erase(targetItem);
-            havePath = true;
-            addPathToAllPath(wholePath, id);
-        }
-    } 
-    if (bring == 1) {
-        choosed_berth_id = berth_center->get_robot_berth(id);
-        if (choosed_berth_id != -1) {
-            Berth* now_berth = berths[choosed_berth_id];
-            Pos choosed_berth_pos = Pos(-1,-1);
-            int minDis = 0x3f3f3f3f;
-            for(Pos sub_berths : now_berth->usePos){
-                if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
-                if (disWithTime[sub_berths.x][sub_berths.y]< minDis){
-                    minDis = disWithTime[sub_berths.x][sub_berths.y];
-                    choosed_berth_pos = sub_berths;
-                }   
+            // 判断是否超时
+            if (nowTime + toItemDis + 3 > i->beginTime + Item_Continue_Time) {
+                i++;
+                continue;
             }
-            if (minDis != 0x3f3f3f3f) {
-                //注意到由于选择港口的原因,上述不可能找不到位置,这一个判断是必定为 True 的
-                wholePath = findPathWithTime(pos, choosed_berth_pos);
-                havePath = true;
-                berth_center->declare_robot_choose_berth(choosed_berth_id);
-                addPathToAllPath(wholePath, id);
+            auto tempValue = double(i->value) / (toItemDis);
+            if (tempValue > value){
+                minDis = toItemDis;
+                targetItem = i;
+                value = tempValue;
             }
-        }
-        else {
-            // 如果没有选择港口,那么先退化到shc方案
-            float* berth_level = berth_center->call_robot_choose_berth();
-
-            float min_level = 1e9;
-            for (int i = 0; i < MAX_Berth_Num; i++) {
-                if (berth_level[i] < min_level && disWithTime[berths[i]->pos.x][berths[i]->pos.y] != 0x3f3f3f3f) {
-                    min_level = berth_level[i];
-                    choosed_berth_id = i;
-                }
-            }
-            if (choosed_berth_id != -1) {
-                Berth* now_berth = berths[choosed_berth_id];
-                Pos choosed_berth_pos = Pos(-1,-1);
-                int minDis = 0x3f3f3f3f;
-                for(Pos sub_berths : now_berth->usePos){
-                    if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
-                    if (disWithTime[sub_berths.x][sub_berths.y]< minDis){
-                        minDis = disWithTime[sub_berths.x][sub_berths.y];
-                        choosed_berth_pos = sub_berths;
-                    }   
-                }
-                if (minDis != 0x3f3f3f3f) {
-                    //注意到这里真可能不可达
-                    wholePath = findPathWithTime(pos, choosed_berth_pos);
-                    havePath = true;
-                    berth_center->declare_robot_choose_berth(choosed_berth_id);
-                    addPathToAllPath(wholePath, id);
-                    centerLogger.log(nowTime, "rool back :rid={0},choosed_berth_id={1}", id, choosed_berth_id);
-                }
-            }
+            i++;
         }
     }
 
+    if (minDis != 0x3f3f3f3f && targetItem != unsolvedItems.end()) {
+        int targetItemIndex = std::distance(unsolvedItems.begin(), targetItem);
+        flowLogger.log(nowTime, "rid={},toItem={}", id, targetItemIndex);
+
+        auto tarPath = findPathWithTime(pos, targetItem->pos);
+
+        if (tarPath.size() > 0) {
+            bringTimeLimit = targetItem->beginTime + Item_Continue_Time;
+            unsolvedItems.erase(targetItem);
+            /*
+            havePath = true;
+            addPathToAllPath(wholePath, id);
+            */
+            return tarPath;
+        } else {
+            pathLogger.log(nowTime, "rid={},toItem={},noPath", id, targetItemIndex);
+        }
+    }
+
+    return std::deque<Pos>();
+}
+
+
+void Robot::action() {
+    flowLogger.log(nowTime, "action {0}", id);
+    robotLogger.log(nowTime, "id={},status={},bring={},pos=({},{}),havePath={},pathSize={}", id, status, bring, pos.x, pos.y, havePath, wholePath.size());
+    // 如果机器人被撞到了
+    if (!status) {
+        wholePath.clear();
+        havePath = false;
+        updateFixPos(pos, id);
+        deletePathFromAllPath(id);
+        return;
+    }
+
+    // 如果机器人的路径首位不等于当前位置，则需要重新计算路径。
+    if (pos != wholePath.front()) {
+        havePath = false;
+        wholePath.clear();
+        deletePathFromAllPath(id);
+    }
+    
+    // 如果找到了目标item
+    if (pos == tarItemPos) {
+        // 如果确实没拿东西，就拿一下
+        if (bring == 0 && nowTime <= bringTimeLimit) {
+            printf("get %d\n", id);
+            flowLogger.log(nowTime, "get {0}", id);
+            // TODO: 需要检测一下是否真的拿到东西了？？？在前面判断一下，如果没有拿到，需要重新计算
+            bring = 1;
+        } 
+        // 然后判断是否需要去港口，为1说明不需要去港口，鉴于已经走到了，清空路径，否则继续走
+        if (wholePath.size() == 1) {
+            havePath = false;
+            wholePath.clear();
+            deletePathFromAllPath(id);
+        }
+    }
+
+    // ==1 表示走到港口了或者找到Item了，但是找到Item已经在上一条语句中判断过了，如果是找到Item了，那就不会==1
+    if (wholePath.size() == 1) {
+        // 机器人到达目的地
+        if (bring == 1 && grids[pos.x][pos.y]->type == 3) {
+            printf("pull %d\n", id);
+            flowLogger.log(nowTime, "pull {0}", id);
+            bring = 0;
+            if (choosed_berth_id != -1) {
+                berth_center->declare_robot_pull_good(choosed_berth_id);
+            }
+        }
+
+        havePath = false;
+        wholePath.clear();
+        deletePathFromAllPath(id);
+    }
+
+
+    // 没走到，正常走过程中
+    if (wholePath.size() > 1) return;
+
+    // 能运行到这里，说明机器人已经没有路径了，可能是因为碰撞引起的重新寻路，可能是走到了需要找新的路径
+    // 如果是重新寻路，则需要判断应该去港口还是去找新的物体
+    // 但是无论如何，都要先从机器人为起点进行一次寻路
+
+    // 找当前机器人在不碰撞前提下，从自己出发的所有路，路长存在disWithTime，前序点存在preWithTime
+    // auto beginSolveTime = high_resolution_clock::now();
+    solveGridWithTime(pos, id);
+    // auto endSolveTime = high_resolution_clock::now();
+    // pathLogger.log(nowTime, "rId={0}solveGridWithTime time={1}", id, duration_cast<microseconds>(endSolveTime - beginSolveTime).count());
+
+    // 拿着东西找港口，直接用前面计算好的dis就行
+    if (bring == 1) {
+        auto berthPath = actionFindBerth();
+        // 可能为空
+        if (berthPath.size() > 0) {
+            wholePath = berthPath;
+            havePath = true;
+            addPathToAllPath(wholePath, id);
+            pathLogger.log(nowTime, "id={},berthTar=({},{}),pathSize={}", id, berthPath.back().x, berthPath.back().y, wholePath.size());
+
+        }
+    }
+
+    // 没拿东西找东西，先计算item的dis，然后传入item的坐标，再计算港口的dis
+    if (bring == 0) {
+        auto itemPath = actionFindItem();
+        // 可能为空，如果为空，也不用去找港口的路
+        if (itemPath.size() > 0) {
+            // 起始点：当前点，目标点：item的位置
+            // 起始时间：0，到item的时间为：itemPath.size() - 1
+            wholePath = itemPath;
+            havePath = true;
+            addPathToAllPath(wholePath, id);
+
+            auto itemPos = itemPath.back();
+            auto itemTime = itemPath.size() - 1;
+            tarItemPos = itemPos;
+            auto berthPath = actionFindBerth(itemPos, itemTime);
+            // 起始点：item的位置，目标点：港口的位置
+            // 起始时间：itemTime，到港口的时间为：itemTime + berthPath.size() - 1
+            // 可能为空
+            pathLogger.log(nowTime, "id={},itemTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, wholePath.size());
+
+            if (berthPath.size() > 0) {
+                //注意，由于上一个path的终点是item的位置，这里的起点也是item位置，所以不需要再计算一次，应该把item pop出去
+                berthPath.pop_front();
+                wholePath.insert(wholePath.end(), berthPath.begin(), berthPath.end());
+                havePath = true;
+                // 直接用wholePath，就不需要考虑从哪个时间加入了
+                addPathToAllPath(wholePath, id);
+                pathLogger.log(nowTime, "id={},itemTar=({},{}),berthTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, berthPath.back().x, berthPath.back().y, wholePath.size());
+            }
+        }
+        
+    } 
+    
+    // TODO: 没位置去的机器人别堵路啊，能不能死一死（？
     if (wholePath.size() == 0) {
         robotLogger.log(nowTime, "noPath id={},bring={},havePath={},pathSize={}", id, bring, havePath, wholePath.size());
         havePath = false;
