@@ -29,6 +29,15 @@ public:
             normal_ship_check(i);
         }
         bcenterlogger.log(nowTime, "ship_check ok");
+
+        if (nowTime >= 14999) {
+            int leftTotal = 0;
+            for (int i = 0; i < MAX_Berth_Num; i++) {
+                berthLogger.log(nowTime, "berth{},goodsNum:{}", i, allberths[i]->goodsNum);
+                leftTotal += allberths[i]->goodsNum;
+            }
+            berthLogger.log(nowTime, "leftTotal:{}", leftTotal);
+        }
     }
 
     float* call_robot_choose_berth(){
@@ -59,7 +68,7 @@ public:
         for (int i = 0; i < MAX_Robot_Num; i++) robot_choose_berth[i] = -1;
         for (int i = 0; i < MAX_Berth_Num; i++) {
             for (int j = 0; j < MAX_Robot_Num; j++) {
-                if (berths[i]->disWithTime[robot_pos[j].x][robot_pos[j].y] != 0x3f3f3f3f) {
+                if (berths[i]->disWithTimeBerth[robot_pos[j].x][robot_pos[j].y] != 0x3f3f3f3f) {
                     centerLogger.log(nowTime, "berth{0} could reach by robot{1}", i, j);
                 }
             }
@@ -72,7 +81,7 @@ public:
             std::vector<std::pair<int, int>> robot_dis;
             // 排序机器人到泊位的距离
             for (int j = 0; j < MAX_Robot_Num; j++) if (robot_choose_berth[j] == -1) {
-                robot_dis.push_back(std::make_pair(j, berths[berth_id]->disWithTime[robot_pos[j].x][robot_pos[j].y]));
+                robot_dis.push_back(std::make_pair(j, berths[berth_id]->disWithTimeBerth[robot_pos[j].x][robot_pos[j].y]));
             }
             std::sort(robot_dis.begin(), robot_dis.end(), [&](const std::pair<int, int>& a, const std::pair<int, int>& b) {
                 return a.second < b.second;
@@ -89,7 +98,7 @@ public:
             if (robot_choose_berth[i] == -1) {
                 for (int j = 0; j < MAX_Ship_Num; j++) {
                     auto berth_id = sortted_bert_by_one_round_time[j];
-                    if (berths[berth_id]->disWithTime[robot_pos[i].x][robot_pos[i].y] != 0x3f3f3f3f) {
+                    if (berths[berth_id]->disWithTimeBerth[robot_pos[i].x][robot_pos[i].y] != 0x3f3f3f3f) {
                         robot_choose_berth[i] = berth_id;
                         break;
                     }
@@ -132,7 +141,7 @@ private:
         int berth_can_reach_robot[MAX_Berth_Num] = {0};
         for (int i = 0; i < MAX_Berth_Num; i++) {
             for (int j = 0; j < MAX_Robot_Num; j++) {
-                if (berths[i]->disWithTime[robot_pos[j].x][robot_pos[j].y] != 0x3f3f3f3f) {
+                if (berths[i]->disWithTimeBerth[robot_pos[j].x][robot_pos[j].y] != 0x3f3f3f3f) {
                     centerLogger.log(nowTime, "berth{0} could reach by robot{1}", i, j);
                     berth_can_reach_robot[i]++;
                 }
@@ -148,7 +157,7 @@ private:
             group.back().push_back(i);
             for (int j = i + 1; j < MAX_Berth_Num; j++) {
                 if (is_grouped[j] != -1) continue;
-                if (berths[i]->disWithTime[berths[j]->pos.x][berths[j]->pos.y] != 0x3f3f3f3f) {
+                if (berths[i]->disWithTimeBerth[berths[j]->pos.x][berths[j]->pos.y] != 0x3f3f3f3f) {
                     group.back().push_back(j);
                     is_grouped[j] = i;
                 }
@@ -173,11 +182,11 @@ private:
                 // 我们只考虑 150 帧内的情况
                 int min_num = 150;
                 for (int i = 0; i < MAX_Berth_Num; i++) {
-                    if (berths[i]->disWithTime[x][y] < min_num) {
-                        min_num = berths[i]->disWithTime[x][y];
+                    if (berths[i]->disWithTimeBerth[x][y] < min_num) {
+                        min_num = berths[i]->disWithTimeBerth[x][y];
                         owner.clear();
                         owner.push_back(i);
-                    } else if (berths[i]->disWithTime[x][y] == min_num) {
+                    } else if (berths[i]->disWithTimeBerth[x][y] == min_num) {
                         owner.push_back(i);
                     }
                 }
@@ -488,7 +497,7 @@ private:
                 shipLogger.log(nowTime, "centre command ship{0} to berth{1}", shipId, best_bert_id);
             } else {
                 // 装货中
-                
+
                 return;
             }
         } else if (allships[shipId]->status == 2) {

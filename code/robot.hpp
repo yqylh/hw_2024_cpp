@@ -64,7 +64,6 @@ std::deque<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=
     // 但是港口距离的计算和第一段到item的距离无关
     choosed_berth_id = berth_center->get_robot_berth(id);
     int minDis = 0x3f3f3f3f;
-    
     if (choosed_berth_id != -1) {
         Berth* now_berth = berths[choosed_berth_id];
         Pos choosed_berth_pos = Pos(-1,-1);
@@ -131,7 +130,7 @@ std::deque<Pos> Robot::actionFindItem() {
     int minDis = 0x3f3f3f3f;
     auto targetItem = unsolvedItems.end();
     choosed_berth_id = berth_center->get_robot_berth(id);
-
+    
     if (choosed_berth_id != -1) {
         for (auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
             if (i->checkDead()) {
@@ -139,18 +138,19 @@ std::deque<Pos> Robot::actionFindItem() {
                 continue;
             }
             auto toItemDis = disWithTime[i->pos.x][i->pos.y];
-            auto toBertDis = berths[choosed_berth_id]->disWithTime[i->pos.x][i->pos.y];
+            // 到港口的是预测时间
+            auto toBertDis = berths[choosed_berth_id]->disWithTimeBerth[i->pos.x][i->pos.y];
             // 判断是否可达
             if (toItemDis == 0x3f3f3f3f) {
                 i++;
                 continue;
             }
             // 判断是否超时
-            if (nowTime + toItemDis + 3 > i->beginTime + Item_Continue_Time) {
+            if (nowTime + toItemDis + 1 > i->beginTime + Item_Continue_Time) {
                 i++;
                 continue;
             }
-            auto tempValue = double(i->value) / (toItemDis + toBertDis);
+            auto tempValue = double(i->value) / (toItemDis + toBertDis) ;
             if (tempValue > value){
                 minDis = toItemDis;
                 targetItem = i;
@@ -174,11 +174,11 @@ std::deque<Pos> Robot::actionFindItem() {
                 continue;
             }
             // 判断是否超时
-            if (nowTime + toItemDis + 3 > i->beginTime + Item_Continue_Time) {
+            if (nowTime + toItemDis + 1 > i->beginTime + Item_Continue_Time) {
                 i++;
                 continue;
             }
-            auto tempValue = double(i->value) / (toItemDis);
+            auto tempValue = double(i->value) / (toItemDis * 2.0) ;
             if (tempValue > value){
                 minDis = toItemDis;
                 targetItem = i;
