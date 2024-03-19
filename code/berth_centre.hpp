@@ -326,7 +326,7 @@ private:
         }
     }
 
-    int ship_choose_berth(int id){
+    int ship_choose_berth(int shipId){
         //用于指引船只进入最佳的泊位
         // cal_berth_want_ship_level();
         // int best_bert_id = -1;
@@ -339,7 +339,7 @@ private:
         //     }
         // }
         // return best_bert_id;
-        return sortted_bert_by_one_round_time[id];
+        return sortted_bert_by_one_round_time[shipId];
     }
 
     int bert_ship_goods_check(int bert_id){
@@ -470,24 +470,24 @@ private:
         bcenterlogger.log(nowTime, "berth_check ok");
     }
 
-    void normal_ship_check(int i){
-        bcenterlogger.log(nowTime, "ship: {0}", i);
-        if (allships[i]->status == 0){
+    void normal_ship_check(int shipId){
+        bcenterlogger.log(nowTime, "ship: {0}", shipId);
+        if (allships[shipId]->status == 0){
             //运输中，不做处理
             return;
         }
-        else if (allships[i]->berthId == -1){
+        else if (allships[shipId]->berthId == -1){
             //送货完毕,重新找泊位
-            int best_bert_id = ship_choose_berth(i);
-            declare_ship(best_bert_id, i);
-            allships[i]->go_berth(best_bert_id);
-            shipLogger.log(nowTime, "centre command ship{0} to berth{1}", i, best_bert_id);
+            int best_bert_id = ship_choose_berth(shipId);
+            declare_ship(best_bert_id, shipId);
+            allships[shipId]->go_berth(best_bert_id);
+            shipLogger.log(nowTime, "centre command ship{0} to berth{1}", shipId, best_bert_id);
         }
-        else if (allships[i]->berthId == 2){
+        else if (allships[shipId]->berthId == 2){
             //排队的,等会处理
             return;
         }
-        bcenterlogger.log(nowTime, "ship: {0} ok", i);
+        bcenterlogger.log(nowTime, "ship: {0} ok", shipId);
     }
 };
 
