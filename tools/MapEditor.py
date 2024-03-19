@@ -46,6 +46,7 @@ class MapEditor:
         self.canvas.bind("<ButtonRelease-1>", self.cell_choose_end)
         self.canvas.bind("<B1-Motion>", self.cell_choose)
         self.canvas.bind("<B3-Motion>", self.cell_remove)
+        self.canvas.bind("<Button-3>", self.cell_remove)
         self.master.bind("<Key>", self.key_input)
         self.text_display.insert(tk.END, help)
         self.canvas.focus_set()
