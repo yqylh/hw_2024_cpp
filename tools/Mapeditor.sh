@@ -1,0 +1,1 @@
+python MapEditor_pygame.py -l ../allMaps tt0.txt

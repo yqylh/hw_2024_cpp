@@ -120,7 +120,7 @@ class MapEditor:
     def handle_mouse_event(self, event):
         for button in self.buttons:
             if button.is_clicked(event):
-                if button.text == "直线(没做)":
+                if button.text == "直线":
                     self.choose_type = 1
                 elif button.text == "框选":
                     self.choose_type = 2
@@ -155,6 +155,27 @@ class MapEditor:
                 self.update_cell(i, j, self.now_color)
                 Result.result[i][j] = self.now_type
 
+    def draw_line(self, start_x, start_y, end_x, end_y):
+        Result.update_last_result()
+        dx = abs(end_x - start_x)
+        dy = -abs(end_y - start_y)
+        sx = 1 if start_x < end_x else -1
+        sy = 1 if start_y < end_y else -1
+        err = dx + dy  # error value e_xy
+        while True:
+            self.update_cell(start_x, start_y, self.now_color)  # 这里假设 update_cell 方法会根据坐标更新屏幕上的像素
+            Result.result[start_x][start_y] = self.now_type  # 更新结果数组
+            if start_x == end_x and start_y == end_y:
+                break
+            e2 = 2 * err
+            if e2 >= dy:  # e_xy+e_x > 0
+                err += dy
+                start_x += sx
+            if e2 <= dx:  # e_xy+e_y < 0
+                err += dx
+                start_y += sy
+        
+
 
     def draw_log(self,txts):
         font = pygame.font.Font("llt.ttf", 24)
@@ -182,7 +203,10 @@ class MapEditor:
 
     def handle_mouse_up_2(self, pos):
         if self.end_pos is not None:
-            self.draw_box(self.start_pos[0] // self.cell_size, self.start_pos[1] // self.cell_size, self.end_pos[0] // self.cell_size, self.end_pos[1] // self.cell_size)
+            if self.choose_type == 1:
+                self.draw_line(self.start_pos[0] // self.cell_size, self.start_pos[1] // self.cell_size, self.end_pos[0] // self.cell_size, self.end_pos[1] // self.cell_size)
+            else:
+                self.draw_box(self.start_pos[0] // self.cell_size, self.start_pos[1] // self.cell_size, self.end_pos[0] // self.cell_size, self.end_pos[1] // self.cell_size)
         self.mouse_down = False
         self.start_pos = None
         self.end_pos = None
@@ -193,12 +217,15 @@ class MapEditor:
 
     def draw_selection_box(self):
         if self.mouse_down and self.start_pos and self.end_pos:
-            rect = pygame.Rect(self.start_pos, (self.end_pos[0] - self.start_pos[0], self.end_pos[1] - self.start_pos[1]))
-
-            if rect.width > 0 and rect.height > 0:
-                surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-                surface.fill((255, 255, 255, 128))  # 半透明白色
-                self.screen.blit(surface, rect.topleft)
+            if self.choose_type == 1:
+                color = self.now_color + (128,)
+                pygame.draw.line(self.screen, color, (self.start_pos[0], self.start_pos[1]), (self.end_pos[0], self.end_pos[1]), 1)
+            else:
+                rect = pygame.Rect(self.start_pos, (self.end_pos[0] - self.start_pos[0], self.end_pos[1] - self.start_pos[1]))
+                if rect.width > 0 and rect.height > 0:
+                    surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                    surface.fill((255, 255, 255, 128))  # 半透明白色
+                    self.screen.blit(surface, rect.topleft)
 
     def run(self):
         running = True
