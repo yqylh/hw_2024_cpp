@@ -22,17 +22,19 @@ def setup_args():
     parser.add_argument('--debug', '-d', nargs='?',type=str,default="1", help='Destination on the server')
     parser.add_argument('--map', '-m', nargs='?',type=str,default='map1.txt', help='Map to use')
     parser.add_argument('--random_seed', nargs='?',type=int,default=123, help='Random seed to use')
+    parser.add_argument('--map_folder', nargs='?',type=str,default="allMaps", help='Random seed to use')
     args = parser.parse_args()
     config['file_name'] = args.file_name
-    # to boolean
     config['debug'] = (args.debug == 'True' or args.debug == 'true' or args.debug == '1')
     config['map'] = args.map
     config['random_seed'] = args.random_seed
     config['stdout'] = (args.stdout == 'True' or args.stdout == 'true' or args.stdout == '1')
+    config['map_folder'] = args.map_folder
+    
     return argparse.Namespace(**config)
 
 def run_all(args):
-    mapList = os.listdir('../allMaps')
+    mapList = os.listdir(f'../{args.map_folder}')
     resList = []
     for map in mapList:
         args.map = map
@@ -94,7 +96,7 @@ def remove_file(file_path, attempts=10):
                 sleep(0.5)
     
 def win_cmd(args):
-    Win_Cmd = '%CD%/../judge/PreliminaryJudge.exe -s ' + str(args.random_seed) + ' -m ../allMaps/' + args.map +' -r ./{}%Y-%m-%d.%H.%M.%S.rep ./main'.format(args.map)
+    Win_Cmd = '%CD%/../judge/PreliminaryJudge.exe -s ' + str(args.random_seed) + f' -m ../{args.map_folder}/' + args.map +' -r ./{}%Y-%m-%d.%H.%M.%S.rep ./main'.format(args.map)
     print(Win_Cmd)
     
     # check if '../log' exists
@@ -130,7 +132,7 @@ def win_cmd(args):
 
 
 def linux_cmd(args):
-    Linux_Cmd = '../judge/PreliminaryJudge -s ' + str(args.random_seed) + ' -m ../allMaps/' + args.map +' -r ./{}%Y-%m-%d.%H.%M.%S.rep ./main'.format(args.map)
+    Linux_Cmd = '../judge/PreliminaryJudge -s ' + str(args.random_seed) + f' -m ../{args.map_folder}/' + args.map +' -r ./{}%Y-%m-%d.%H.%M.%S.rep ./main'.format(args.map)
     print(Linux_Cmd)
     
     # check if '../log' exists
