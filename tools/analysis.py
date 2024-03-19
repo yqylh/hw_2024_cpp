@@ -1,6 +1,8 @@
 import re
 from collections import defaultdict
 
+from cv2 import Mat
+
 def analyze_judger_output_v3(file_path):
     # 初始化统计字典
     duration_stats = {
@@ -73,4 +75,14 @@ def analyze_time_distribution(file_path):
     # 输出平均值和最大值
     print(f"\n平均值：{average_time:.2f}")
     print(f"最大值：{max_time}")
+
+def analyze_goods_distribution(file_path):
+
+    with open(file_path, 'r') as file:
+        for line in file:
+            # target is like 123:tmpTotalGoods:456, what we need is 456
+            match = re.search(r'tmpTotalGoods:(\d+)', line)
+            if match:
+                goods = int(match.group(1))
+                print("货物总量", goods)
 

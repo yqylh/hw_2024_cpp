@@ -190,7 +190,7 @@ std::deque<Pos> Robot::actionFindItem() {
 
     if (minDis != 0x3f3f3f3f && targetItem != unsolvedItems.end()) {
         int targetItemIndex = std::distance(unsolvedItems.begin(), targetItem);
-        flowLogger.log(nowTime, "rid={},toItem={}", id, targetItemIndex);
+        // flowLogger.log(nowTime, "rid={},toItem={}", id, targetItemIndex);
 
         auto tarPath = findPathWithTime(pos, targetItem->pos);
 
@@ -213,7 +213,7 @@ std::deque<Pos> Robot::actionFindItem() {
 
 void Robot::action() {
     flowLogger.log(nowTime, "action {0}", id);
-    robotLogger.log(nowTime, "id={},status={},bring={},pos=({},{}),havePath={},pathSize={}", id, status, bring, pos.x, pos.y, havePath, wholePath.size());
+    // robotLogger.log(nowTime, "id={},status={},bring={},pos=({},{}),havePath={},pathSize={}", id, status, bring, pos.x, pos.y, havePath, wholePath.size());
     // 如果机器人被撞到了
     if (!status) {
         wholePath.clear();
@@ -286,7 +286,7 @@ void Robot::action() {
             wholePath = berthPath;
             havePath = true;
             addPathToAllPath(wholePath, id);
-            pathLogger.log(nowTime, "id={},berthTar=({},{}),pathSize={}", id, berthPath.back().x, berthPath.back().y, wholePath.size());
+            // pathLogger.log(nowTime, "id={},berthTar=({},{}),pathSize={}", id, berthPath.back().x, berthPath.back().y, wholePath.size());
 
         }
     }
@@ -309,7 +309,7 @@ void Robot::action() {
             // 起始点：item的位置，目标点：港口的位置
             // 起始时间：itemTime，到港口的时间为：itemTime + berthPath.size() - 1
             // 可能为空
-            pathLogger.log(nowTime, "id={},itemTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, wholePath.size());
+            // pathLogger.log(nowTime, "id={},itemTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, wholePath.size());
 
             if (berthPath.size() > 0) {
                 //注意，由于上一个path的终点是item的位置，这里的起点也是item位置，所以不需要再计算一次，应该把item pop出去
@@ -318,7 +318,7 @@ void Robot::action() {
                 havePath = true;
                 // 直接用wholePath，就不需要考虑从哪个时间加入了
                 addPathToAllPath(wholePath, id);
-                pathLogger.log(nowTime, "id={},itemTar=({},{}),berthTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, berthPath.back().x, berthPath.back().y, wholePath.size());
+                // pathLogger.log(nowTime, "id={},itemTar=({},{}),berthTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, berthPath.back().x, berthPath.back().y, wholePath.size());
             }
         }
         
@@ -360,10 +360,10 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
         nextTimePos = wholePath.at(1);
         nextDir = getDirWithPath(pos, nextTimePos);
     }
-    robotLogger.log(nowTime, "robot{0} pos{1},{2} nextTimePos{3},{4} nextDir{5}", id, pos.x, pos.y, nextTimePos.x, nextTimePos.y, nextDir);
+    // robotLogger.log(nowTime, "robot{0} pos{1},{2} nextTimePos{3},{4} nextDir{5}", id, pos.x, pos.y, nextTimePos.x, nextTimePos.y, nextDir);
     // 如果下一帧的位置有机器人 或者有两个机器人交换位置
     if (otherPos.find(nextTimePos) != otherPos.end() || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextTimePos) ){
-        robotLogger.log(nowTime, "robot{0} crash", id);
+        // robotLogger.log(nowTime, "robot{0} crash", id);
         // 不能继续走同样的方向,尽量不被追着揍
         std::vector<int> ableDir;
         if (nextDir == 0) ableDir = {2, 3, 1}; 

@@ -2,6 +2,9 @@
 #define __SHIP_H__
 #include "config.hpp"
 #include "berth.hpp"
+
+int tmpTotalGoods = 0;
+
 struct Ship {
     int id;
     int status; // 0 移动(运输)中 1正常状态(即装货状态或运输完成状态) 2 泊位外等待状态
@@ -21,6 +24,7 @@ struct Ship {
     }
     void go(int berthId){
         printf("go %d\n", id);
+        tmpTotalGoods += capacity;
         shipLogger.log(nowTime, "ship{0} go", id);
     }
     void go_berth(int berthId){

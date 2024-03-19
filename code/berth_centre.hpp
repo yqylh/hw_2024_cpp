@@ -7,14 +7,13 @@
 // #include "robot.hpp"
 #include <vector>
 
-
 class Berth_center {
 public:
     bool is_init = false;
 
     void call_ship_and_berth_check(){
         /* 检查船坞\船的当前容量,满则发船 */
-        normal_berth_check(); //船坞检查 不用外置循环
+        normal_berth_check(); // 船坞检查 不用外置循环
 
         for(int i = 0; i < MAX_Ship_Num; i++){
             if(allships[i] ->berthId != -1){
@@ -23,12 +22,12 @@ public:
                 if (allberths[allships[i]->berthId]->time + nowTime + 20 > MAX_TIME){
                     allships[i]->go(allships[i]->berthId);
                     allships[i] -> is_last_round = true;
-                    bcenterlogger.log(nowTime, "ship{0} go last round", i);
+                    // bcenterlogger.log(nowTime, "ship{0} go last round", i);
                 }
             }
             normal_ship_check(i);
         }
-        bcenterlogger.log(nowTime, "ship_check ok");
+        // bcenterlogger.log(nowTime, "ship_check ok");
 
         if (nowTime >= 14999) {
             int leftTotal = 0;
@@ -37,6 +36,8 @@ public:
                 leftTotal += allberths[i]->goodsNum;
             }
             berthLogger.log(nowTime, "leftTotal:{}", leftTotal);
+            tmpTotalGoods += leftTotal;
+            berthLogger.log(nowTime, "tmpTotalGoods:{}", tmpTotalGoods);
         }
     }
 
@@ -53,7 +54,7 @@ public:
 
     void declare_robot_pull_good(int bert_id){
         /* 机器人告知塔台卸货 */
-        bcenterlogger.log(nowTime, "declare_robot_pull_good");
+        // bcenterlogger.log(nowTime, "declare_robot_pull_good");
         pull_good(bert_id);
     }
 
@@ -297,7 +298,7 @@ private:
             return bert_fix_times[a] < bert_fix_times[b]; // 按修正时间升序排列
         });
         find_private_space();
-        bcenterlogger.log(nowTime, "init_done");
+        // bcenterlogger.log(nowTime, "init_done");
     }
     
     void first_frame_doing(){
@@ -318,9 +319,9 @@ private:
                 berth_want_goods_level [i] = 0; //急需货物，快来！
                 continue;
             }
-            bcenterlogger.log(nowTime, "goodsNum :{}", allberths[i]->goodsNum + allberths[i]->on_way_robot);
+            // bcenterlogger.log(nowTime, "goodsNum :{}", allberths[i]->goodsNum + allberths[i]->on_way_robot);
             float remaining_shipment = (allberths[i]->goodsNum + allberths[i]->on_way_robot) / float(MAX_Capacity); //剩余运输次数,货物包括已经在泊位上的和机器人手上的
-            bcenterlogger.log(nowTime, "remaining_shipment: {} int: {} , bert_fix_times:{}", remaining_shipment,floor(remaining_shipment),bert_fix_times[i]);
+            // bcenterlogger.log(nowTime, "remaining_shipment: {} int: {} , bert_fix_times:{}", remaining_shipment,floor(remaining_shipment),bert_fix_times[i]);
             berth_want_goods_level[i] = bert_fix_times[i] * ceil(remaining_shipment); //剩余运输次数越多，需求等级越低
         }
         std::sort(sortted_berth_want_goods_level.begin(), sortted_berth_want_goods_level.end(), [&](const int& a, const int& b) {
@@ -373,12 +374,12 @@ private:
                     }
                     allships[allberths[bert_id]->shipId[0]]->capacity += loaded_goods;
                     allberths[bert_id]->goodsNum -= loaded_goods;
-                    bcenterlogger.log(nowTime, "loaded_goods: {}, remaining goods: {}", loaded_goods, allberths[bert_id]->goodsNum);
+                    // bcenterlogger.log(nowTime, "loaded_goods: {}, remaining goods: {}", loaded_goods, allberths[bert_id]->goodsNum);
                     bert_load_start_times[bert_id] = bert_load_start_times[bert_id] + loaded_goods / bert_velocitys[bert_id];
                 }
             }
             else if (allberths[bert_id]->on_way_robot < 0){
-                bcenterlogger.log(nowTime, "warning : goodsNum: {0}", allberths[bert_id]->goodsNum);
+                // bcenterlogger.log(nowTime, "warning : goodsNum: {0}", allberths[bert_id]->goodsNum);
             }
         }
         return MAX_Capacity - allberths[bert_id]->goodsNum;
@@ -409,13 +410,13 @@ private:
         int best_fixed_level = 15000;
         for (int i = 0; i < MAX_Berth_Num; i++){
             int refixed_level = berth_want_ship_level[i];
-            bcenterlogger.log(nowTime, "berth {} :refixed_level: {}", i, refixed_level);
+            // bcenterlogger.log(nowTime, "berth {} :refixed_level: {}", i, refixed_level);
             if (refixed_level < best_fixed_level){
                 best_fixed_level = refixed_level;
                 best_bert_id = i;
             }
         }//重新找一个被堆了大量货物的泊位
-        bcenterlogger.log(nowTime, "ship{0} rechange to berth {1}", this_ship_id, best_bert_id);
+        // bcenterlogger.log(nowTime, "ship{0} rechange to berth {1}", this_ship_id, best_bert_id);
 
         for (int i = 0; i < MAX_Robot_Num; i++){
             if (robot_choose_berth[i] == -1){ //找到没有被指引的机器人,指引他们去该泊位
@@ -428,16 +429,16 @@ private:
         allberths[best_bert_id]->ship_wait_start_time = nowTime + 500;
         allships[this_ship_id]->move_berth(best_bert_id);
         if(!allberths[bert_id]->shipId.empty()){
-            bcenterlogger.log(nowTime, "ship{0} rechange to berth{1} fail", this_ship_id, best_bert_id);
+            // bcenterlogger.log(nowTime, "ship{0} rechange to berth{1} fail", this_ship_id, best_bert_id);
             for(auto i : allberths[bert_id]->shipId){
-                bcenterlogger.log(nowTime, "ship{0} still on berth{1}", i, bert_id);
+                // bcenterlogger.log(nowTime, "ship{0} still on berth{1}", i, bert_id);
             }
         }
     }
 
     void pull_good(int bert_id){
         // 装载货物: 首先顺手检查一下港口和轮船状态，然后装货
-        bcenterlogger.log(nowTime, "pull_good:berths {}->goodsNum: {}", bert_id,allberths[bert_id]->goodsNum);
+        // bcenterlogger.log(nowTime, "pull_good:berths {}->goodsNum: {}", bert_id,allberths[bert_id]->goodsNum);
         allberths[bert_id]->goodsNum++;
         allberths[bert_id]->on_way_robot--;
         if(allberths[bert_id]->on_way_ship > 0) if(allships[allberths[bert_id]->shipId[0]]->status == 0){
@@ -452,36 +453,36 @@ private:
             bert_ship_goods_check(bert_id);
             bert_load_finish_times[bert_id] += 1;
         }
-         bcenterlogger.log(nowTime, "pulled_good:berths {}->goodsNum: {}", bert_id,allberths[bert_id]->goodsNum);
+        // bcenterlogger.log(nowTime, "pulled_good:berths {}->goodsNum: {}", bert_id,allberths[bert_id]->goodsNum);
     }
 
     void normal_berth_check(){
-        bcenterlogger.log(nowTime, "call_ship_and_berth_check");
+        // bcenterlogger.log(nowTime, "call_ship_and_berth_check");
         for(int i = 0; i < MAX_Berth_Num; i++){
-            bcenterlogger.log(nowTime, "berth: {0}", i);
+            // bcenterlogger.log(nowTime, "berth: {0}", i);
             bert_ship_goods_check(i);
-            bcenterlogger.log(nowTime, "berth: {0} statcheck ok", i);
+            // bcenterlogger.log(nowTime, "berth: {0} statcheck ok", i);
             if (!allberths[i]->shipId.empty()){
                 //有船,检查船的状态
-                if (allships[allberths[i]->shipId[0]]->leftCapacity() <= 1 && allships[allberths[i]->shipId[0]]->status == 1){
+                if (allships[allberths[i]->shipId[0]]->leftCapacity() == 0 && allships[allberths[i]->shipId[0]]->status == 1){
                     //发船
-                    bcenterlogger.log(nowTime, "have ship!");
-                    bcenterlogger.log(nowTime, "ship on berth: {0}", allberths[i]->shipId[0]);
-                    bcenterlogger.log(nowTime, "leftCapacity: {0}", allships[allberths[i]->shipId[0]]->leftCapacity());
+                    // bcenterlogger.log(nowTime, "have ship!");
+                    // bcenterlogger.log(nowTime, "ship on berth: {0}", allberths[i]->shipId[0]);
+                    // bcenterlogger.log(nowTime, "leftCapacity: {0}", allships[allberths[i]->shipId[0]]->leftCapacity());
 
                     ship_declare_go(i);
                     allships[allberths[i]->shipId[0]]->go(i);
                     
-                    bcenterlogger.log(nowTime, "ship{0} go", allberths[i]->shipId[0]);
+                    // bcenterlogger.log(nowTime, "ship{0} go", allberths[i]->shipId[0]);
                 }
             }
-            bcenterlogger.log(nowTime, "berth: {0} ok", i);
+            // bcenterlogger.log(nowTime, "berth: {0} ok", i);
         }
-        bcenterlogger.log(nowTime, "berth_check ok");
+        // bcenterlogger.log(nowTime, "berth_check ok");
     }
 
     void normal_ship_check(int shipId) {
-        bcenterlogger.log(nowTime, "ship: {0}", shipId);
+        // bcenterlogger.log(nowTime, "ship: {0}", shipId);
         if (allships[shipId]->status == 0) {
             //运输中，不做处理
             return;
@@ -504,7 +505,7 @@ private:
             //排队的,等会处理
             return;
         }
-        bcenterlogger.log(nowTime, "ship: {0} ok", shipId);
+        // bcenterlogger.log(nowTime, "ship: {0} ok", shipId);
     }
 };
 
