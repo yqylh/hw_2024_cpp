@@ -57,6 +57,14 @@ bool inputFlag = true; // 是否input是否结束
 */
 auto programStart = high_resolution_clock::now(); // 计时器
 
+
+/**
+ * 超参数
+*/
+int MAX_Berth_Control_Length = 160; // 泊位控制长度,用来判断私有区域
+int Worst_Rate = 3; // 用来筛选多差的港口不要选
+double Sell_Ration = 0.85; // 还剩多少港口空了就去卖
+
 Pos dir[4] = {Pos(0, 1), Pos(0, -1), Pos(-1, 0), Pos(1, 0)};
 // 0 表示右移一格 1 表示左移一格 2 表示上移一格 3 表示下移一格
 std::unordered_map<Pos, int> Pos2move = {

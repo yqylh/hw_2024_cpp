@@ -62,7 +62,6 @@ std::deque<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=
         // 从item开始求到港口的距离，在这种情况下，dis和path都是从item开始的
     }
     // 但是港口距离的计算和第一段到item的距离无关
-    choosed_berth_id = berth_center->get_robot_berth(id);
     int minDis = 0x3f3f3f3f;
     if (choosed_berth_id != -1) {
         Berth* now_berth = berths[choosed_berth_id];
@@ -80,7 +79,7 @@ std::deque<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=
 
             auto tarPath = findPathWithTime(beginPos, choosed_berth_pos);
             if (tarPath.size() > 0) {
-                berth_center->declare_robot_choose_berth(choosed_berth_id);
+                // berth_center->declare_robot_choose_berth(choosed_berth_id);
                 return tarPath;
             } else {
                 pathLogger.log(nowTime, "rid={},toBerth={},noPath", id, choosed_berth_id);
@@ -89,35 +88,35 @@ std::deque<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=
     }
     if (minDis == 0x3f3f3f3f) {
         // 如果没有选择港口,那么先退化到shc方案
-        float* berth_level = berth_center->call_robot_choose_berth();
+        // float* berth_level = berth_center->call_robot_choose_berth();
 
-        float min_level = 1e9;
-        for (int i = 0; i < MAX_Berth_Num; i++) {
-            if (berth_level[i] < min_level && disWithTime[berths[i]->pos.x][berths[i]->pos.y] != 0x3f3f3f3f) {
-                min_level = berth_level[i];
-                choosed_berth_id = i;
-            }
-        }
-        if (choosed_berth_id != -1) {
-            Berth* now_berth = berths[choosed_berth_id];
-            Pos choosed_berth_pos = Pos(-1,-1);
-            int minDis = 0x3f3f3f3f;
-            for(Pos sub_berths : now_berth->usePos){
-                if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
-                if (disWithTime[sub_berths.x][sub_berths.y]< minDis){
-                    minDis = disWithTime[sub_berths.x][sub_berths.y];
-                    choosed_berth_pos = sub_berths;
-                }   
-            }
-            if (minDis != 0x3f3f3f3f) {
-                //注意到这里真可能不可达
-                auto tarPath = findPathWithTime(pos, choosed_berth_pos);
-                if (tarPath.size() > 0) {
-                    berth_center->declare_robot_choose_berth(choosed_berth_id);
-                    return tarPath;
-                }
-            }
-        }
+        // float min_level = 1e9;
+        // for (int i = 0; i < MAX_Berth_Num; i++) {
+        //     if (berth_level[i] < min_level && disWithTime[berths[i]->pos.x][berths[i]->pos.y] != 0x3f3f3f3f) {
+        //         min_level = berth_level[i];
+        //         choosed_berth_id = i;
+        //     }
+        // }
+        // if (choosed_berth_id != -1) {
+        //     Berth* now_berth = berths[choosed_berth_id];
+        //     Pos choosed_berth_pos = Pos(-1,-1);
+        //     int minDis = 0x3f3f3f3f;
+        //     for(Pos sub_berths : now_berth->usePos){
+        //         if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
+        //         if (disWithTime[sub_berths.x][sub_berths.y]< minDis){
+        //             minDis = disWithTime[sub_berths.x][sub_berths.y];
+        //             choosed_berth_pos = sub_berths;
+        //         }   
+        //     }
+        //     if (minDis != 0x3f3f3f3f) {
+        //         //注意到这里真可能不可达
+        //         auto tarPath = findPathWithTime(pos, choosed_berth_pos);
+        //         if (tarPath.size() > 0) {
+        //             berth_center->declare_robot_choose_berth(choosed_berth_id);
+        //             return tarPath;
+        //         }
+        //     }
+        // }
     }
 
     return std::deque<Pos>();
@@ -128,10 +127,10 @@ std::deque<Pos> Robot::actionFindItem() {
         
     double value = 0;
     int minDis = 0x3f3f3f3f;
+    auto berth_select = -1;
     auto targetItem = unsolvedItems.end();
-    choosed_berth_id = berth_center->get_robot_berth(id);
-    
-    if (choosed_berth_id != -1) {
+    auto robot_berths = berth_center->get_robot_berth(id);
+    for (auto & berth : robot_berths) {
         for (auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
             if (i->checkDead()) {
                 unsolvedItems.erase(i++);
@@ -139,7 +138,7 @@ std::deque<Pos> Robot::actionFindItem() {
             }
             auto toItemDis = disWithTime[i->pos.x][i->pos.y];
             // 到港口的是预测时间
-            auto toBertDis = berths[choosed_berth_id]->disWithTimeBerth[i->pos.x][i->pos.y];
+            auto toBertDis = berths[berth]->disWithTimeBerth[i->pos.x][i->pos.y];
             // 判断是否可达
             if (toItemDis == 0x3f3f3f3f) {
                 i++;
@@ -155,6 +154,7 @@ std::deque<Pos> Robot::actionFindItem() {
                 minDis = toItemDis;
                 targetItem = i;
                 value = tempValue;
+                berth_select = berth;
             }
             i++;
         }
@@ -197,6 +197,7 @@ std::deque<Pos> Robot::actionFindItem() {
         if (tarPath.size() > 0) {
             bringTimeLimit = targetItem->beginTime + Item_Continue_Time;
             unsolvedItems.erase(targetItem);
+            choosed_berth_id = berth_select;
             /*
             havePath = true;
             addPathToAllPath(wholePath, id);

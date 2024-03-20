@@ -16,7 +16,6 @@ struct Berth {
     //上面的是原始值，别改
     
     std::vector<int> shipId; // 表示当前泊位上的船的 id,可能有多个,用empty()判断是否有船
-    bool selected; // 表示当前泊位是否被选中
     int goodsNum; // 表示当前泊位上的货物数量
     int on_way_ship;
     int on_way_robot;
@@ -24,12 +23,12 @@ struct Berth {
     int ship_wait_start_time;
     Berth(int id, int x, int y, int time, int velocity) : id(id), time(time), velocity(velocity) {
         this->pos = Pos(x, y);
-        selected = false;
         goodsNum = 0;
         on_way_ship = 0;
         on_way_robot = 0;
         waitting_ship = 0;
         ship_wait_start_time =0;
+        this->shipId.clear();
     }
     void findUsePos() {
         usePos.clear();
@@ -63,23 +62,6 @@ Berth *berths[MAX_Berth_Num];
 std::unordered_map<Pos, Berth*> pos2berth;
 
 void solveBerth() {
-    std::vector<std::pair<int, int>> arr;
-    /**
-     * 选择最优的泊位
-     * 选择的标准是速度和时间的加权和
-     * 不一定有用
-    */
-    for (int i = 0; i < MAX_Berth_Num; i++) {
-        arr.emplace_back(i, berths[i]->velocity + berths[i]->time * 2);
-        // arr.emplace_back(i, berths[i]->velocity * MAX_Capacity + berths[i]->time * 2);
-    }
-    std::sort(arr.begin(), arr.end(), [](const std::pair<int, int> &a, const std::pair<int, int> &b) {
-        return a.second < b.second;
-    });
-    // 只选择前 MAX_Ship_Num 个泊位
-    for (int i = 0; i < MAX_Ship_Num; i++) {
-        berths[arr[i].first]->selected = true;
-    }
     // 预处理每个泊位到每个虚拟点的时间
     for (int i = 0; i < MAX_Berth_Num; i++) {
         berths[i]->findUsePos();

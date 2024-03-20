@@ -50,7 +50,6 @@ void inputMap(){
         std::vector<Pos> robot_pos;
         for (int i = 0; i <= robotNum; i++) robot_pos.push_back(robots[i]->pos);
         berth_center->do_first_frame(robot_pos);
-        berth_center->solve_robot_berth();
     }
     srand(time(0));
     puts("OK");
