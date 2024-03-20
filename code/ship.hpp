@@ -12,12 +12,14 @@ struct Ship {
     int capacity; // 货物数量
     int waitTime; // 等待时间
     bool is_last_round; // 是否是最后一轮(游戏结束)
+    int ship_load_start_time; // 装货开始时间
     Ship(int id): id(id) {
         status = 1;
         berthId = -1;
         capacity = 0;
         waitTime = 0;
         is_last_round = false;
+        ship_load_start_time = -1;
     }
     int leftCapacity() {
         return MAX_Capacity - capacity;
@@ -25,6 +27,7 @@ struct Ship {
     void go(int berthId){
         printf("go %d\n", id);
         tmpTotalGoods += capacity;
+        ship_load_start_time = -1;
         shipLogger.log(nowTime, "ship{0} go", id);
     }
     void go_berth(int berthId){

@@ -26,6 +26,7 @@ public:
                 }
             }
             normal_ship_check(i);
+            do_ship_rechange(allships[i]->berthId, ship_rechange_check(i)); // 船只自检并尝试换港口
         }
         // bcenterlogger.log(nowTime, "ship_check ok");
 
@@ -355,39 +356,34 @@ private:
         //检查泊位和船只状态，返回值为泊位剩余容量
         // 如果港口非空
         if (!allberths[bert_id]->shipId.empty()) {
-            // 如果船在港口，可以装卸货（或者船在虚拟点，但是因为是从港口取得船，所以一定在港口），取队列最前端的船
             if (allships[allberths[bert_id]->shipId[0]]->status == 1) {
-                // 啊？这是要判断啥，start_times为啥会等于15000？哦，15000只是个特殊标记，表示还没船？应该新搞一个标识，比如NOT_START=-1这样的
                 if (bert_load_start_times[bert_id] == MAX_TIME) {
                     bert_load_start_times[bert_id] = nowTime;
                     bert_load_finish_times[bert_id] = nowTime + allberths[bert_id]->goodsNum / bert_velocitys[bert_id] + 1;
                 }
-                // 如果港口有货物
-                if (allberths[bert_id]->goodsNum > 0) {
-                    allberths[bert_id]->ship_wait_start_time = nowTime;
-                    // 还没到时间
+                if (allberths[bert_id]->goodsNum > 0) {// 如果港口有货物
                     if (bert_load_finish_times[bert_id] < nowTime) {
+                        // 肯定装完了,简单处理
                         allships[allberths[bert_id]->shipId[0]]->capacity += allberths[bert_id]->goodsNum;
                         allberths[bert_id]->goodsNum = 0;
                         bert_load_start_times[bert_id] = 0;
-                    } else {
-                        // 到时间了
-                        // 预估装载货物，等下，这个东西是说，一直在装货物的情况下，一共装了多少货物？
+                    } else { //可能还没装完,计算装载情况
                         int loaded_goods =  (nowTime - bert_load_start_times[bert_id]) * bert_velocitys[bert_id];
-                        // 如果预测值大于实际值，那么取实际值，那为什么不直接取实际值？
-                        // 哦，是不是因为两个都是预估值，所以取小的那一个？
                         if (loaded_goods > allberths[bert_id]->goodsNum){
                             loaded_goods = allberths[bert_id]->goodsNum;
                         }
+                        shipLogger.log(nowTime, "ship{0} load {1} goods ,now have {2}", allberths[bert_id]->shipId[0], loaded_goods, allships[allberths[bert_id]->shipId[0]]->capacity);
                         // 船只装载货物
                         allships[allberths[bert_id]->shipId[0]]->capacity += loaded_goods;
                         // 港口货物减少
                         allberths[bert_id]->goodsNum -= loaded_goods;
-                        // bcenterlogger.log(nowTime, "loaded_goods: {}, remaining goods: {}", loaded_goods, allberths[bert_id]->goodsNum);
                         bert_load_start_times[bert_id] = bert_load_start_times[bert_id] + loaded_goods / bert_velocitys[bert_id];
                     }
-                } else if (allberths[bert_id]->on_way_robot < 0) {
-                    // bcenterlogger.log(nowTime, "warning : goodsNum: {0}", allberths[bert_id]->goodsNum);
+                }
+                //不知道上面怎么改了,下面加个补丁防止船饱满(吃多了吐出来)
+                if(allships[allberths[bert_id]->shipId[0]]->leftCapacity() < 0){
+                    allberths[bert_id]->goodsNum += - allships[allberths[bert_id]->shipId[0]]->leftCapacity();
+                    allships[allberths[bert_id]->shipId[0]]->capacity = MAX_Capacity;
                 }
             }
         }
@@ -409,38 +405,59 @@ private:
         allberths[bert_id]->shipId.clear();
     }
 
-    void ship_rechange(int bert_id){
-        // ship_declare_go(bert_id);
-        cal_berth_want_ship_level();
-        int this_ship_id = allberths[bert_id]->shipId[0];
-        allberths[bert_id]->on_way_ship--;
-        allberths[bert_id]->shipId.clear();
-        int best_bert_id = -1;
-        int best_fixed_level = 15000;
-        for (int i = 0; i < MAX_Berth_Num; i++){
-            int refixed_level = berth_want_ship_level[i];
-            // bcenterlogger.log(nowTime, "berth {} :refixed_level: {}", i, refixed_level);
-            if (refixed_level < best_fixed_level){
-                best_fixed_level = refixed_level;
-                best_bert_id = i;
-            }
-        }//重新找一个被堆了大量货物的泊位
-        // bcenterlogger.log(nowTime, "ship{0} rechange to berth {1}", this_ship_id, best_bert_id);
+    int ship_rechange_check(int ship_id){
+        if (allships[ship_id]->status == 0)return -1; //如果船只在运输中，不换港口
+        if (allships[ship_id]->is_last_round) return -1; //如果是最后一轮，不换港口
+        if (allships[ship_id]->berthId == -1) return -1; //如果船只在虚拟点，不换港口
+        if (allberths[allships[ship_id]->berthId]->goodsNum > 0) return -1; //如果港口有货物，不换港口
 
-        for (int i = 0; i < MAX_Robot_Num; i++){
-            if (robot_choose_berth[i] == -1){ //找到没有被指引的机器人,指引他们去该泊位
-                robot_choose_berth[i] = best_bert_id;
-                sortted_bert_by_one_round_time[this_ship_id] = best_bert_id;
+        int this_berth_id = allships[ship_id]->berthId;
+        int left_capacity = allships[ship_id]->leftCapacity();
+        for (int i = 0; i < MAX_Berth_Num; i++){
+            if (allberths[i]->goodsNum >= left_capacity && allberths[i]->goodsNum >= 10 && allberths[i]->on_way_ship == 0){ //如果港口有足够的货物，且没有船只在等待
+                bcenterlogger.log(nowTime, "ship{0} rechange to berth{1}, left_capacity: {2}, goodsNum: {3}", ship_id, i, left_capacity, allberths[i]->goodsNum);
+                return i;
             }
         }
-        allberths[best_bert_id]->on_way_ship++;
-        allberths[best_bert_id]->shipId.push_back(this_ship_id);
-        allberths[best_bert_id]->ship_wait_start_time = nowTime + 500;
-        allships[this_ship_id]->move_berth(best_bert_id);
+        return -1;
+    }
+
+    void do_ship_rechange(int bert_id, int new_bert_id){
+        if (new_bert_id == -1) return;
+        bcenterlogger.log(nowTime, "ship{0} rechange to berth{1}", allberths[bert_id]->shipId[0], new_bert_id);
+        // 用于变更港口
+        int this_ship_id = allberths[bert_id]->shipId[0];
+        allberths[bert_id]->on_way_ship--;
+        /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                    救救!我pop不出去船!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+        allberths[bert_id]->shipId.clear();
+        /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                                    救救!我pop不出去船!
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
+
+        //修改新港口状态
+        allberths[new_bert_id]->on_way_ship++;
+        allberths[new_bert_id]->shipId.push_back(this_ship_id);
+        allberths[new_bert_id]->ship_wait_start_time = nowTime + 500;
+        //发送船只到新港口
+        allships[this_ship_id]->move_berth(new_bert_id);
+        //重置港口装货状态
+        bert_load_start_times[bert_id] = MAX_TIME;
+        bert_load_finish_times[bert_id] = MAX_TIME + 1;
         if(!allberths[bert_id]->shipId.empty()){
-            // bcenterlogger.log(nowTime, "ship{0} rechange to berth{1} fail", this_ship_id, best_bert_id);
+            bcenterlogger.log(nowTime, "ship{0} rechange to berth{1} fail", this_ship_id, new_bert_id);
             for(auto i : allberths[bert_id]->shipId){
-                // bcenterlogger.log(nowTime, "ship{0} still on berth{1}", i, bert_id);
+                bcenterlogger.log(nowTime, "ship{0} still on berth{1}", i, bert_id);
+            }
+        }
+    }
+
+    void robot_change(int from_berth_id,int to_berth_id){
+        // 用于变更机器人对港口的绑定
+        for (int i = 0; i < MAX_Robot_Num; i++){
+            if (robot_choose_berth[i] == from_berth_id){
+                robot_choose_berth[i] = to_berth_id;
             }
         }
     }
@@ -496,6 +513,9 @@ private:
             //运输中，不做处理
             return;
         } else if (allships[shipId]->status == 1) {
+            // 开始装货,记录时间(只记录一次,每次发船会重置为-1)
+            if (allships[shipId]->ship_load_start_time == -1) allships[shipId]->ship_load_start_time = nowTime; 
+
             if (allships[shipId]->berthId == -1) {
                 // 送货完毕,重新找泊位
                 allships[shipId]->capacity = 0;
