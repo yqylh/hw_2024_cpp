@@ -52,18 +52,20 @@ para_input = [
 ]
 '''
 
+''' 在这里设置参数的可选项 '''
 para_input = [
-    [10], # MAX_Berth_Control_Length, 10~200, 5
+    [5, 10, 15, 40, 80, 160, 200], # MAX_Berth_Control_Length, 10~200, 5
     [1], # MAX_Berth_Merge_Length, 1~200, 5
     [0.7], # Sell_Ration,  0.5~1
-    [1, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000] # Min_Next_Berth_Value,  0~100
+    [800] # Min_Next_Berth_Value,  0~100
 ]
 
+''' 如果要进行可视化，-1是要可视化的参数 '''
 para_select_input = [
-    10,
+    -1,
     1,
     0.7,
-    -1
+    800
 ]
 
 def del_files():
@@ -211,11 +213,11 @@ def select_best_para(all_paras, all_scores):
         min_scores.append(min(score))
         max_scores.append(max(score))
     max_avg_index = avg_scores.index(max(avg_scores))
-    print(all_paras[max_avg_index], avg_scores[max_avg_index], min_scores[max_avg_index], max_scores[max_avg_index])
+    print("平均最佳:", all_paras[max_avg_index], avg_scores[max_avg_index], min_scores[max_avg_index], max_scores[max_avg_index])
     max_min_index = min_scores.index(max(min_scores))
-    print(all_paras[max_min_index], avg_scores[max_min_index], min_scores[max_min_index], max_scores[max_min_index])
+    print("最小最佳:", all_paras[max_min_index], avg_scores[max_min_index], min_scores[max_min_index], max_scores[max_min_index])
     max_max_index = max_scores.index(max(max_scores))
-    print(all_paras[max_max_index], avg_scores[max_max_index], min_scores[max_max_index], max_scores[max_max_index])
+    print("最大最佳:", all_paras[max_max_index], avg_scores[max_max_index], min_scores[max_max_index], max_scores[max_max_index])
     
 def main():
     random.seed(990321)
