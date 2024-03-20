@@ -35,7 +35,7 @@ public:
         }
         if (max_goods_id == -1) {
             TEST(fout << "ship_choose_berth error" << std::endl;)
-            throw;
+            // throw;
         }
         return max_goods_id;
     }
@@ -122,6 +122,7 @@ public:
                     // plan A
                     // if (berths[best_bert_id]->goodsNum < Min_Next_Berth_Goods) continue;
                     // plan B
+                    if (best_bert_id == -1) continue;
                     if (berths[best_bert_id]->sum_value < Min_Next_Berth_Value) continue;
                     berths[i]->shipId.clear();
                     declare_ship(best_bert_id, ship_ptr->id);
@@ -140,6 +141,7 @@ public:
             // 送货完毕,重新找泊位
             ships[shipId]->capacity = 0;
             int best_bert_id = ship_choose_berth();
+            if (best_bert_id == -1) best_bert_id = group[group_sorted_id[shipId % group_sorted_id.size()]][shipId / group_sorted_id.size()];
             declare_ship(best_bert_id, shipId);
             ships[shipId]->go_berth(best_bert_id);
             shipLogger.log(nowTime, "centre command ship{0} to berth{1}", shipId, best_bert_id);
