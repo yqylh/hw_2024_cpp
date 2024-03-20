@@ -61,11 +61,11 @@ auto programStart = high_resolution_clock::now(); // 计时器
 /**
  * 超参数
 */
-int MAX_Berth_Control_Length = 160; // 泊位控制长度,用来判断私有区域
-int MAX_Berth_Merge_Length = 80; // 泊位合并长度,用来判断是否可以合并
-int Worst_Rate = 3; // 用来筛选多差的港口不要选
-double Sell_Ration = 0.85; // 还剩多少港口空了就去卖
-int Min_Next_Berth_Goods = 10; // 还剩多少港口空了就去卖
+int MAX_Berth_Control_Length = 160; // 机器人搜索长度,用来判断私有区域, 10~200, 5
+int MAX_Berth_Merge_Length = 80; // 泊位合并长度,用来判断是否可以合并, 1~200, 5
+int Worst_Rate = 3; // 用来筛选多差的港口不要选, 1~10
+double Sell_Ration = 0.85; // 还剩多少港口空了就去卖, 0.5~1
+int Min_Next_Berth_Goods = 10; // another 港口的货物少于这个值就不去, 0~100
 int Last_Round_delay_time = 4500; // 预留给最后一轮的时间,含去 回 去
 
 Pos dir[4] = {Pos(0, 1), Pos(0, -1), Pos(-1, 0), Pos(1, 0)};
