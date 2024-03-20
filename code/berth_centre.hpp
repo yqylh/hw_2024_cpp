@@ -24,12 +24,12 @@ public:
 
     // 用于指引船只进入最佳的泊位
     int ship_choose_berth() {
-        int max_goods = 0;
-        int max_goods_id = 0;
+        int max_goods = -1;
+        int max_goods_id = -1;
         for (int i = 0; i < MAX_Berth_Num; i++) {
             if (berths[i]->shipId.empty() == false) continue;
-            if (berths[i]->goodsNum > max_goods) {
-                max_goods = berths[i]->goodsNum;
+            if (berths[i]->sum_value > 0 && berths[i]->sum_value > max_goods) {
+                max_goods = berths[i]->sum_value;
                 max_goods_id = i;
             }
         }
@@ -49,7 +49,7 @@ public:
         //     if (ret.size() != 0) return ret;
         //     else return robot_choose_berth[id];
         // } else 
-        if (nowTime + 2000 > MAX_TIME) {
+        if (nowTime + Only_Run_On_Berth_with_Ship > MAX_TIME) {
             std::vector<int> ret;
             for (int i = 0; i < MAX_Berth_Num; i++) {
                 if (berths[i]->shipId.size() != 0) ret.push_back(i);
@@ -61,9 +61,11 @@ public:
         }
     }
     // 机器人告知塔台卸货
-    void declare_robot_pull_good(int bert_id){
+    void declare_robot_pull_good(int bert_id, int item_value){
         berths[bert_id]->goodsNum++;
         tmpTotalGoods++;
+        berths[bert_id]->item_value_queue.push(item_value);
+        berths[bert_id]->sum_value += item_value;
     }
     // 船只告知塔台进入泊位
     void declare_ship(int bert_id,int ship_id){
@@ -77,6 +79,10 @@ public:
                 if (loaded_goods > berths[bert_id]->velocity) loaded_goods = berths[bert_id]->velocity;
                 ships[berths[bert_id]->shipId[0]]->capacity += loaded_goods;
                 berths[bert_id]->goodsNum -= loaded_goods;
+                while (loaded_goods--) {
+                    berths[bert_id]->sum_value -= berths[bert_id]->item_value_queue.front();
+                    berths[bert_id]->item_value_queue.pop();
+                }
             }
         }
     }
@@ -113,7 +119,10 @@ public:
                 // 但是去了之后不能超时
                 if (berths[i]->goodsNum == 0 && berths[i]->time + nowTime + 10 + 500 < MAX_TIME) {
                     int best_bert_id = ship_choose_berth();
-                    if (berths[best_bert_id]->goodsNum < Min_Next_Berth_Goods) continue;
+                    // plan A
+                    // if (berths[best_bert_id]->goodsNum < Min_Next_Berth_Goods) continue;
+                    // plan B
+                    if (berths[best_bert_id]->sum_value < Min_Next_Berth_Value) continue;
                     berths[i]->shipId.clear();
                     declare_ship(best_bert_id, ship_ptr->id);
                     ship_ptr->move_berth(best_bert_id);
@@ -258,26 +267,24 @@ public:
             }
         }
     }
-
-    // 初始化
-    void do_first_frame(std::vector<Pos> pos){
-        this->robot_pos = pos;
-        find_private_space();
-        for (int i = 0; i < MAX_Ship_Num; i++){
-            // 初始化船,每个船进度的目标是 : 排序后每个 group 的第一个泊位
-            ships[i]->go_berth(group[group_sorted_id[i % group_sorted_id.size()]][i / group_sorted_id.size()]); 
-            declare_ship(group[group_sorted_id[i % group_sorted_id.size()]][i / group_sorted_id.size()], i);
-        }
-    }
     void finish_log();
     // 每一轮都要执行的检查状态
     void call_ship_and_berth_check(){
+        // 如果是第一轮,那么就初始化船只指令
+        if (nowTime == 1) {
+            for (int i = 0; i < MAX_Ship_Num; i++){
+                // 初始化船,每个船进度的目标是 : 排序后每个 group 的第一个泊位
+                ships[i]->go_berth(group[group_sorted_id[i % group_sorted_id.size()]][i / group_sorted_id.size()]); 
+                declare_ship(group[group_sorted_id[i % group_sorted_id.size()]][i / group_sorted_id.size()], i);
+            }
+            return;
+        }
         /* 检查港口的当前容量, 如果有货物就卸货,船满了或者最后一轮就让船走*/
         normal_berth_check();
         /*检查船是否到达了虚拟点*/
         for(int i = 0; i < MAX_Ship_Num; i++) normal_ship_check(i);
         if (nowTime == 15000) finish_log();
-    }  
+    }
 };
 
 Berth_center *berth_center = new Berth_center();
@@ -286,10 +293,10 @@ Berth_center *berth_center = new Berth_center();
 void Berth_center::finish_log() {
     int leftTotal = 0;
     for (int i = 0; i < MAX_Berth_Num; i++) {
-        berthLogger.log(nowTime, "berth{},goodsNum:{}", i, berths[i]->goodsNum);
-        leftTotal += berths[i]->goodsNum;
+        berthLogger.log(nowTime, "berth{},goodsNum:{}", i, berths[i]->sum_value);
+        leftTotal += berths[i]->sum_value;
     }
     berthLogger.log(nowTime, "leftTotal:{}", leftTotal);
-    berthLogger.log(nowTime, "tmpTotalGoods:{}", tmpTotalGoods + leftTotal);
+    // berthLogger.log(nowTime, "tmpTotalGoods:{}", tmpTotalGoods + leftTotal);
 }
 #endif

@@ -18,6 +18,7 @@ struct Robot{
     int bring; // 机器人带的货物 0 表示没有货物 1 表示有货物
     int bringTimeLimit; // 机器人到达带货物的时间
     int choosed_berth_id; // 机器人选择的泊位
+    int item_value; // 机器人选择的物品的价值
 
     Direction *robotDir; // 机器人到达每个点的方向
     int lastWeak; // 上一次的弱智时间
@@ -196,6 +197,7 @@ std::deque<Pos> Robot::actionFindItem() {
 
         if (tarPath.size() > 0) {
             bringTimeLimit = targetItem->beginTime + Item_Continue_Time;
+            item_value = targetItem->value;
             unsolvedItems.erase(targetItem);
             choosed_berth_id = berth_select;
             /*
@@ -256,7 +258,7 @@ void Robot::action() {
             flowLogger.log(nowTime, "pull {0}", id);
             bring = 0;
             if (choosed_berth_id != -1) {
-                berth_center->declare_robot_pull_good(choosed_berth_id);
+                berth_center->declare_robot_pull_good(choosed_berth_id, item_value);
             }
         }
 

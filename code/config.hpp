@@ -65,8 +65,14 @@ int MAX_Berth_Control_Length = 160; // 机器人搜索长度,用来判断私有�
 int MAX_Berth_Merge_Length = 80; // 泊位合并长度,用来判断是否可以合并, 1~200, 5
 int Worst_Rate = 3; // 用来筛选多差的港口不要选, 1~10
 double Sell_Ration = 0.85; // 还剩多少港口空了就去卖, 0.5~1
-int Min_Next_Berth_Goods = 10; // another 港口的货物少于这个值就不去, 0~100
+int Min_Next_Berth_Value = 200; // another 港口的货物价值少于这个值就不去, 0~1000
+
+// 调参效益不大的超参数
 int Last_Round_delay_time = 4500; // 预留给最后一轮的时间,含去 回 去
+int Only_Run_On_Berth_with_Ship = 1600; // 最后这些帧,只在有船的泊位上运行,
+// 暂时不要调的参数,不一定有用 | 策略已经放弃了
+int Min_Next_Berth_Goods = 10; // another 港口的货物少于这个值就不去, 0~100
+
 
 Pos dir[4] = {Pos(0, 1), Pos(0, -1), Pos(-1, 0), Pos(1, 0)};
 // 0 表示右移一格 1 表示左移一格 2 表示上移一格 3 表示下移一格

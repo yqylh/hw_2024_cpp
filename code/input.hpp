@@ -45,11 +45,11 @@ void inputMap(){
     shipNum = MAX_Ship_Num - 1;
     solveBerth();
     solveRobot();
-    // solveAllGrid();
     { // 因为要实现 header_only 的特性, center 和 robot不能互相引用, 所以只能在这里初始化
         std::vector<Pos> robot_pos;
         for (int i = 0; i <= robotNum; i++) robot_pos.push_back(robots[i]->pos);
-        berth_center->do_first_frame(robot_pos);
+        berth_center->robot_pos = robot_pos;
+        berth_center->find_private_space();
     }
     srand(time(0));
     puts("OK");
@@ -84,10 +84,6 @@ bool inputFrame() {
 void solveFrame() {
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
 
-    berth_center->call_ship_and_berth_check();
-    
-    bcenterlogger.log(nowTime, "ship_and_berth_check_ok");
-
     for (int i = 0; i <= robotNum; i++) robots[i]->action();
     // 碰撞检测
     solveCollision();
@@ -96,6 +92,10 @@ void solveFrame() {
     pathLogger.log(nowTime, "allPath.size()={0}", allPath.size());
     // 时间向前推进
     if (allPath.size() > 0) allPath.pop_front();
+
+    berth_center->call_ship_and_berth_check();    
+    bcenterlogger.log(nowTime, "ship_and_berth_check_ok");
+
     
     puts("OK");
     fflush(stdout);

@@ -21,6 +21,8 @@ struct Berth {
     int on_way_robot;
     int waitting_ship;
     int ship_wait_start_time;
+    std::queue<int> item_value_queue;
+    int sum_value;
     Berth(int id, int x, int y, int time, int velocity) : id(id), time(time), velocity(velocity) {
         this->pos = Pos(x, y);
         goodsNum = 0;
@@ -29,6 +31,8 @@ struct Berth {
         waitting_ship = 0;
         ship_wait_start_time =0;
         this->shipId.clear();
+        this->item_value_queue = std::queue<int>();
+        this->sum_value = 0;
     }
     void findUsePos() {
         usePos.clear();
