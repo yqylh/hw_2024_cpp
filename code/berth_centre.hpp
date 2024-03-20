@@ -459,7 +459,7 @@ private:
             bert_load_finish_times[bert_id] = 1 + nowTime;
             bert_load_start_times[bert_id] = nowTime;
         }else{
-            bert_ship_goods_check(bert_id);
+            // bert_ship_goods_check(bert_id); //每帧已经检查了,这就不用了吧
             bert_load_finish_times[bert_id] += 1;
         }
         // bcenterlogger.log(nowTime, "pulled_good:berths {}->goodsNum: {}", bert_id,allberths[bert_id]->goodsNum);
