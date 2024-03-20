@@ -100,19 +100,20 @@ public:
                     continue;
                 }
                 // tricks 额外的一种去虚拟点的情况
-                // line4: 如果还剩一轮的时间 也就是现在送一次,下一轮送一次,中间还去了一趟别的地方, 并且装了MAX_Capacity的货物 
-                if (ship_ptr->isLastRound == false && berths[i]->time * 2 + nowTime + 500 * 4 == MAX_TIME) {
-                    berths[i]->shipId.clear();
-                    ship_ptr->go();
-                    ship_ptr->isLastRound = true;
-                    continue;
-                }
+                // 什么垃圾代码 狗都不用
+                // // line4: 如果还剩一轮的时间 也就是现在送一次,下一轮送一次,中间还去了一趟别的地方, 并且装了MAX_Capacity的货物 
+                // if (ship_ptr->isLastRound == false && nowTime + Last_Round_delay_time >= MAX_TIME) {
+                //     berths[i]->shipId.clear();
+                //     ship_ptr->go();
+                //     ship_ptr->isLastRound = true;
+                //     continue;
+                // }
                 // 让船去别的地方的情况
                 // 港口没货了,并且船没装满Sell_Ration
                 // 但是去了之后不能超时
                 if (berths[i]->goodsNum == 0 && berths[i]->time + nowTime + 10 + 500 < MAX_TIME) {
                     int best_bert_id = ship_choose_berth();
-                    if (berths[best_bert_id]->goodsNum == 0) continue;
+                    if (berths[best_bert_id]->goodsNum < Min_Next_Berth_Goods) continue;
                     berths[i]->shipId.clear();
                     declare_ship(best_bert_id, ship_ptr->id);
                     ship_ptr->move_berth(best_bert_id);
