@@ -81,6 +81,13 @@ class MapEditor:
             Button(self.screen_width - 190, 120, 180, 40, "单击"),
             Button(self.screen_width - 190, 170, 180, 40, "保存"),
         ]
+        self.buttons2 = [
+            Button(self.screen_width - 190, 450, 180, 40, "障碍物"),
+            Button(self.screen_width - 190, 500, 180, 40, "陆地"),
+            Button(self.screen_width - 190, 550, 180, 40, "海洋"),
+            Button(self.screen_width - 190, 600, 180, 40, "泊位"),
+            Button(self.screen_width - 190, 650, 180, 40, "机器人"),
+        ]
         self. txts_pos = (self.screen_width - 190, 170 + 40)
         self.log_messages = []
 
@@ -129,19 +136,25 @@ class MapEditor:
                 elif button.text == "保存":
                     save_map()
                 return
+        for button in self.buttons2:
+            if button.is_clicked(event):
+                self.now_type = self.buttons2.index(button)
+                self.now_color = color_map[self.now_type]
+                return
 
         x, y = event.pos[0] // self.cell_size, event.pos[1] // self.cell_size
         if event.button == 1:  # Left click
             if self.choose_type == 0:
-                self.update_cell(x, y, self.now_color)
-                Result.result[x][y] = self.now_type
+                if x < self.map_width and y < self.map_height:
+                    self.update_cell(x, y, self.now_color)
+                    Result.result[x][y] = self.now_type
                 # Result.update(x, y, self.now_type)
-            elif self.choose_type == 2:
-                if self.start_x != -1 and self.start_y != -1:
-                    self.draw_box(self.start_x, self.start_y, x, y)
-                    self.start_x, self.start_y = -1, -1
-                else:
-                    self.start_x, self.start_y = x, y
+            # elif self.choose_type == 2:
+            #     if self.start_x != -1 and self.start_y != -1:
+            #         self.draw_box(self.start_x, self.start_y, x, y)
+            #         self.start_x, self.start_y = -1, -1
+            #     else:
+            #         self.start_x, self.start_y = x, y
                 
         elif event.button == 3:  # Right click
             self.update_cell(x, y, BLOCK_COLOR)
@@ -152,8 +165,9 @@ class MapEditor:
         Result.update_last_result()
         for i in range(min(start_x, end_x), max(start_x, end_x)):
             for j in range(min(start_y, end_y), max(start_y, end_y)):
-                self.update_cell(i, j, self.now_color)
-                Result.result[i][j] = self.now_type
+                if 0 <= i < self.map_width and 0 <= j < self.map_height:
+                    self.update_cell(i, j, self.now_color)
+                    Result.result[i][j] = self.now_type
 
     def draw_line(self, start_x, start_y, end_x, end_y):
         Result.update_last_result()
@@ -199,6 +213,10 @@ class MapEditor:
 
     def handle_mouse_down_2(self, pos):
         self.mouse_down = True
+        pos_t0 = pos[0] // self.cell_size
+        pos_t1 = pos[1] // self.cell_size
+        # print(pos_t0, pos_t1,pos[0], pos[1])
+        pos = (pos_t0 * self.cell_size, pos_t1 * self.cell_size)
         self.start_pos = pos
 
     def handle_mouse_up_2(self, pos):
@@ -227,6 +245,23 @@ class MapEditor:
                     surface.fill((255, 255, 255, 128))  # 半透明白色
                     self.screen.blit(surface, rect.topleft)
 
+    def draw_button(self):
+        for button in self.buttons:
+            button.color = (200, 200, 200)
+            if button.text == "直线" and self.choose_type == 1:
+                button.color = (0, 255, 0)
+            elif button.text == "框选" and self.choose_type == 2:
+                button.color = (0, 255, 0)
+            elif button.text == "单击" and self.choose_type == 0:
+                button.color = (0, 255, 0)
+            button.draw(self.screen)
+        for button in self.buttons2:
+            button.color = (200, 200, 200)
+            if self.now_type == self.buttons2.index(button):
+                button.color = (0, 255, 0)
+            button.draw(self.screen)
+
+
     def run(self):
         running = True
         while running:
@@ -245,8 +280,7 @@ class MapEditor:
 
             self.screen.fill(self.rgb_to_fill(BLOCK_COLOR))  # 用背景色填充屏幕
             self.draw_grid()
-            for button in self.buttons:
-                button.draw(self.screen)
+            self.draw_button()
             self.draw_log(help)
             self.draw_selection_box()
             pygame.display.flip()
