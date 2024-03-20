@@ -1,6 +1,7 @@
 import argparse
 from audioop import avg
 import os
+import sys
 import pickle
 import random
 import shutil
@@ -9,9 +10,18 @@ from time import sleep
 import matplotlib.pyplot as plt
 from tqdm import trange
 
-from multiprocessing import Pool
+from multiprocessing import Pool, process
 from functools import partial
 
+if sys.platform.startswith('linux'):
+    print("System: Linux")
+    system = 'linux'
+elif sys.platform.startswith('win'):
+    print("System: Windows")
+    system = 'win'
+elif sys.platform.startswith('darwin'):
+    print("System: Mac")
+    system = 'mac'
 
 '''
 160
@@ -66,11 +76,25 @@ para_select_input = [
     -1
 ]
 
-def del_files():
+def del_files_win():
     if os.path.isfile('main.exe'):
         remove_file('main.exe')
     if os.path.exists('replay'):
         os.rmdir('replay')
+
+def del_files_linux():
+    if os.path.isfile('main'):
+        os.remove('main')
+    if os.path.exists('main.dSYM'):
+        shutil.rmtree('main.dSYM')
+    if os.path.exists('replay'):
+        os.rmdir('replay')
+
+def del_files():
+    if system == 'win':
+        del_files_win()
+    else:
+        del_files_linux()
 
 def setup_args():
     parser = argparse.ArgumentParser(description='Upload a file to the server')
@@ -103,12 +127,12 @@ def remove_file(file_path, attempts=10):
 
 def run_one(args, random_seed):
     Win_Cmd = f'%CD%/../judge/PreliminaryJudge.exe -s {str(random_seed)} -m ../{args.map_folder}/{args.map} -r ./{args.map}{str(random_seed)}%Y-%m-%d.%H.%M.%S.rep ./main'
+    Linux_Cmd = f'../judge/PreliminaryJudge -s {str(random_seed)} -m ../{args.map_folder}/{args.map} -r ./{args.map}{str(random_seed)}%Y-%m-%d.%H.%M.%S.rep ./main'
 
-    if not os.path.exists('../log'):
-        os.makedirs('../log')
-    
-    process = subprocess.Popen(Win_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    process = subprocess.Popen(Win_Cmd if system == 'win' else Linux_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
+
 
     for files in os.listdir('./replay'):
         if files.endswith('.rep'):
@@ -145,8 +169,9 @@ def run_one_all_seed(args, now_para, seed_list):
         score_list.append(res)
     '''
 
+    process_max = min(len(seed_list), 48)
 
-    with Pool(processes=6) as pool:
+    with Pool(processes=process_max) as pool:
         func = partial(run_one, args)
         score_list = pool.map(func, seed_list)
     return score_list
@@ -198,7 +223,7 @@ def draw_one_param(para_select, all_paras, all_scores):
     plt.plot(selected_para_values, avg_scores, label='avg')
     plt.legend()
     plt.savefig('tune.png')
-    plt.show()
+    # plt.show()
     plt.close()
 
 def select_best_para(all_paras, all_scores):
@@ -228,6 +253,9 @@ def main():
     if not os.path.exists("../judge/replay"):
         os.makedirs("../judge/replay")
         print("Created replay folder")
+        
+    if not os.path.exists('../log'):
+        os.makedirs('../log')
     
     try:
         os.chdir("../code")
