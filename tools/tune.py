@@ -1,6 +1,7 @@
 import argparse
 from audioop import avg
 import os
+import sys
 import pickle
 import random
 import shutil
@@ -12,7 +13,13 @@ from tqdm import trange
 from multiprocessing import Pool
 from functools import partial
 
-
+if sys.platform.startswith('linux'):
+    system = 'linux'
+elif sys.platform.startswith('win'):
+    system = 'win'
+elif sys.platform.startswith('darwin'):
+    system = 'mac'
+    
 '''
 160
 80
@@ -54,25 +61,39 @@ para_input = [
 
 ''' 在这里设置参数的可选项 '''
 para_input = [
-    [5, 10, 15, 40, 80, 160, 200], # MAX_Berth_Control_Length, 10~200, 5
+    [40], # MAX_Berth_Control_Length, 10~200, 5
     [1], # MAX_Berth_Merge_Length, 1~200, 5
     [0.7], # Sell_Ration,  0.5~1
-    [800] # Min_Next_Berth_Value,  0~100
+    [0, 100, 200, 2900, 3000, 3100] # Min_Next_Berth_Value,  0~100
 ]
 
 ''' 如果要进行可视化，-1是要可视化的参数 '''
 para_select_input = [
-    -1,
+    40,
     1,
     0.7,
-    800
+    -1
 ]
 
-def del_files():
+def del_files_win():
     if os.path.isfile('main.exe'):
         remove_file('main.exe')
     if os.path.exists('replay'):
         os.rmdir('replay')
+
+def del_files_linux():
+    if os.path.isfile('main'):
+        os.remove('main')
+    if os.path.exists('main.dSYM'):
+        shutil.rmtree('main.dSYM')
+    if os.path.exists('replay'):
+        os.rmdir('replay')
+
+def del_files():
+    if system == 'win':
+        del_files_win()
+    else:
+        del_files_linux()
 
 def setup_args():
     parser = argparse.ArgumentParser(description='Upload a file to the server')
@@ -105,7 +126,8 @@ def remove_file(file_path, attempts=10):
 
 def run_one(args, random_seed):
     Win_Cmd = f'%CD%/../judge/PreliminaryJudge.exe -s {str(random_seed)} -m ../{args.map_folder}/{args.map} -r ./{args.map}{str(random_seed)}%Y-%m-%d.%H.%M.%S.rep ./main'
-
+    Linux_Cmd = f'../judge/PreliminaryJudge -s {str(random_seed)} -m ../{args.map_folder}/{args.map} -r ./{args.map}{str(random_seed)}%Y-%m-%d.%H.%M.%S.rep ./main'
+    
     if not os.path.exists('../log'):
         os.makedirs('../log')
     
