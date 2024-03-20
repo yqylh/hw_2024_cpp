@@ -36,8 +36,7 @@ public:
                 leftTotal += allberths[i]->goodsNum;
             }
             berthLogger.log(nowTime, "leftTotal:{}", leftTotal);
-            tmpTotalGoods += leftTotal;
-            berthLogger.log(nowTime, "tmpTotalGoods:{}", tmpTotalGoods);
+            berthLogger.log(nowTime, "tmpTotalGoods:{}", tmpTotalGoods + leftTotal);
         }
     }
 
