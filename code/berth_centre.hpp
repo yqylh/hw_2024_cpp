@@ -354,32 +354,35 @@ private:
 
     int bert_ship_goods_check(int bert_id){
         //检查泊位和船只状态，返回值为泊位剩余容量
-        if (!allberths[bert_id]->shipId.empty()) if (allships[allberths[bert_id]->shipId[0]]->status == 1){
-            //有船,检查船的状态
-            if (bert_load_start_times[bert_id] == MAX_TIME){
-                bert_load_start_times[bert_id] = nowTime;
-                bert_load_finish_times[bert_id] = nowTime + allberths[bert_id]->goodsNum / bert_velocitys[bert_id] + 1;
-            }
-            if (allberths[bert_id]->goodsNum > 0){
-                allberths[bert_id]->ship_wait_start_time = nowTime;
-                if (bert_load_finish_times[bert_id] < nowTime){
-                    allships[allberths[bert_id]->shipId[0]]->capacity += allberths[bert_id]->goodsNum;
-                    allberths[bert_id]->goodsNum = 0;
-                    bert_load_start_times[bert_id] = 0;
+        // 如果港口非空
+        if (!allberths[bert_id]->shipId.empty()) {
+            // 如果船在港口，可以装卸货，或者船在虚拟点，那就取队列最前端的船
+            if (allships[allberths[bert_id]->shipId[0]]->status == 1){
+                // 
+                if (bert_load_start_times[bert_id] == MAX_TIME){
+                    bert_load_start_times[bert_id] = nowTime;
+                    bert_load_finish_times[bert_id] = nowTime + allberths[bert_id]->goodsNum / bert_velocitys[bert_id] + 1;
                 }
-                else{
-                    int loaded_goods =  (nowTime - bert_load_start_times[bert_id]) * bert_velocitys[bert_id];
-                    if (loaded_goods > allberths[bert_id]->goodsNum){
-                        loaded_goods = allberths[bert_id]->goodsNum;
+                if (allberths[bert_id]->goodsNum > 0){
+                    allberths[bert_id]->ship_wait_start_time = nowTime;
+                    if (bert_load_finish_times[bert_id] < nowTime){
+                        allships[allberths[bert_id]->shipId[0]]->capacity += allberths[bert_id]->goodsNum;
+                        allberths[bert_id]->goodsNum = 0;
+                        bert_load_start_times[bert_id] = 0;
                     }
-                    allships[allberths[bert_id]->shipId[0]]->capacity += loaded_goods;
-                    allberths[bert_id]->goodsNum -= loaded_goods;
-                    // bcenterlogger.log(nowTime, "loaded_goods: {}, remaining goods: {}", loaded_goods, allberths[bert_id]->goodsNum);
-                    bert_load_start_times[bert_id] = bert_load_start_times[bert_id] + loaded_goods / bert_velocitys[bert_id];
+                    else{
+                        int loaded_goods =  (nowTime - bert_load_start_times[bert_id]) * bert_velocitys[bert_id];
+                        if (loaded_goods > allberths[bert_id]->goodsNum){
+                            loaded_goods = allberths[bert_id]->goodsNum;
+                        }
+                        allships[allberths[bert_id]->shipId[0]]->capacity += loaded_goods;
+                        allberths[bert_id]->goodsNum -= loaded_goods;
+                        // bcenterlogger.log(nowTime, "loaded_goods: {}, remaining goods: {}", loaded_goods, allberths[bert_id]->goodsNum);
+                        bert_load_start_times[bert_id] = bert_load_start_times[bert_id] + loaded_goods / bert_velocitys[bert_id];
+                    }
+                } else if (allberths[bert_id]->on_way_robot < 0) {
+                    // bcenterlogger.log(nowTime, "warning : goodsNum: {0}", allberths[bert_id]->goodsNum);
                 }
-            }
-            else if (allberths[bert_id]->on_way_robot < 0){
-                // bcenterlogger.log(nowTime, "warning : goodsNum: {0}", allberths[bert_id]->goodsNum);
             }
         }
         return MAX_Capacity - allberths[bert_id]->goodsNum;
