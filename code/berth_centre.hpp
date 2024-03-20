@@ -151,7 +151,7 @@ public:
             for (int j = i + 1; j < MAX_Berth_Num; j++) {
                 if (is_grouped[j] != -1) continue;
                 // 如果两个泊位之间的距离小于 MAX_Berth_Control_Length / 2,那么就是一个组
-                if (berths[i]->disWithTimeBerth[berths[j]->pos.x][berths[j]->pos.y] < MAX_Berth_Control_Length / 2) {
+                if (berths[i]->disWithTimeBerth[berths[j]->pos.x][berths[j]->pos.y] < MAX_Berth_Merge_Length) {
                     group[i].push_back(j);
                     is_grouped[j] = i;
                 }
@@ -215,7 +215,7 @@ public:
         std::vector<std::vector<int> > group_can_reach_robot(MAX_Berth_Num, std::vector<int>());
         bool robot_selected[MAX_Robot_Num] = {0};
         bool need_select_worst = false;
-        while (1) {
+        while (true) {
             bool flag = false;
             // 按照优先级,每个组选择一个最近的机器人
             for (auto & i : group_sorted_id) {

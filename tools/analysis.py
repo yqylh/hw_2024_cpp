@@ -81,8 +81,12 @@ def analyze_goods_distribution(file_path):
     with open(file_path, 'r') as file:
         for line in file:
             # target is like 123:tmpTotalGoods:456, what we need is 456
-            match = re.search(r'tmpTotalGoods:(\d+)', line)
-            if match:
-                goods = int(match.group(1))
+            matchTotal = re.search(r'tmpTotalGoods:(\d+)', line)
+            if matchTotal:
+                goods = int(matchTotal.group(1))
                 print("货物总量", goods)
+            matchLeft = re.search(r'leftTotal:(\d+)', line)
+            if matchLeft:
+                left = int(matchLeft.group(1))
+                print("剩余货物", left)
 

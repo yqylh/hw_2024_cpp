@@ -62,6 +62,7 @@ auto programStart = high_resolution_clock::now(); // 计时器
  * 超参数
 */
 int MAX_Berth_Control_Length = 160; // 泊位控制长度,用来判断私有区域
+int MAX_Berth_Merge_Length = 80; // 泊位合并长度,用来判断是否可以合并
 int Worst_Rate = 3; // 用来筛选多差的港口不要选
 double Sell_Ration = 0.85; // 还剩多少港口空了就去卖
 int Min_Next_Berth_Goods = 10; // 还剩多少港口空了就去卖
