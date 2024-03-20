@@ -124,7 +124,7 @@ private:
 
     int bert_velocitys[MAX_Berth_Num];
     int bert_load_start_times[MAX_Berth_Num];
-    int bert_load_finish_times[MAX_Berth_Num]; //运输到虚拟点的剩余时间
+    int bert_load_finish_times[MAX_Berth_Num]; // 运输到虚拟点的剩余时间
     int bert_times[MAX_Berth_Num]; //运输到虚拟点的时间
     int bert_fix_times[MAX_Berth_Num]; //运输到虚拟点的 “修正时间”（即运输到虚拟点的时间+船只装货时间）
     int robot_choose_berth[MAX_Robot_Num]; //机器人选择的泊位
@@ -351,30 +351,37 @@ private:
         return sortted_bert_by_one_round_time[shipId];
     }
 
-    int bert_ship_goods_check(int bert_id){
+    int bert_ship_goods_check(int bert_id) {
         //检查泊位和船只状态，返回值为泊位剩余容量
         // 如果港口非空
         if (!allberths[bert_id]->shipId.empty()) {
-            // 如果船在港口，可以装卸货，或者船在虚拟点，那就取队列最前端的船
-            if (allships[allberths[bert_id]->shipId[0]]->status == 1){
-                // 
-                if (bert_load_start_times[bert_id] == MAX_TIME){
+            // 如果船在港口，可以装卸货（或者船在虚拟点，但是因为是从港口取得船，所以一定在港口），取队列最前端的船
+            if (allships[allberths[bert_id]->shipId[0]]->status == 1) {
+                // 啊？这是要判断啥，start_times为啥会等于15000？哦，15000只是个特殊标记，表示还没船？应该新搞一个标识，比如NOT_START=-1这样的
+                if (bert_load_start_times[bert_id] == MAX_TIME) {
                     bert_load_start_times[bert_id] = nowTime;
                     bert_load_finish_times[bert_id] = nowTime + allberths[bert_id]->goodsNum / bert_velocitys[bert_id] + 1;
                 }
-                if (allberths[bert_id]->goodsNum > 0){
+                // 如果港口有货物
+                if (allberths[bert_id]->goodsNum > 0) {
                     allberths[bert_id]->ship_wait_start_time = nowTime;
-                    if (bert_load_finish_times[bert_id] < nowTime){
+                    // 还没到时间
+                    if (bert_load_finish_times[bert_id] < nowTime) {
                         allships[allberths[bert_id]->shipId[0]]->capacity += allberths[bert_id]->goodsNum;
                         allberths[bert_id]->goodsNum = 0;
                         bert_load_start_times[bert_id] = 0;
-                    }
-                    else{
+                    } else {
+                        // 到时间了
+                        // 预估装载货物，等下，这个东西是说，一直在装货物的情况下，一共装了多少货物？
                         int loaded_goods =  (nowTime - bert_load_start_times[bert_id]) * bert_velocitys[bert_id];
+                        // 如果预测值大于实际值，那么取实际值，那为什么不直接取实际值？
+                        // 哦，是不是因为两个都是预估值，所以取小的那一个？
                         if (loaded_goods > allberths[bert_id]->goodsNum){
                             loaded_goods = allberths[bert_id]->goodsNum;
                         }
+                        // 船只装载货物
                         allships[allberths[bert_id]->shipId[0]]->capacity += loaded_goods;
+                        // 港口货物减少
                         allberths[bert_id]->goodsNum -= loaded_goods;
                         // bcenterlogger.log(nowTime, "loaded_goods: {}, remaining goods: {}", loaded_goods, allberths[bert_id]->goodsNum);
                         bert_load_start_times[bert_id] = bert_load_start_times[bert_id] + loaded_goods / bert_velocitys[bert_id];
