@@ -7,7 +7,7 @@ int main() {
     fin >> MAX_Berth_Control_Length;
     fin >> MAX_Berth_Merge_Length;
     fin >> Sell_Ration;
-    fin >> Min_Next_Berth_Goods;
+    fin >> Min_Next_Berth_Value;
 #endif
     inputMap();
     while (1) {

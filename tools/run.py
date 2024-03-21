@@ -70,12 +70,13 @@ def Do_cmd(args):
         res = win_cmd(args)
     else:
         res = linux_cmd(args)
-    file_path = '../log/judger_output.txt'
-    analyze_judger_output_v3(file_path)
-    file_path = '../log/path_log.txt'
-    analyze_time_distribution(file_path)
-    file_path = '../log/berth_log.txt'
-    analyze_goods_distribution(file_path)
+    if args.debug:
+        file_path = '../log/judger_output.txt'
+        analyze_judger_output_v3(file_path)
+        file_path = '../log/path_log.txt'
+        analyze_time_distribution(file_path)
+        file_path = '../log/berth_log.txt'
+        analyze_goods_distribution(file_path)
     print('=====================nextMap=====================')
     
     return res
@@ -102,6 +103,7 @@ def win_cmd(args):
     # check if '../log' exists
     if not os.path.exists('../log'):
         os.makedirs('../log')
+        
     
     if args.stdout:
         os.system(Win_Cmd)
