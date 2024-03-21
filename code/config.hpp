@@ -59,13 +59,19 @@ auto programStart = high_resolution_clock::now(); // 计时器
 
 
 /**
- * 超参数
+ * 超参数  160 80 0.85 200 是一组经典参数,适合大部分地图能跑一个不错的成绩
+ * 孤军奋战: 40 1 0.7 800
+ * 全员一锅粥: 40 500 0.7 800
+ * MAX_Berth_Control_Length的建议参数 40 左右
+ * MAX_Berth_Merge_Length的建议参数 1 / 40 / 80
+ * Sell_Ration的建议参数 0.7 左右
+ * Min_Next_Berth_Value的建议参数 0, 200, 800, 1000
 */
 int MAX_Berth_Control_Length = 160; // 机器人搜索长度,用来判断私有区域, 10~200, 5
 int MAX_Berth_Merge_Length = 80; // 泊位合并长度,用来判断是否可以合并, 1~200, 5
 int Worst_Rate = 3; // 用来筛选多差的港口不要选, 1~10
-double Sell_Ration = 0.85; // 还剩多少港口空了就去卖, 0.5~1
-int Min_Next_Berth_Value = 200; // another 港口的货物价值少于这个值就不去, 0~1000
+double Sell_Ration = 0.7; // 还剩多少港口空了就去卖, 0.5~1
+int Min_Next_Berth_Value = 800; // another 港口的货物价值少于这个值就不去, 0~1000
 
 // 调参效益不大的超参数
 int Last_Round_delay_time = 4500; // 预留给最后一轮的时间,含去 回 去
