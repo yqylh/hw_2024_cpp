@@ -231,7 +231,7 @@ public:
             // 按照优先级,每个组选择一个最近的机器人
             for (auto & i : group_sorted_id) {
                 // 如果这个组的评分*3小于最好的组的评分,那么就不考虑这个组
-                // if (berth_onwer_space[i].size() / avg_onwer_space_length[i] * Worst_Rate < berth_onwer_space[group_sorted_id.front()].size() / avg_onwer_space_length[group_sorted_id.front()] && need_select_worst == false) continue;
+                if (berth_onwer_space[i].size() / avg_onwer_space_length[i] * Worst_Rate < berth_onwer_space[group_sorted_id.front()].size() / avg_onwer_space_length[group_sorted_id.front()] && need_select_worst == false) continue;
                 int min_dis = INT_MAX;
                 int min_robot_id = -1;
                 for (int robot_id = 0; robot_id < MAX_Robot_Num; robot_id++) {
