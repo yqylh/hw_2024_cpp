@@ -18,13 +18,11 @@ def setup_args():
     config = {}
     parser = argparse.ArgumentParser(description='Upload a file to the server')
     parser.add_argument('--stdout', '-s', nargs='?',type=str,default="1", help='File name to upload')
-    parser.add_argument('--file_name', '-f', nargs='?',type=str,default=None, help='File name to upload')
     parser.add_argument('--debug', '-d', nargs='?',type=str,default="1", help='Destination on the server')
     parser.add_argument('--map', '-m', nargs='?',type=str,default='map1.txt', help='Map to use')
-    parser.add_argument('--random_seed', nargs='?',type=int,default=123, help='Random seed to use')
-    parser.add_argument('--map_folder', nargs='?',type=str,default="allMaps", help='Random seed to use')
+    parser.add_argument('--random_seed', '-r', nargs='?',type=int,default=123, help='Random seed to use')
+    parser.add_argument('--map_folder', '-f', nargs='?',type=str,default="allMaps", help='Random seed to use')
     args = parser.parse_args()
-    config['file_name'] = args.file_name
     config['debug'] = (args.debug == 'True' or args.debug == 'true' or args.debug == '1')
     config['map'] = args.map
     config['random_seed'] = args.random_seed
