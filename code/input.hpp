@@ -51,6 +51,7 @@ void inputMap(){
         Sell_Ration = 0.7; // 还剩多少港口空了就去卖, 0.5~1
         Min_Next_Berth_Value = 1300; // another 港口的货物价值少于这个值就不去, 0~1000
         Only_Run_On_Berth_with_Ship = 3000; // 最后这些帧,只在有船的泊位上运行,
+        lastRoundRuningTime = 1000; // 估计的最后一轮的运行时间
     } else if (robots[0]->pos == Pos(49, 40)) {
         TEST(fout << "map2" << std::endl;)
         // map2 普通图
@@ -60,6 +61,7 @@ void inputMap(){
         Sell_Ration = 0.7; // 还剩多少港口空了就去卖, 0.5~1
         Min_Next_Berth_Value = 800; // another 港口的货物价值少于这个值就不去, 0~1000
         Only_Run_On_Berth_with_Ship = 1600; // 最后这些帧,只在有船的泊位上运行,
+        lastRoundRuningTime = 1000; // 估计的最后一轮的运行时间
     } else {
         // 最后一张地图
         MAX_Berth_Control_Length = 160; // 机器人搜索长度,用来判断私有区域, 10~200, 5
@@ -68,6 +70,7 @@ void inputMap(){
         Sell_Ration = 0.7; // 还剩多少港口空了就去卖, 0.5~1
         Min_Next_Berth_Value = 800; // another 港口的货物价值少于这个值就不去, 0~1000
         Only_Run_On_Berth_with_Ship = 1600; // 最后这些帧,只在有船的泊位上运行,
+        lastRoundRuningTime = 1000; // 估计的最后一轮的运行时间
     }
     shipNum = MAX_Ship_Num - 1;
     solveBerth();
