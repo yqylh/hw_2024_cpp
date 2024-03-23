@@ -1,1 +1,1 @@
-python run.py --debug True --map map6.txt --random_seed 123 --stdout 0
+python run.py --debug True --map map1.txt --random_seed 678 --stdout 0

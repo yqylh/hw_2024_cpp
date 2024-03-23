@@ -74,7 +74,7 @@ int Worst_Rate = 3; // 用来筛选多差的港口不要选, 1~10
 double Sell_Ration = 0.7; // 还剩多少港口空了就去卖, 0.5~1
 int Min_Next_Berth_Value = 800; // another 港口的货物价值少于这个值就不去, 0~1000
 int Only_Run_On_Berth_with_Ship = 1600; // 最后这些帧,只在有船的泊位上运行,
-
+int lastRoundRuningTime = 1000; // 估计的最后一轮的运行时间
 
 // 暂时不要调的参数,不一定有用 | 策略已经放弃了
 int Min_Next_Berth_Goods = 10; // another 港口的货物少于这个值就不去, 0~100

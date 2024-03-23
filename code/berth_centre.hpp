@@ -111,7 +111,7 @@ public:
                 // line3: 如果港口没货物了, 并且船装满了百分之 ratio
                 if (   ship_ptr->leftCapacity() == 0
                     || berths[i]->time + nowTime + 2 > MAX_TIME
-                    || (berths[i]->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration && nowTime + berths[i]->time * 2 + 600 < MAX_TIME && !LastGame)
+                    || (berths[i]->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration && nowTime + berths[i]->time * 2 + lastRoundRuningTime < MAX_TIME && !LastGame)
                 ) {
                     berths[i]->shipId.clear();
                     ship_ptr->go();
