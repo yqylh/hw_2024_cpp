@@ -64,13 +64,13 @@ void inputMap(){
         lastRoundRuningTime = 700; // 估计的最后一轮的运行时间
     } else {
         // 最后一张地图
-        MAX_Berth_Control_Length = 160; // 机器人搜索长度,用来判断私有区域, 10~200, 5
-        MAX_Berth_Merge_Length = 80; // 泊位合并长度,用来判断是否可以合并, 1~200, 5
+        MAX_Berth_Control_Length = 150; // 机器人搜索长度,用来判断私有区域, 10~200, 5
+        MAX_Berth_Merge_Length = 16; // 泊位合并长度,用来判断是否可以合并, 1~200, 5
         Worst_Rate = 3; // 用来筛选多差的港口不要选, 1~10
         Sell_Ration = 0.7; // 还剩多少港口空了就去卖, 0.5~1
-        Min_Next_Berth_Value = 800; // another 港口的货物价值少于这个值就不去, 0~1000
-        Only_Run_On_Berth_with_Ship = 1600; // 最后这些帧,只在有船的泊位上运行,
-        lastRoundRuningTime = 1000; // 估计的最后一轮的运行时间
+        Min_Next_Berth_Value = 1700; // another 港口的货物价值少于这个值就不去, 0~1000
+        Only_Run_On_Berth_with_Ship = 2000; // 最后这些帧,只在有船的泊位上运行,
+        lastRoundRuningTime = 600; // 估计的最后一轮的运行时间
     }
     shipNum = MAX_Ship_Num - 1;
     solveBerth();
