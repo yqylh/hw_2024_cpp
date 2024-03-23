@@ -51,6 +51,7 @@ int shipNum = -1; // 当前船只标号,实际数量-1, 0-shipNum
 int money = 0; // 当前金钱
 int nowTime = 0; // 当前帧数
 bool inputFlag = true; // 是否input是否结束
+bool LastGame = false; // 是否是最后一轮
 
 /**
  * 预处理&多线程控制相关变量
