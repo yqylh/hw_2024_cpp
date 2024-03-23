@@ -62,17 +62,21 @@ para_input = [
 ''' 在这里设置参数的可选项 '''
 para_input = [
     [40], # MAX_Berth_Control_Length, 10~200, 5
-    [1], # MAX_Berth_Merge_Length, 1~200, 5
+    [1, 40, 80, 120], # MAX_Berth_Merge_Length, 1~200, 5
+    [3], # Worst_Rate, 1~10
     [0.7], # Sell_Ration,  0.5~1
-    [0, 100, 200, 2900, 3000, 3100] # Min_Next_Berth_Value,  0~100
+    [800], # Min_Next_Berth_Value,  0~3000
+    [1600], # Only_Run_On_Berth_with_Ship, 0~2000
 ]
 
 ''' 如果要进行可视化，-1是要可视化的参数 '''
 para_select_input = [
     40,
-    1,
+    -1,
+    3,
     0.7,
-    -1
+    800,
+    1600
 ]
 
 def del_files_win():
@@ -222,7 +226,7 @@ def draw_one_param(para_select, all_paras, all_scores):
     plt.plot(selected_para_values, avg_scores, label='avg')
     plt.legend()
     plt.savefig('tune.png')
-    plt.show()
+    # plt.show()
     plt.close()
 
 def select_best_para(all_paras, all_scores):
