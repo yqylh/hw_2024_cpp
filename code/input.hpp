@@ -42,36 +42,6 @@ void inputMap(){
     std::string line;
     while(getline(std::cin, line) && line != "OK");
     for (int i = 0; i < MAX_Ship_Num; i++) ships[i] = new Ship(i);
-    if (robots[0]->pos == Pos(9,104)) {
-        TEST(fout << "map1" << std::endl;)
-        // map1 迷宫图
-        MAX_Berth_Control_Length = 40; // 机器人搜索长度,用来判断私有区域, 10~200, 5
-        MAX_Berth_Merge_Length = 1200; // 泊位合并长度,用来判断是否可以合并, 1~200, 5
-        Worst_Rate = 3; // 用来筛选多差的港口不要选, 1~10
-        Sell_Ration = 0.68; // 还剩多少港口空了就去卖, 0.5~1
-        Min_Next_Berth_Value = 1000; // another 港口的货物价值少于这个值就不去, 0~1000
-        Only_Run_On_Berth_with_Ship = 1800; // 最后这些帧,只在有船的泊位上运行,
-        lastRoundRuningTime = 700; // 估计的最后一轮的运行时间
-    } else if (robots[0]->pos == Pos(49, 40)) {
-        TEST(fout << "map2" << std::endl;)
-        // map2 普通图
-        MAX_Berth_Control_Length = 150; // 机器人搜索长度,用来判断私有区域, 10~200, 5
-        MAX_Berth_Merge_Length = 16; // 泊位合并长度,用来判断是否可以合并, 1~200, 5
-        Worst_Rate = 3; // 用来筛选多差的港口不要选, 1~10
-        Sell_Ration = 0.8; // 还剩多少港口空了就去卖, 0.5~1
-        Min_Next_Berth_Value = 1700; // another 港口的货物价值少于这个值就不去, 0~1000
-        Only_Run_On_Berth_with_Ship = 2500; // 最后这些帧,只在有船的泊位上运行,
-        lastRoundRuningTime = 100; // 估计的最后一轮的运行时间
-    } else {
-        // 最后一张地图
-        MAX_Berth_Control_Length = 150; // 机器人搜索长度,用来判断私有区域, 10~200, 5. 160 和 200 没区别,说明非常空
-        MAX_Berth_Merge_Length = 16; // 泊位合并长度,用来判断是否可以合并, 16 和 1 成绩一样,说明最短的两个港口,相近距离也是>16. 24.8. 图很宽阔. 500全合并效果很差23.8. 50 效果也不好,说明 50 合多了或者少了. 80-23.6 更差
-        Worst_Rate = 100; // 用来筛选多差的港口不要选, 1~10. 100 有很大的进步 5 和 1 3 都很差
-        Sell_Ration = 0.7; // 还剩多少港口空了就去卖, 0.5~1. 0.65 比较差
-        Min_Next_Berth_Value = 1700; // another 港口的货物价值少于这个值就不去, 0~1000. 1000 很差 2000 很差
-        Only_Run_On_Berth_with_Ship = 2000; // 最后这些帧,只在有船的泊位上运行,
-        lastRoundRuningTime = 600; // 估计的最后一轮的运行时间 200 600 700 1000 一个分数.
-    }
     shipNum = MAX_Ship_Num - 1;
     solveBerth();
     solveRobot();

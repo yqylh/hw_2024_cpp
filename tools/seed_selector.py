@@ -22,12 +22,16 @@ elif sys.platform.startswith('darwin'):
 
 
 para_input = [
-    [160, 80, 0.85, 10],
-    [160, 1, 0.85, 10],
+    [150,16,3,0.7,1700,2000,700],
+    [150,16,3,0.76,800,1700,1000],
+    [160,80,3,0.7,800,1600,1000],
+    [150,16,3,0.7,1700,2000,500],
 ]
 score_input = [
-    200000,
-    210000,
+    255136,
+    240418,
+    250954,
+    241682,
 ]
 
 def del_files_win():
@@ -86,7 +90,7 @@ def run_one(args, random_seed):
     if not os.path.exists('../log'):
         os.makedirs('../log')
     
-    process = subprocess.Popen(Win_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(Linux_Cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
 
     for files in os.listdir('./replay'):
@@ -170,7 +174,7 @@ def main():
     
     try:
         os.chdir("../code")
-        cmd = "g++ main.cpp -o main -std=c++17 -O2 -DTUNE"
+        cmd = "g++-13 main.cpp -o main -std=c++17 -O2 -DTUNE"
 
         if os.system(cmd) == 0:
             print("Compile success")
@@ -182,7 +186,7 @@ def main():
         print(e)
         return
 
-    seed_list = [random.randint(0, 65535) for i in range(args.test_times)]
+    seed_list = [random.randint(0, 32767) for i in range(args.test_times)]
     all_paras, all_scores = result_with_seed(args, para_input, seed_list)
         
     tune_res_file_pickle = 'seed_res.pkl'
