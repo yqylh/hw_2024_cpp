@@ -1,1 +1,1 @@
-python run.py --map 'all' --random_seed 678 --stdout 0  --debug False
+python run.py --map 'all' --random_seed 10 --stdout 0  --debug False

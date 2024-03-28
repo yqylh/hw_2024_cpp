@@ -10,6 +10,7 @@ int main() {
     fin >> Sell_Ration;
     fin >> Min_Next_Berth_Value;
     fin >> Only_Run_On_Berth_with_Ship;
+    fin >> lastRoundRuningTime;
 #endif
     inputMap();
     while (1) {
