@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+import matplotlib.pyplot as plt
 
 from cv2 import Mat
 
@@ -90,3 +91,15 @@ def analyze_goods_distribution(file_path):
                 left = int(matchLeft.group(1))
                 print("剩余货物", left)
 
+def analyse_robot_path(file_path,map = None):
+    leng = []
+    plt.clf()
+    with open(file_path, 'r') as file:
+        for line in file:
+            leng.append(int(line))
+    plt.hist(leng, bins=range(0, 100, 5), edgecolor='black')
+    plt.xlabel('Path Length')
+    plt.ylabel('Frequency')
+    plt.title('Path Length Distribution')
+    save_name = 'path_length_distribution.png' if map is None else f'path_length_distribution_{map}.png'
+    plt.savefig('../log/'+save_name)

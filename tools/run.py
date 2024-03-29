@@ -1,7 +1,7 @@
 import os,sys,shutil
 import argparse
 import subprocess
-from analysis import analyze_judger_output_v3,analyze_time_distribution,analyze_goods_distribution
+from analysis import analyze_judger_output_v3,analyze_time_distribution,analyze_goods_distribution,analyse_robot_path
 import time
 from time import sleep
 
@@ -83,6 +83,8 @@ def Do_cmd(args):
         analyze_time_distribution(file_path)
         file_path = '../log/berth_log.txt'
         analyze_goods_distribution(file_path)
+        file_path = '../log/counter.txt_robot_move_length_vector.txt'
+        analyse_robot_path(file_path,args.map)
     print('=====================nextMap=====================')
     
     return res

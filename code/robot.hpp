@@ -211,6 +211,7 @@ std::deque<Pos> Robot::actionFindItem() {
             */
             counter.max_put("robot_move_length_max", tarPath.size());
             counter.min_put("robot_move_length_min", tarPath.size());
+            counter.push_back("robot_move_length_vector", tarPath.size());
             return tarPath;
         } else {
             pathLogger.log(nowTime, "rid={},toItem={},noPath", id, targetItemIndex);

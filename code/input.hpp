@@ -62,6 +62,7 @@ void inputMap(){
     counter.registerVariable("robot_get_value_before_lastgame", 0);
     counter.registerVariable("robot_move_length_max", 0);
     counter.registerVariable("robot_move_length_min", 40000);
+    counter.registerVector("robot_move_length_vector");
 }
 
 void do_special_frame() {

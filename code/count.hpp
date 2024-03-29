@@ -88,6 +88,13 @@ public:
         outFile << "min_robot_move_length: " << getValue("robot_move_length_min") << std::endl;
         outFile << "============================================" << std::endl;
         outFile.close();
+        for (const auto& vec : vectors) {
+            std::ofstream outFile(filename + "_" + vec.first + ".txt");
+            for (int i = 0; i < vec.second.size(); i++) {
+                outFile << vec.second[i] << std::endl;
+            }
+            outFile.close();
+        }
     }
 };
 
