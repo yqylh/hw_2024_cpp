@@ -54,6 +54,25 @@ void inputMap(){
     srand(time(0));
     puts("OK");
     fflush(stdout);
+    counter.registerVariable("shipNum", shipNum);
+    counter.registerVariable("robotNum", robotNum);
+    counter.registerVariable("robot_move_length", 0);
+    counter.registerVariable("robot_get_nums", 0);
+    counter.registerVariable("robot_get_value", 0);
+    counter.registerVariable("robot_get_value_before_lastgame", 0);
+    counter.registerVariable("robot_move_length_max", 0);
+    counter.registerVariable("robot_move_length_min", 40000);
+}
+
+void do_special_frame() {
+    
+    if (nowTime == 15000-lastRoundRuningTime) {
+        counter.lock("robot_move_length");
+        counter.lock("robot_get_nums");
+        counter.add("robot_get_value_before_lastgame", counter.getValue("robot_get_value"));
+        counter.lock("robot_get_value_before_lastgame");
+    }
+    if (nowTime == 14950) counter.writeToFile("../log/counter.txt");
 }
 
 
@@ -96,6 +115,7 @@ void solveFrame() {
     berth_center->call_ship_and_berth_check();    
     bcenterlogger.log(nowTime, "ship_and_berth_check_ok");
 
+    do_special_frame();
     
     puts("OK");
     fflush(stdout);

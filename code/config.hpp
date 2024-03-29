@@ -25,6 +25,7 @@
 #include "pos.hpp"
 using namespace std::chrono;
 #include "logger.hpp"
+#include "count.hpp"
 
 /**
  * 常量定义
@@ -113,6 +114,12 @@ FileLogger allPathLogger("../log/allPath_log.txt");
     std::ofstream fout("output.txt"); // 测试用输出
 #else
     #define TEST(x) 
+#endif
+
+#ifdef DEBUG
+    Counter counter;
+#else
+    Void_Counter counter;
 #endif
 
 #ifdef CREATE

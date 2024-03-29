@@ -209,6 +209,8 @@ std::deque<Pos> Robot::actionFindItem() {
             havePath = true;
             addPathToAllPath(wholePath, id);
             */
+            counter.max_put("robot_move_length_max", tarPath.size());
+            counter.min_put("robot_move_length_min", tarPath.size());
             return tarPath;
         } else {
             pathLogger.log(nowTime, "rid={},toItem={},noPath", id, targetItemIndex);
@@ -244,6 +246,8 @@ void Robot::action() {
         if (bring == 0 && nowTime <= bringTimeLimit) {
             printf("get %d\n", id);
             flowLogger.log(nowTime, "get {0}", id);
+            counter.add("robot_get_nums", 1);
+            counter.add("robot_get_value", item_value);
             // TODO: 需要检测一下是否真的拿到东西了？？？在前面判断一下，如果没有拿到，需要重新计算
             bring = 1;
         } 
@@ -313,6 +317,7 @@ void Robot::action() {
             auto itemPos = itemPath.back();
             auto itemTime = itemPath.size() - 1;
             tarItemPos = itemPos;
+            
             auto berthPath = actionFindBerth(itemPos, itemTime);
             // 起始点：item的位置，目标点：港口的位置
             // 起始时间：itemTime，到港口的时间为：itemTime + berthPath.size() - 1
@@ -352,6 +357,7 @@ void Robot::move() {
     // 把当前位置弹出
     wholePath.pop_front();
     printf("move %d %d\n", id , nextDir);
+    counter.add("robot_move_length", 1);
 
     flowLogger.log(nowTime, "move {0} {1}", id, nextDir);
 }

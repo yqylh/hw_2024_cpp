@@ -2,6 +2,7 @@ import os,sys,shutil
 import argparse
 import subprocess
 from analysis import analyze_judger_output_v3,analyze_time_distribution,analyze_goods_distribution
+import time
 from time import sleep
 
 if sys.platform.startswith('linux'):
@@ -63,7 +64,14 @@ def del_files():
     else:
         del_files_linux()
 
+def wirte_counter_logger(str):
+    with open('../log/counter.txt', 'a') as f:
+        f.write(str)
+        f.write('\n')
+
+
 def Do_cmd(args):
+    wirte_counter_logger(args.map + ' ' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     if system == 'win':
         res = win_cmd(args)
     else:
