@@ -6,16 +6,39 @@ import sys
 help = ["定义:","0 : 障碍物","1 : 陆地 (通行区域)","2 : 海洋","3 : 泊位","4 : 机器人出生点","按s保存地图"]
 map_name = "my_map.txt"
 
-BLOCK_COLOR = (156, 140, 128) 
-TEXT_COLOR =  (255, 255, 255)
-EARTH_COLOR = (201, 223, 153)
-OCEAN_COLOR = (206, 222, 254)
-ROBOT_COLOR = (0, 0, 255)
-SHIP_COLOR =  (251, 241, 51)
-PORT_COLOR =  (190, 193, 198)
-ITEM_COLOR =  (249, 139, 228)
+# 定义颜色
+OBSTACLE_COLOR = (156, 140, 128)  # 障碍物
+LAND_COLOR = (201, 223, 153)  # 空地 (陆地)
+OCEAN_COLOR = (206, 222, 254)  # 海洋
+PORT_COLOR = (190, 193, 198)  # 泊位
+# 机器人颜色已废弃
+MAIN_ROAD_COLOR = (255, 235, 207)  # 陆地主干道
+MAIN_WATERWAY_COLOR = (156, 202, 254)  # 海洋主航道
+ROBOT_PURCHASE_BLOCK_COLOR = (255, 140, 0)  # 机器人购买地块，同时该地块也是主干道
+SHIP_PURCHASE_BLOCK_COLOR = (0, 0, 255)  # 船舶购买地块，同时该地块也是主航道
+DOCKING_AREA_COLOR = (203, 196, 255)  # 靠泊区
+LAND_SEA_TRAFFIC_COLOR = (216, 188, 109)  # 海陆立体交通地块
+MAIN_LAND_SEA_TRAFFIC_COLOR = (158, 200, 136)  # 海陆立体交通地块，同时为主干道和主航道
+DELIVERY_POINT_COLOR = (147, 112, 219)  # 交货点
 
-color_map = [BLOCK_COLOR, EARTH_COLOR, OCEAN_COLOR, PORT_COLOR, ROBOT_COLOR, SHIP_COLOR]
+# 创建 color_map，按照索引与地图区块类型的映射关系
+color_map = [
+    OBSTACLE_COLOR,  # 0 - 障碍
+    LAND_COLOR,  # 1 - 空地 (陆地)
+    OCEAN_COLOR,  # 2 - 海洋
+    PORT_COLOR,  # 3 - 泊位
+    (0, 0, 0),  # 4 - 机器人颜色已废弃，使用占位颜色
+    MAIN_ROAD_COLOR,  # 5 - 陆地主干道
+    MAIN_WATERWAY_COLOR,  # 6 - 海洋主航道
+    ROBOT_PURCHASE_BLOCK_COLOR,  # 7 - 机器人购买地块
+    SHIP_PURCHASE_BLOCK_COLOR,  # 8 - 船舶购买地块
+    DOCKING_AREA_COLOR,  # 9 - 靠泊区
+    LAND_SEA_TRAFFIC_COLOR,  # 10 - 海陆立体交通地块
+    MAIN_LAND_SEA_TRAFFIC_COLOR,  # 11 - 海陆立体交通地块，同时为主干道和主航道
+    DELIVERY_POINT_COLOR,  # 12 - 交货点
+]
+
+BLACK_COLOR = (0, 0, 0)
 
 class CResult:
     def __init__(self) -> None:
@@ -39,18 +62,21 @@ class CResult:
 Result = CResult()
 
 class Button:
-    def __init__(self, x, y, width, height, text):
+    def __init__(self, x, y, width, height, text,color=(200, 200, 200)):
+        self.if_pass = False if width != 0 else True
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
-        self.color = (200, 200, 200)  # 灰色按钮
+        self.color = color  # 按钮当前颜色
+        self.set_color = color  # 按钮原始颜色
         self.text_color = (0, 0, 0)  # 黑色文本
         self.font = pygame.font.Font("llt.ttf", 32)
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
-        text_surf = self.font.render(self.text, True, self.text_color)
-        text_rect = text_surf.get_rect(center=self.rect.center)
-        screen.blit(text_surf, text_rect)
+        if not self.if_pass:
+            pygame.draw.rect(screen, self.color, self.rect)
+            text_surf = self.font.render(self.text, True, self.text_color)
+            text_rect = text_surf.get_rect(center=self.rect.center)
+            screen.blit(text_surf, text_rect)
 
     def is_clicked(self, event):
         return self.rect.collidepoint(event.pos)
@@ -82,11 +108,19 @@ class MapEditor:
             Button(self.screen_width - 190, 170, 180, 40, "保存"),
         ]
         self.buttons2 = [
-            Button(self.screen_width - 190, 450, 180, 40, "障碍物"),
-            Button(self.screen_width - 190, 500, 180, 40, "陆地"),
-            Button(self.screen_width - 190, 550, 180, 40, "海洋"),
-            Button(self.screen_width - 190, 600, 180, 40, "泊位"),
-            Button(self.screen_width - 190, 650, 180, 40, "机器人"),
+            Button(self.screen_width - 190, 450, 180, 40, "障碍物",     color = color_map[0]),
+            Button(self.screen_width - 190, 500, 180, 40, "陆地",       color = color_map[1]),
+            Button(self.screen_width - 190, 550, 180, 40, "海洋",       color = color_map[2]),
+            Button(self.screen_width - 190, 600, 180, 40, "泊位",       color = color_map[3]),
+            Button(0, 0, 0, 0, "机器人-废弃", color = color_map[4]),
+            Button(self.screen_width - 190, 750, 180, 40, "主干道",     color = color_map[5]),
+            Button(self.screen_width - 190, 800, 180, 40, "主航道",     color = color_map[6]),
+            Button(self.screen_width - 190, 650, 180, 40, "机器人购买", color = color_map[7]),
+            Button(self.screen_width - 190, 700, 180, 40, "船舶购买",   color = color_map[8]),
+            Button(self.screen_width - 190, 850, 180, 40, "靠泊区",     color = color_map[9]),
+            Button(self.screen_width - 190, 900, 180, 40, "海陆立体交通",color = color_map[10]),
+            Button(self.screen_width - 190, 950, 180, 40, "主干海陆立体",color = color_map[11]),
+            Button(self.screen_width - 190, 1000, 180, 40, "交货点",    color = color_map[12]),
         ]
         self. txts_pos = (self.screen_width - 190, 170 + 40)
         self.log_messages = []
@@ -157,7 +191,7 @@ class MapEditor:
             #         self.start_x, self.start_y = x, y
                 
         elif event.button == 3:  # Right click
-            self.update_cell(x, y, BLOCK_COLOR)
+            self.update_cell(x, y, OBSTACLE_COLOR)
             Result.result[x][y] = 0
             # Result.update(x, y, 0)
 
@@ -238,12 +272,17 @@ class MapEditor:
             if self.choose_type == 1:
                 color = self.now_color + (128,)
                 pygame.draw.line(self.screen, color, (self.start_pos[0], self.start_pos[1]), (self.end_pos[0], self.end_pos[1]), 1)
-            else:
-                rect = pygame.Rect(self.start_pos, (self.end_pos[0] - self.start_pos[0], self.end_pos[1] - self.start_pos[1]))
-                if rect.width > 0 and rect.height > 0:
-                    surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-                    surface.fill((255, 255, 255, 128))  # 半透明白色
-                    self.screen.blit(surface, rect.topleft)
+            else:   
+                x = min(self.start_pos[0], self.end_pos[0])
+                y = min(self.start_pos[1], self.end_pos[1])
+                width = abs(self.end_pos[0] - self.start_pos[0])
+                height = abs(self.end_pos[1] - self.start_pos[1])
+
+                # 创建 Rect 对象
+                rect = pygame.Rect(x, y, width, height)
+                surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                surface.fill((255, 255, 255, 128))  # 半透明白色
+                self.screen.blit(surface, rect.topleft)
 
     def draw_button(self):
         for button in self.buttons:
@@ -256,9 +295,12 @@ class MapEditor:
                 button.color = (0, 255, 0)
             button.draw(self.screen)
         for button in self.buttons2:
-            button.color = (200, 200, 200)
+            button.color = button.set_color
             if self.now_type == self.buttons2.index(button):
-                button.color = (0, 255, 0)
+                rect = pygame.Rect(button.rect.x - 5, button.rect.y - 5, button.rect.width + 10, button.rect.height + 10)
+                surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+                surface.fill((0, 255, 0, 128))  # 半透明绿色
+                self.screen.blit(surface, rect.topleft)
             button.draw(self.screen)
 
 
@@ -278,7 +320,7 @@ class MapEditor:
                 elif event.type == pygame.MOUSEMOTION:
                     self.handle_mouse_move(event.pos)
 
-            self.screen.fill(self.rgb_to_fill(BLOCK_COLOR))  # 用背景色填充屏幕
+            self.screen.fill(self.rgb_to_fill(OBSTACLE_COLOR))  # 用背景色填充屏幕
             self.draw_grid()
             self.draw_button()
             self.draw_log(help)
@@ -302,6 +344,22 @@ def save_map():
                     map_file.write('B')
                 if grid_content == 4:
                     map_file.write('A')
+                if grid_content == 5:
+                    map_file.write('>')
+                if grid_content == 6:
+                    map_file.write('~')
+                if grid_content == 7:
+                    map_file.write('R')
+                if grid_content == 8:
+                    map_file.write('S')
+                if grid_content == 9:
+                    map_file.write('K')
+                if grid_content == 10:
+                    map_file.write('C')
+                if grid_content == 11:
+                    map_file.write('c')
+                if grid_content == 12:
+                    map_file.write('T')
             map_file.write('\n')
     print("Map saved as " + map_name)
 
@@ -316,15 +374,31 @@ def load_map(file):
     for i, line in enumerate(lines):
         for j, grid_content in enumerate(line):
             if grid_content == '#':
-                result[j][i] = 0
+                result[j][i] = 0    #障碍
             if grid_content == '.':
-                result[j][i] = 1
+                result[j][i] = 1    #空地
             if grid_content == '*':
-                result[j][i] = 2
+                result[j][i] = 2    #海洋
             if grid_content == 'B':
-                result[j][i] = 3
+                result[j][i] = 3    #泊位
             if grid_content == 'A':
-                result[j][i] = 4
+                result[j][i] = 4    #机器人,废弃
+            if grid_content == '>':
+                result[j][i] = 5    #陆地主干道
+            if grid_content == '~':
+                result[j][i] = 6    #海洋主干道
+            if grid_content == 'R':
+                result[j][i] = 7    #机器人购买地块，同时该地块也是主干道
+            if grid_content == 'S':
+                result[j][i] = 8    #船舶购买地块，同时该地块也是主航道
+            if grid_content == 'K':
+                result[j][i] = 9    #靠泊区
+            if grid_content == 'C':
+                result[j][i] = 10   #海陆立体交通地块
+            if grid_content == 'c':
+                result[j][i] = 11   #海陆立体交通地块，同时为主干道和主航道
+            if grid_content == 'T':
+                result[j][i] = 12   #交货点
     return result
     
 
