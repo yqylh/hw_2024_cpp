@@ -20,12 +20,22 @@ struct ShipBuyer {
 };
 
 /**
+ * @brief 交货点
+*/
+struct Delivery {
+    Pos pos;
+    int value;
+    Delivery(Pos _pos, int _value) : pos(_pos), value(_value) {}
+};
+
+/**
  * Berth_center即船坞、轮船控制中心（塔台），进行统一调配，并指引机器人进入泊位
 */
 class Berth_center {
 public:
     std::vector<RobotBuyer> robot_buyer;
     std::vector<ShipBuyer> ship_buyer;
+    std::vector<Delivery> delivery;
     std::vector<std::vector<int> > r_buyer_choose_berth; //机器人销售点选择的泊位
     std::vector<int> group_sorted_id; // 初始的分组排序
     std::vector<std::vector<int> > group;

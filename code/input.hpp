@@ -66,6 +66,7 @@ void inputMap(){
                     break;
                 case 'T':
                     grids[i][j] = new Grid(i, j, 12);
+                    berth_center->delivery.emplace_back(Pos(i, j));
                     break;
                 default:
                     throw;
