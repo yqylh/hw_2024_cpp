@@ -108,6 +108,7 @@ FileLogger flowLogger("../log/flow_log.txt");
 FileLogger bcenterlogger("../log/bcenter_log.txt");
 FileLogger pathLogger("../log/path_log.txt");
 FileLogger allPathLogger("../log/allPath_log.txt");
+FileLogger mainlogger("../log/main.txt");
 
 #ifdef DEBUG
     #define TEST(x) x

@@ -263,7 +263,7 @@ void Robot::action() {
     // ==1 表示走到港口了或者找到Item了，但是找到Item已经在上一条语句中判断过了，如果是找到Item了，那就不会==1
     if (wholePath.size() == 1) {
         // 机器人到达目的地
-        if (bring == 1 && grids[pos.x][pos.y]->type == 3) {
+        if (bring == 1 && robot_grids[pos.x][pos.y]->Grid::type == 3) {
             printf("pull %d\n", id);
             flowLogger.log(nowTime, "pull {0}", id);
             bring = 0;
@@ -397,7 +397,7 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
             if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) {
                 continue;
             }
-            if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
+            if (robot_grids[nextPos.x][nextPos.y]->type == -1) continue;
             if (otherPos.find(nextPos) != otherPos.end() 
                 || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextPos) ) {
                 continue;
@@ -426,7 +426,7 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
                 // 判断越界
                 if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) continue;
                 // 判断是否是障碍物
-                if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
+                if (robot_grids[nextPos.x][nextPos.y]->type == -1) continue;
                 // 判断是否有机器人
                 if (otherPos.find(nextPos) != otherPos.end()) continue;
                 // 判断是否重叠
@@ -456,7 +456,7 @@ void solveRobot() {
     // 预处理每个机器人初始点到每个虚拟点的时间, 也就是机器人能到达的点
     for (int i = 0; i < MAX_Robot_Num; i++) {
         robots[i]->robotDir = sovleGrid(robots[i]->pos);
-        grids[robots[i]->pos.x][robots[i]->pos.y]->gridDir = robots[i]->robotDir;
+        robot_grids[robots[i]->pos.x][robots[i]->pos.y]->gridDir = robots[i]->robotDir;
     }
 }
 
@@ -483,7 +483,7 @@ void solveCollision() {
                 continue;
             }
             if (robotPos.find(nextPos) != robotPos.end()) continue;
-            if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
+            if (robot_grids[nextPos.x][nextPos.y]->type == -1) continue;
             free[i]++;
         }
     }

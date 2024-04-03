@@ -9,24 +9,45 @@
 #include "logger.hpp"
 #include "berth_centre.hpp"
 
+void gengerate_grid(int i, int j, int type){
+    robot_grids[i][j] = new RoadGrid(i,j,type,0);
+    boat_grids[i][j] = new RoadGrid(i,j,type,1);
+}
+
 void inputMap(){
     for (int i = 0; i < MAX_Line_Length; i++) {
         std::string line;
         getline(std::cin, line);
-    
+        
         for (int j = 0; j < MAX_Col_Length; j++) {
             if (line[j] == '.') {
-                grids[i][j] = new Grid(i, j, 0);
+                gengerate_grid(i, j, 0);
             } else if (line[j] == '*') {
-                grids[i][j] = new Grid(i, j, 1);
+                gengerate_grid(i, j, 1);
             } else if (line[j] == '#') {
-                grids[i][j] = new Grid(i, j, 2);
-            } else if (line[j] == 'A') {
+                gengerate_grid(i, j, 2);
+            } else if (line[j] == 'A') { //废弃
                 robotNum++;
                 robots[robotNum] = new Robot(robotNum, i, j);
-                grids[i][j] = new Grid(i, j, 0);
+                gengerate_grid(i, j, 0);
             } else if (line[j] == 'B') {
-                grids[i][j] = new Grid(i, j, 3);
+                gengerate_grid(i, j, 3);
+            } else if (line[j] == '>') {
+                gengerate_grid(i, j, 5);
+            } else if (line[j] == '~') {
+                gengerate_grid(i, j, 6);
+            } else if (line[j] == 'R') {
+                gengerate_grid(i, j, 7);
+            } else if (line[j] == 'S') {
+                gengerate_grid(i, j, 8);
+            } else if (line[j] == 'K') {
+                gengerate_grid(i, j, 9);
+            } else if (line[j] == 'C') {
+                gengerate_grid(i, j, 10);
+            } else if (line[j] == 'c') {
+                gengerate_grid(i, j, 11);
+            } else if (line[j] == 'T') {
+                gengerate_grid(i, j, 12);
             } else {
                 throw;
             }

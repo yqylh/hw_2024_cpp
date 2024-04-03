@@ -105,7 +105,7 @@ def remove_file(file_path, attempts=10):
                 sleep(0.5)
     
 def win_cmd(args):
-    Win_Cmd = '%CD%/../judge/PreliminaryJudge.exe -s ' + str(args.random_seed) + f' -m ../{args.map_folder}/' + args.map +' -r ./{}%Y-%m-%d.%H.%M.%S.rep ./main'.format(args.map)
+    Win_Cmd = '%CD%/../judge/SemiFinalJudge.exe -s ' + str(args.random_seed) + f' -m ../{args.map_folder}/' + args.map +' -r ./{}%Y-%m-%d.%H.%M.%S.rep ./main'.format(args.map)
     print(Win_Cmd)
     
     # check if '../log' exists

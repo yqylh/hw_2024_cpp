@@ -50,7 +50,7 @@ struct Berth {
                     if (temp2.x < 0 || temp2.x >= MAX_Line_Length || temp2.y < 0 || temp2.y >= MAX_Col_Length) {
                         continue;
                     }
-                    if (grids[temp2.x][temp2.y]->type == 0) {
+                    if (robot_grids[temp2.x][temp2.y]->type == 0) {
                         haveGround++;
                     }
                 }

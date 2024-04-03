@@ -264,7 +264,7 @@ public:
         for (int x = 0; x < MAX_Line_Length; x++) {
             for (int y = 0; y < MAX_Col_Length; y++) {
                 // 排除障碍物和海洋
-                if (grids[x][y]->type == 1 || grids[x][y]->type == 2) continue;
+                if (robot_grids[x][y]->type == -1) continue;
                 ground_num++;
                 std::set<int> owner;
                 // 我们只考虑 MAX_Berth_Control_Length 帧内的情况

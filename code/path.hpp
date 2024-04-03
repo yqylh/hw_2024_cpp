@@ -26,7 +26,7 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
     
     for (int i = 0; i < fixPos.size(); i++) {
         if (fixPos[i].x != -1 and i != nowRobotId) {
-            grids[fixPos[i].x][fixPos[i].y]->robotOnIt = true;
+            robot_grids[fixPos[i].x][fixPos[i].y]->robotOnIt = true;
         }
     }
 
@@ -63,13 +63,13 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
             if (lastSeenDis != -1 and lastSeenDis < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis]) {
                     if (tar.x == -1) continue;
-                    grids[tar.x][tar.y]->robotOnIt = false;
+                    robot_grids[tar.x][tar.y]->robotOnIt = false;
                 }
             }
             if (lastSeenDis != -1 and lastSeenDis + 1 < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis + 1]) {
                     if (tar.x == -1) continue;
-                    grids[tar.x][tar.y]->robotOnIt = false;
+                    robot_grids[tar.x][tar.y]->robotOnIt = false;
                 }
             }
             
@@ -79,13 +79,13 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
             if (lastSeenDis < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis]) {
                     if (tar.x == -1) continue;
-                    grids[tar.x][tar.y]->robotOnIt = true;
+                    robot_grids[tar.x][tar.y]->robotOnIt = true;
                 }
             }
             if (lastSeenDis + 1 < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis + 1]) {
                     if (tar.x == -1) continue;
-                    grids[tar.x][tar.y]->robotOnIt = true;
+                    robot_grids[tar.x][tar.y]->robotOnIt = true;
                 }
             }
         }
@@ -94,8 +94,8 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
         for (int i = 0; i < 4; i++) {
             Pos next = now + dir[i];
             if (next.x < 0 || next.x >= MAX_Line_Length || next.y < 0 || next.y >= MAX_Col_Length) continue;
-            if (disWithTime[next.x][next.y] <= disWithTime[now.x][now.y] + 1 || (grids[next.x][next.y]->type != 0 && grids[next.x][next.y]->type != 3)) continue;
-            if (grids[next.x][next.y]->robotOnIt) continue;
+            if (disWithTime[next.x][next.y] <= disWithTime[now.x][now.y] + 1 || (robot_grids[next.x][next.y]->type == -1)) continue;
+            if (robot_grids[next.x][next.y]->robotOnIt) continue;
             _queueRobot[end++] = next;
             if (end == 40010) end = 0;
             disWithTime[next.x][next.y] = disWithTime[now.x][now.y] + 1;
@@ -120,19 +120,19 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
     if (lastSeenDis != -1 and lastSeenDis < allPath.size()) {
         for (Pos tar : allPath[lastSeenDis]) {
             if (tar.x == -1) continue;
-            grids[tar.x][tar.y]->robotOnIt = false;
+            robot_grids[tar.x][tar.y]->robotOnIt = false;
         }
     }
     if (lastSeenDis != -1 and lastSeenDis + 1 < allPath.size()) {
         for (Pos tar : allPath[lastSeenDis + 1]) {
             if (tar.x == -1) continue;
-            grids[tar.x][tar.y]->robotOnIt = false;
+            robot_grids[tar.x][tar.y]->robotOnIt = false;
         }
     }
     
     for (int i = 0; i < fixPos.size(); i++) {
         if (fixPos[i].x != -1 and i != nowRobotId) {
-            grids[fixPos[i].x][fixPos[i].y]->robotOnIt = false;
+            robot_grids[fixPos[i].x][fixPos[i].y]->robotOnIt = false;
         }
     }
 

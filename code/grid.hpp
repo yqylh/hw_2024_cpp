@@ -35,10 +35,29 @@ struct Direction {
     }
 };
 
-struct Grid {
+class Grid {
+public:
     Pos pos; // 位置
-    int type; // 0->空地 1->海洋 2->障碍物 3->泊位 10->机器人
+    int type;  
+    /*
+        -1  #保留(视作障碍物)
+        0    #空地
+        1    #海洋
+        2    #障碍物
+        3    #泊位
+        4   #保留
+        5    #陆地主干道
+        6    #海洋主干道
+        7    #机器人购买地块，同时该地块也是主干道
+        8    #船舶购买地块，同时该地块也是主航道
+        9    #靠泊区
+        10   #海陆立体交通地块
+        11   #海陆立体交通地块，同时为主干道和主航道
+        12   #交货点
+    */
+   
     bool robotOnIt;
+    
     Direction *gridDir; // 用来导航从起点到终点的路径
     Grid(){
         this->pos = Pos(-1, -1);
@@ -52,6 +71,27 @@ struct Grid {
         this->robotOnIt = false;
     }
 };
+
+int gengerate_robot_type(int type);
+int gengerate_boat_type(int type);
+
+class RoadGrid:public Grid{
+public:
+    int type;
+    /*
+    -1  禁行
+    0   通行
+    1   主干道/主航道
+    */
+   RoadGrid():Grid(){
+        this->type = -1;
+   }
+   RoadGrid(int x, int y, int type ,int robot_or_boat):Grid(x,y,type){
+        if(robot_or_boat == 0) this->type = gengerate_robot_type(type);
+        if(robot_or_boat == 1) this->type = gengerate_boat_type(type);
+   }
+};
+
 
 struct Path {
     Pos begin;
@@ -70,7 +110,9 @@ struct Path {
     ~Path() {}
 };
 
-Grid *grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
+// Grid *grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
+RoadGrid *robot_grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
+RoadGrid *boat_grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
 
 // BFS用于寻路
 std::list<Pos> *findPath(Pos begin, Pos end) {
@@ -87,7 +129,7 @@ std::list<Pos> *findPath(Pos begin, Pos end) {
         for (int i = 0; i < 4; i++) {
             Pos next = now + dir[i];
             if (next.x < 0 || next.x >= MAX_Line_Length || next.y < 0 || next.y >= MAX_Col_Length) continue;
-            if (pre.find(next) != pre.end() || (grids[next.x][next.y]->type != 0 && grids[next.x][next.y]->type != 3)) continue;
+            if (pre.find(next) != pre.end() || (robot_grids[next.x][next.y]->type == -1)) continue;
             q.push(next);
             pre[next] = now;
         }
@@ -114,7 +156,7 @@ Direction * sovleGrid(Pos origin) {
         for (int i = 0; i < 4; i++) {
             Pos next = now + dir[i]; // 下一个点
             if (next.x < 0 || next.x >= MAX_Line_Length || next.y < 0 || next.y >= MAX_Col_Length) continue; // 越界
-            if ((grids[next.x][next.y]->type != 0 && grids[next.x][next.y]->type != 3) || result->isVisited(next.x, next.y)) continue; //不是空地或者泊位,或者已经记录过前序, 跳过
+            if ((robot_grids[next.x][next.y]->type == -1) || result->isVisited(next.x, next.y)) continue; //不是空地或者泊位,或者已经记录过前序, 跳过
             result->setVisited(next.x, next.y);
             result->setDir(next.x, next.y, ((i == 0 || i == 2) ? i + 1 : i - 1));
             _arr[end++] = next;
@@ -129,13 +171,49 @@ void solveAllGrid() {
             auto stop = high_resolution_clock::now();
             auto usedTime = duration_cast<milliseconds>(stop - programStart).count();
             if (usedTime > 3500) return;
-            if ((grids[i][j]->type == 0 || grids[i][j]->type == 3) && grids[i][j]->gridDir == nullptr) {
-                grids[i][j]->gridDir = sovleGrid(Pos(i, j));
+            if ((robot_grids[i][j]->type != -1) && robot_grids[i][j]->gridDir == nullptr) {
+                robot_grids[i][j]->gridDir = sovleGrid(Pos(i, j));
             }
         }
     }
     flowLogger.log(nowTime, "main thread Finish");
     return;
+}
+
+int gengerate_robot_type(int type){
+    switch(type){
+        case 0: return 0;
+        case 1: return -1;
+        case 2: return -1;
+        case 3: return 1;
+        case 5: return 1;
+        case 6: return -1;
+        case 7: return 1;
+        case 8: return -1;
+        case 9: return -1;
+        case 10: return 0;
+        case 11: return 1;
+        case 12: return -1;
+    }
+    return -1;
+}
+
+int gengerate_boat_type(int type){
+        switch(type){
+            case 0: return -1;
+            case 1: return 0;
+            case 2: return -1;
+            case 3: return 1;
+            case 5: return -1;
+            case 6: return 1;
+            case 7: return -1;
+            case 8: return 1;
+            case 9: return 1;
+            case 10: return 0;
+            case 11: return 1;
+            case 12: return 1;
+        }
+    return -1;
 }
 
 #endif
