@@ -48,7 +48,6 @@ int MAX_Capacity; // 船的容量
 int money = 0; // 当前金钱
 int nowTime = 0; // 当前帧数
 bool inputFlag = true; // 是否input是否结束
-bool LastGame = false; // 是否是最后一轮
 
 /**
  * 预处理&多线程控制相关变量
@@ -124,5 +123,9 @@ FileLogger allPathLogger("../log/allPath_log.txt");
 #else
     #define CREATEMAP(x)
 #endif
+
+void quickFix(int flag) {
+    TEST(fout << "flag" << flag << std::endl;)
+}
 
 #endif

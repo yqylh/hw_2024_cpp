@@ -9,6 +9,20 @@
 #include "logger.hpp"
 #include "berth_centre.hpp"
 
+//  * 0‘.’ ： 空地                                   | 机器人可以走  会发生碰撞
+//  * 1‘*’ ： 海洋                                   | 船可以走  会发生碰撞
+//  * 2‘#’ ： 障碍                                   | 谁都不可以走
+//  * 3‘B’ ： 泊位  同时算主干道主航道                  | 船和机器人都可以走 不会发生碰撞
+//  * 4‘>’ ： 陆地主干道                              | 机器人可以走 不会发生碰撞
+//  * 5‘~’ ： 海洋主航道                              | 船可以走 不会发生碰撞
+//  * 6‘R’ ： 机器人购买地块，同时该地块也是主干道.        | 机器人可以走, 不会发生碰撞
+//  * 7‘S’ ： 船舶购买地块，同时该地块也是主航道           | 船可以走, 不会发生碰撞
+//  * 8‘K’ ： 靠泊区 算主航道                          | 船可以走 不会发生碰撞
+//  * 9‘C’ ： 海陆立体交通地块                         | 船和机器人都可以走 会发生碰撞
+//  * 11‘c’ ： 海陆立体交通地块，同时为主干道和主航道      |船和机器人都可以走 不会发生碰撞
+//  * 12‘T’ ： 交货点 特殊的靠泊区 所以也算主航道         | 船可以走 不会发生碰撞
+
+
 void inputMap(){
     for (int i = 0; i < MAX_Line_Length; i++) {
         std::string line;
@@ -35,9 +49,11 @@ void inputMap(){
                     break;
                 case 'R':
                     grids[i][j] = new Grid(i, j, 6);
+                    berth_center->robot_buyer.emplace_back(Pos(i, j));
                     break;
                 case 'S':
                     grids[i][j] = new Grid(i, j, 7);
+                    berth_center->ship_buyer.emplace_back(Pos(i, j));
                     break;
                 case 'K':
                     grids[i][j] = new Grid(i, j, 8);
@@ -66,14 +82,8 @@ void inputMap(){
     std::cin >> MAX_Capacity;
     std::string line;
     while(getline(std::cin, line) && line != "OK");
-    // solveBerth();
-    // solveRobot();
-    // { // 因为要实现 header_only 的特性, center 和 robot不能互相引用, 所以只能在这里初始化
-    //     std::vector<Pos> robot_pos;
-    //     for (auto & robot : robots) robot_pos.push_back(robot->pos);
-    //     berth_center->robot_pos = robot_pos;
-    //     berth_center->find_private_space();
-    // }
+    solveBerth();
+    berth_center->find_private_space();
     srand(time(0));
     puts("OK");
     fflush(stdout);
@@ -119,12 +129,19 @@ bool inputFrame() {
     scanf("%d", &R);
     for (int i = 1; i <= R; i++) {
         int id, bring, x, y;
-        scanf("%d%d%d%d%d", &id, &bring, &x, &y);
+        scanf("%d%d%d%d", &id, &bring, &x, &y);
+        robots[id]->bring = bring;
+        robots[id]->pos = Pos(x, y);
     }
     int B;
+    scanf("%d", &B);
     for (int i = 1; i <= B; i++) {
         int id, bring, x, y, direction, status;
         scanf("%d%d%d%d%d%d", &id, &bring, &x, &y, &direction, &status);
+        ships[id]->capacity = bring;
+        ships[id]->pos = Pos(x, y);
+        ships[id]->direction = direction;
+        ships[id]->status = status;
     }
     std::string line;
     while(getline(std::cin, line) && line != "OK");
@@ -132,20 +149,26 @@ bool inputFrame() {
 }
 
 void solveFrame() {
-    // flowLogger.log(nowTime, "当前帧数={0}", nowTime);
-
-    // for (auto & robot : robots) robot->action();
-    // // 碰撞检测
+    flowLogger.log(nowTime, "当前帧数={0}", nowTime);
+    
+    for (auto & robot : robots) robot->action();
+    // 碰撞检测
     // solveCollision();
-    // // 移动
-    // for (auto & robot : robots) robot->move();
-    // pathLogger.log(nowTime, "allPath.size()={0}", allPath.size());
-    // // 时间向前推进
-    // if (allPath.size() > 0) allPath.pop_front();
+    // 移动
+    for (auto & robot : robots) robot->move();
+    if (nowTime == 1) {
+        for (auto & robotBuyer : berth_center->robot_buyer) {
+            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+        }
+    }
+    // 时间向前推进
+    if (allPath.size() > 0) allPath.pop_front();
 
     // berth_center->call_ship_and_berth_check();    
-    // bcenterlogger.log(nowTime, "ship_and_berth_check_ok");
-
     // do_special_frame();
     
     puts("OK");

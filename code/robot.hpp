@@ -14,7 +14,7 @@ struct Robot{
     int id; // 机器人的 id
     Pos pos; // 机器人的位置
 
-    int status; // 机器人的状态 0表示寄了 1 表示正常运行
+    int status; // 机器人的状态 0表示寄了 1 表示正常运行 用来控制避障
     int bring; // 机器人带的货物 0 表示没有货物 1 表示有货物
     int bringTimeLimit; // 机器人到达带货物的时间
     int choosed_berth_id; // 机器人选择的泊位
@@ -224,23 +224,12 @@ std::deque<Pos> Robot::actionFindItem() {
 
 void Robot::action() {
     flowLogger.log(nowTime, "action {0}", id);
-    // robotLogger.log(nowTime, "id={},status={},bring={},pos=({},{}),havePath={},pathSize={}", id, status, bring, pos.x, pos.y, havePath, wholePath.size());
-    // 如果机器人被撞到了
-    if (!status) {
-        wholePath.clear();
-        havePath = false;
-        updateFixPos(pos, id);
-        deletePathFromAllPath(id);
-        return;
-    }
-
     // 如果机器人的路径首位不等于当前位置，则需要重新计算路径。
-    if (pos != wholePath.front()) {
+    if (wholePath.size() == 0 || pos != wholePath.front()) {
         havePath = false;
         wholePath.clear();
         deletePathFromAllPath(id);
     }
-    
     // 如果找到了目标item
     if (pos == tarItemPos) {
         // 如果确实没拿东西，就拿一下
@@ -259,7 +248,6 @@ void Robot::action() {
             deletePathFromAllPath(id);
         }
     }
-
     // ==1 表示走到港口了或者找到Item了，但是找到Item已经在上一条语句中判断过了，如果是找到Item了，那就不会==1
     if (wholePath.size() == 1) {
         // 机器人到达目的地
@@ -277,7 +265,6 @@ void Robot::action() {
         deletePathFromAllPath(id);
     }
 
-
     // 没走到，正常走过程中
     if (wholePath.size() > 1) return;
 
@@ -290,7 +277,6 @@ void Robot::action() {
     solveGridWithTime(pos, id);
     // auto endSolveTime = high_resolution_clock::now();
     // pathLogger.log(nowTime, "rId={0}solveGridWithTime time={1}", id, duration_cast<microseconds>(endSolveTime - beginSolveTime).count());
-
     // 拿着东西找港口，直接用前面计算好的dis就行
     if (bring == 1) {
         auto berthPath = actionFindBerth();
@@ -314,16 +300,14 @@ void Robot::action() {
             wholePath = itemPath;
             havePath = true;
             addPathToAllPath(wholePath, id);
-
             auto itemPos = itemPath.back();
             auto itemTime = itemPath.size() - 1;
             tarItemPos = itemPos;
-            
             auto berthPath = actionFindBerth(itemPos, itemTime);
             // 起始点：item的位置，目标点：港口的位置
             // 起始时间：itemTime，到港口的时间为：itemTime + berthPath.size() - 1
             // 可能为空
-            // pathLogger.log(nowTime, "id={},itemTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, wholePath.size());
+            pathLogger.log(nowTime, "id={},itemTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, wholePath.size());
 
             if (berthPath.size() > 0) {
                 //注意，由于上一个path的终点是item的位置，这里的起点也是item位置，所以不需要再计算一次，应该把item pop出去
@@ -332,12 +316,10 @@ void Robot::action() {
                 havePath = true;
                 // 直接用wholePath，就不需要考虑从哪个时间加入了
                 addPathToAllPath(wholePath, id);
-                // pathLogger.log(nowTime, "id={},itemTar=({},{}),berthTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, berthPath.back().x, berthPath.back().y, wholePath.size());
+                pathLogger.log(nowTime, "id={},itemTar=({},{}),berthTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, berthPath.back().x, berthPath.back().y, wholePath.size());
             }
         }
-        
     } 
-    
     // TODO: 没位置去的机器人别堵路啊，能不能死一死（？
     if (wholePath.size() == 0) {
         robotLogger.log(nowTime, "noPath id={},bring={},havePath={},pathSize={}", id, bring, havePath, wholePath.size());
@@ -348,7 +330,10 @@ void Robot::action() {
 
 void Robot::move() {
     // 如果机器人被撞到了
-    if (!status) return;
+    if (!status) {
+        status = 1;
+        return;
+    }
     // 只要路径小于2，就说明无论如何不用走
     if (wholePath.size() < 2) return;
     // robotLogger.log(nowTime, "id={},bring={},havePath={},pathSize={},from=({},{}),to=({},{}),status={}", id, bring, havePath, wholePath.size(), wholePath.front().x, wholePath.front().y, wholePath.back().x, wholePath.back().y, status);
@@ -394,10 +379,7 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
         }
         for (auto & d : ableDir) { 
             auto nextPos = pos + dir[d];
-            if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) {
-                continue;
-            }
-            if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
+            if (checkRobotAble(nextPos) == false) continue;
             if (otherPos.find(nextPos) != otherPos.end() 
                 || (otherPos.find(pos) != otherPos.end() && otherPos.find(pos)->second == nextPos) ) {
                 continue;
@@ -423,10 +405,8 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
             for (int d = 0; d < 4; d++) if (d != nextDir) {
                 auto nextPos = pos + dir[d];
                 auto length = wholePath.back().length(nextPos);
-                // 判断越界
-                if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) continue;
-                // 判断是否是障碍物
-                if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
+                // 判断越界和障碍物
+                if (checkRobotAble(nextPos) == false) continue;
                 // 判断是否有机器人
                 if (otherPos.find(nextPos) != otherPos.end()) continue;
                 // 判断是否重叠
@@ -452,14 +432,6 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
 }
 std::vector<Robot *> robots;
 
-void solveRobot() {
-    // 预处理每个机器人初始点到每个虚拟点的时间, 也就是机器人能到达的点
-    for (int i = 0; i < MAX_Robot_Num; i++) {
-        robots[i]->robotDir = sovleGrid(robots[i]->pos);
-        grids[robots[i]->pos.x][robots[i]->pos.y]->gridDir = robots[i]->robotDir;
-    }
-}
-
 void solveCollision() {
     // 记录 friends
     std::vector<std::vector<int>> friends(MAX_Robot_Num, std::vector<int>(0));
@@ -479,11 +451,8 @@ void solveCollision() {
     for (int i = 0; i < MAX_Robot_Num; i++) {
         for (int j = 0; j < 4; j++) {
             auto nextPos = robots[i]->pos + dir[j];
-            if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) {
-                continue;
-            }
+            if (checkRobotAble(nextPos) == false) continue;
             if (robotPos.find(nextPos) != robotPos.end()) continue;
-            if (grids[nextPos.x][nextPos.y]->type == 1 || grids[nextPos.x][nextPos.y]->type == 2) continue;
             free[i]++;
         }
     }
@@ -552,6 +521,13 @@ void solveCollision() {
         }
     }
     return;
+}
+
+
+void newRobot(int x, int y) {
+    printf("lbot %d %d\n", x, y);
+    robots.push_back(new Robot(MAX_Robot_Num++, x, y));
+    fixPos.emplace_back(Pos(-1, -1));
 }
 
 #endif

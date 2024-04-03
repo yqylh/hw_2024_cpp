@@ -7,9 +7,12 @@ int tmpTotalGoods = 0;
 
 struct Ship {
     int id;
-    int status; // 0 移动(运输)中 1正常状态(即装货状态或运输完成状态) 2 泊位外等待状态
-    int berthId; // 表示目标泊位，如果目标泊位是虚拟点，则为-1
     int capacity; // 货物数量
+    Pos pos; // 船的核心点的位置
+    int status; // 0 正常行驶状态 1恢复状态 2装载状态
+    int direction; // 0 到 3 分别对应右、左、上、下。（和机器人移动的方向表示一致）
+    
+    int berthId; // 表示目标泊位，如果目标泊位是虚拟点，则为-1
     int isLastRound; // 是否是最后一轮
     Ship(int id): id(id) {
         status = 1;
@@ -38,5 +41,8 @@ struct Ship {
 };
 
 std::vector<Ship *> ships;
-
+void newShip(int x, int y) {
+    printf("lship %d %d\n", x, y);
+    ships.push_back(new Ship(MAX_Ship_Num++));
+}
 #endif

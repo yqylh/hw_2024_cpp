@@ -70,6 +70,29 @@ struct Grid {
     }
 };
 
+Grid *grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
+
+bool checkPos(Pos pos) {
+    return pos.x >= 0 && pos.x < MAX_Line_Length && pos.y >= 0 && pos.y < MAX_Col_Length;
+}
+bool checkRobotAble(Pos pos) {
+    auto type = grids[pos.x][pos.y]->type;
+    return checkPos(pos) && (type == 0 || type == 3 || type == 4 || type == 6 || type == 9 || type == 11);
+}
+bool checkShipAble(Pos pos) {
+    auto type = grids[pos.x][pos.y]->type;
+    return checkPos(pos) && (type == 1 || type == 3 || type == 5 || type == 7 || type == 8 || type == 9 || type == 11 || type == 12);
+}
+bool checkRobotNoColl(Pos pos) {
+    auto type = grids[pos.x][pos.y]->type;
+    return checkPos(pos) && (type == 3 || type == 4 || type == 6 || type == 11);
+}
+bool checkShipNoColl(Pos pos) {
+    auto type = grids[pos.x][pos.y]->type;
+    return checkPos(pos) && (type == 3 || type == 5 || type == 7 || type == 8 || type == 11 || type == 12);
+}
+
+
 struct Path {
     Pos begin;
     Pos end;
@@ -87,8 +110,6 @@ struct Path {
     ~Path() {}
 };
 
-Grid *grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
-
 // BFS用于寻路
 std::list<Pos> *findPath(Pos begin, Pos end) {
     std::list<Pos> *path = new std::list<Pos>();
@@ -103,8 +124,8 @@ std::list<Pos> *findPath(Pos begin, Pos end) {
         if (now == end) break;
         for (int i = 0; i < 4; i++) {
             Pos next = now + dir[i];
-            if (next.x < 0 || next.x >= MAX_Line_Length || next.y < 0 || next.y >= MAX_Col_Length) continue;
-            if (pre.find(next) != pre.end() || (grids[next.x][next.y]->type != 0 && grids[next.x][next.y]->type != 3)) continue;
+            if (checkRobotAble(next) == false) continue;
+            if (pre.find(next) != pre.end()) continue;
             q.push(next);
             pre[next] = now;
         }
@@ -130,8 +151,8 @@ Direction * sovleGrid(Pos origin) {
         Pos &now = _arr[start++];
         for (int i = 0; i < 4; i++) {
             Pos next = now + dir[i]; // 下一个点
-            if (next.x < 0 || next.x >= MAX_Line_Length || next.y < 0 || next.y >= MAX_Col_Length) continue; // 越界
-            if ((grids[next.x][next.y]->type != 0 && grids[next.x][next.y]->type != 3) || result->isVisited(next.x, next.y)) continue; //不是空地或者泊位,或者已经记录过前序, 跳过
+            if (checkRobotAble(next) == false) continue; // 不是机器人可以走的地方
+            if (result->isVisited(next.x, next.y)) continue; //记录过前序, 跳过
             result->setVisited(next.x, next.y);
             result->setDir(next.x, next.y, ((i == 0 || i == 2) ? i + 1 : i - 1));
             _arr[end++] = next;
@@ -146,7 +167,7 @@ void solveAllGrid() {
             auto stop = high_resolution_clock::now();
             auto usedTime = duration_cast<milliseconds>(stop - programStart).count();
             if (usedTime > 3500) return;
-            if ((grids[i][j]->type == 0 || grids[i][j]->type == 3) && grids[i][j]->gridDir == nullptr) {
+            if (checkRobotAble(Pos(i,j)) && grids[i][j]->gridDir == nullptr) {
                 grids[i][j]->gridDir = sovleGrid(Pos(i, j));
             }
         }

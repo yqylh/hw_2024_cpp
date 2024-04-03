@@ -26,6 +26,7 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
     
     for (int i = 0; i < fixPos.size(); i++) {
         if (fixPos[i].x != -1 and i != nowRobotId) {
+            if (checkRobotNoColl(fixPos[i])) continue;
             grids[fixPos[i].x][fixPos[i].y]->robotOnIt = true;
         }
     }
@@ -79,12 +80,14 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
             if (lastSeenDis < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis]) {
                     if (tar.x == -1) continue;
+                    if (checkRobotNoColl(tar)) continue;
                     grids[tar.x][tar.y]->robotOnIt = true;
                 }
             }
             if (lastSeenDis + 1 < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis + 1]) {
                     if (tar.x == -1) continue;
+                    if (checkRobotNoColl(tar)) continue;
                     grids[tar.x][tar.y]->robotOnIt = true;
                 }
             }
@@ -93,8 +96,8 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
 
         for (int i = 0; i < 4; i++) {
             Pos next = now + dir[i];
-            if (next.x < 0 || next.x >= MAX_Line_Length || next.y < 0 || next.y >= MAX_Col_Length) continue;
-            if (disWithTime[next.x][next.y] <= disWithTime[now.x][now.y] + 1 || (grids[next.x][next.y]->type != 0 && grids[next.x][next.y]->type != 3)) continue;
+            if (checkRobotAble(next) == false) continue;
+            if (disWithTime[next.x][next.y] <= disWithTime[now.x][now.y] + 1) continue;
             if (grids[next.x][next.y]->robotOnIt) continue;
             _queueRobot[end++] = next;
             if (end == 40010) end = 0;
@@ -177,7 +180,7 @@ std::deque<Pos> findPathWithTime(Pos beginPos, Pos endPos) {
     std::deque<Pos> path;
     auto now = endPos;
     while (!(now == beginPos)) {
-        if (now.x < 0 or now.y < 0) {
+        if (checkRobotAble(now) == false) {
             path.clear();
             return path;
         }

@@ -40,21 +40,22 @@ struct Berth {
     void findUsePos() {
         usePos.clear();
         std::vector<std::pair<Pos, int>> arr;
-        for (int i = 0; i <= 3; i++) {
-            for (int j = 0; j <= 3; j++) {
-                Pos temp = pos + Pos(i, j);
-                int haveGround = 0;
-                for (int d = 0; d <= 3; d++) {
-                    Pos temp2 = temp + dir[d];
-                    if (temp2.x < 0 || temp2.x >= MAX_Line_Length || temp2.y < 0 || temp2.y >= MAX_Col_Length) {
-                        continue;
-                    }
-                    if (grids[temp2.x][temp2.y]->type == 0) {
-                        haveGround++;
-                    }
+        std::unordered_set<Pos> visited;
+        std::queue<Pos> q;
+        q.push(pos);
+        while (!q.empty()) {
+            auto top = q.front(); q.pop();
+            int haveGround = 0;
+            for (int d = 0; d <= 3; d++) {
+                Pos next = top + dir[d];
+                if (checkRobotAble(next) && grids[next.x][next.y]->type != 3) haveGround++;
+                if (visited.find(next) != visited.end()) continue;
+                if (grids[next.x][next.y]->type == 3) {
+                    q.push(next);
+                    visited.insert(next);
                 }
-                arr.emplace_back(temp, haveGround);
             }
+            arr.emplace_back(top, haveGround);
         }
         std::sort(arr.begin(), arr.end(), [](const std::pair<Pos, int> &a, const std::pair<Pos, int> &b) {
             return a.second > b.second;

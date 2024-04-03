@@ -8,26 +8,33 @@
 #include <vector>
 
 /**
+ * @brief 机器人和船只的购买位置
+*/
+struct RobotBuyer {
+    Pos pos;
+    RobotBuyer(Pos _pos) : pos(_pos) {}
+};
+struct ShipBuyer {
+    Pos pos;
+    ShipBuyer(Pos _pos) : pos(_pos) {}
+};
+
+/**
  * Berth_center即船坞、轮船控制中心（塔台），进行统一调配，并指引机器人进入泊位
 */
 class Berth_center {
 public:
-    std::vector<std::vector<int> > robot_choose_berth; //机器人选择的泊位
+    std::vector<RobotBuyer> robot_buyer;
+    std::vector<ShipBuyer> ship_buyer;
+    std::vector<std::vector<int> > r_buyer_choose_berth; //机器人销售点选择的泊位
     std::vector<int> group_sorted_id; // 初始的分组排序
     std::vector<std::vector<int> > group;
-    std::vector<Pos> robot_pos; // 机器人的初始位置
-    std::vector<int> finish_berth; // 最后一轮的泊位
-    std::vector<int>finish_robot_berth; // 最后一轮的机器人泊位
     Berth_center() {
         group_sorted_id.clear();
-        group = std::vector<std::vector<int> >(MAX_Berth_Num, std::vector<int>());
     }    
 
     // 用于指引船只进入最佳的泊位
     int ship_choose_berth() {
-        if (LastGame) {
-            for (auto & i : finish_berth) if (berths[i]->shipId.empty() == false) return i;
-        }
         int max_goods = -1;
         int max_goods_id = -1;
         for (int i = 0; i < MAX_Berth_Num; i++) {
@@ -45,29 +52,19 @@ public:
     }
     // 用于指引机器人进入最佳的泊位
     std::vector<int> get_robot_berth(int id) {
-        // 如果是最后一轮,那么就返回最后一轮的泊位
-        if (LastGame) {
-            if (finish_robot_berth[id] != -1) return {finish_robot_berth[id]};
-            else return robot_choose_berth[id];
-        }
-        // if (nowTime + 1300 > MAX_TIME) {
+        // if (nowTime + Only_Run_On_Berth_with_Ship > MAX_TIME) {
         //     std::vector<int> ret;
-        //     for (auto & i : robot_choose_berth[id]) {
+        //     for (int i = 0; i < MAX_Berth_Num; i++) {
         //         if (berths[i]->shipId.size() != 0) ret.push_back(i);
         //     }
         //     if (ret.size() != 0) return ret;
-        //     else return robot_choose_berth[id];
-        // } else 
-        if (nowTime + Only_Run_On_Berth_with_Ship > MAX_TIME) {
-            std::vector<int> ret;
-            for (int i = 0; i < MAX_Berth_Num; i++) {
-                if (berths[i]->shipId.size() != 0) ret.push_back(i);
-            }
-            if (ret.size() != 0) return ret;
-            else return robot_choose_berth[id];
-        } else {
-            return robot_choose_berth[id];
-        }
+        //     else return r_buyer_choose_berth[id];
+        // } else {
+        //     return r_buyer_choose_berth[id];
+        // }
+        std::vector<int> ret;
+        for (int i = 0; i < MAX_Berth_Num; i++) ret.push_back(i);
+        return ret;
     }
     // 机器人告知塔台卸货
     void declare_robot_pull_good(int bert_id, int item_value){
@@ -110,93 +107,17 @@ public:
                 // line3: 如果港口没货物了, 并且船装满了百分之 ratio
                 if (   ship_ptr->leftCapacity() == 0
                     || berths[i]->time + nowTime + 2 > MAX_TIME
-                    || (berths[i]->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration && nowTime + berths[i]->time * 2 + lastRoundRuningTime < MAX_TIME && !LastGame)
+                    || (berths[i]->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration && nowTime + berths[i]->time * 2 + lastRoundRuningTime < MAX_TIME)
                 ) {
                     berths[i]->shipId.clear();
                     ship_ptr->go();
-                    // {
-                    //     if (nowTime + berths[i]->time * 3 + MAX_Capacity > MAX_TIME && LastGame == false) {
-                    //         LastGame = true;
-                    //         // 对所有的泊位进行分组
-                    //         int is_grouped[MAX_Berth_Num];
-                    //         for (int i = 0; i < MAX_Berth_Num; i++) is_grouped[i] = -1;
-                    //         for (int i = 0; i < MAX_Berth_Num; i++) {
-                    //             if (is_grouped[i] != -1) continue;
-                    //             is_grouped[i] = i;
-                    //             for (int j = i + 1; j < MAX_Berth_Num; j++) {
-                    //                 if (is_grouped[j] != -1) continue;
-                    //                 if (berths[i]->disWithTimeBerth[berths[j]->pos.x][berths[j]->pos.y] != 0x3f3f3f3f) {
-                    //                     is_grouped[j] = i;
-                    //                 }
-                    //             }
-                    //         }
-                    //         // 每次找到一个没加入过的,并且组里加入的次数小于 max_group_num 的泊位,加入.如果找不到,那么就 max_group_num++
-                    //         bool flag[MAX_Berth_Num] = {0};
-                    //         int group_num[MAX_Berth_Num] = {0};
-                    //         int max_group_num = 1;
-                    //         while (finish_berth.size() < 5) {
-                    //             int max_value = -1;
-                    //             int index = -1;
-                    //             for (int i = 0; i < MAX_Berth_Num; i++) {
-                    //                 if (flag[i]) continue;
-                    //                 if (group_num[is_grouped[i]] >= max_group_num) continue;
-                    //                 if (berths[i]->sum_value > max_value) {
-                    //                     max_value = berths[i]->sum_value;
-                    //                     index = i;
-                    //                 }
-                    //             }
-                    //             if (index == -1) {
-                    //                 max_group_num++;
-                    //                 continue;
-                    //             }
-                    //             flag[index] = true;
-                    //             finish_berth.push_back(index);
-                    //             group_num[is_grouped[index]]++;
-                    //         }
-                    //         // 顺序遍历每个泊位,直到所有机器人都加入
-                    //         for (int i = 0; i < MAX_Robot_Num; i++) finish_robot_berth[i] = -1;
-                    //         int solved = 0;
-                    //         while (solved != 10) {
-                    //             bool flag = false;
-                    //             for (auto & i : finish_berth) {
-                    //                 int min_dis = 0x3f3f3f3f;
-                    //                 int min_robot_id = -1;
-                    //                 for (int j = 0; j < MAX_Robot_Num; j++) {
-                    //                     if (finish_robot_berth[j] != -1) continue;
-                    //                     if (berths[i]->disWithTimeBerth[robot_pos[j].x][robot_pos[j].y] < min_dis) {
-                    //                         min_dis = berths[i]->disWithTimeBerth[robot_pos[j].x][robot_pos[j].y];
-                    //                         min_robot_id = j;
-                    //                     }
-                    //                 }
-                    //                 if (min_robot_id != -1) {
-                    //                     finish_robot_berth[min_robot_id] = i;
-                    //                     solved++;
-                    //                     flag = true;
-                    //                 }
-                    //             }
-                    //             if (!flag) break;
-                    //         }
-                    //     }
-                    // }
                     continue;
                 }
-                // tricks 额外的一种去虚拟点的情况
-                // 什么垃圾代码 狗都不用
-                // // line4: 如果还剩一轮的时间 也就是现在送一次,下一轮送一次,中间还去了一趟别的地方, 并且装了MAX_Capacity的货物 
-                // if (ship_ptr->isLastRound == false && nowTime + Last_Round_delay_time >= MAX_TIME) {
-                //     berths[i]->shipId.clear();
-                //     ship_ptr->go();
-                //     ship_ptr->isLastRound = true;
-                //     continue;
-                // }
                 // 让船去别的地方的情况
                 // 港口没货了,并且船没装满Sell_Ration
                 // 但是去了之后不能超时
-                if (berths[i]->goodsNum == 0 && berths[i]->time + nowTime + 10 + 500 < MAX_TIME && LastGame == 0) {
+                if (berths[i]->goodsNum == 0 && berths[i]->time + nowTime + 10 + 500 < MAX_TIME) {
                     int best_bert_id = ship_choose_berth();
-                    // plan A
-                    // if (berths[best_bert_id]->goodsNum < Min_Next_Berth_Goods) continue;
-                    // plan B
                     if (best_bert_id == -1) continue;
                     if (berths[best_bert_id]->sum_value < Min_Next_Berth_Value) continue;
                     berths[i]->shipId.clear();
@@ -228,8 +149,9 @@ public:
     */
     void find_private_space() {
         // 对所有的泊位进行分组
-        int is_grouped[MAX_Berth_Num];
-        for (int i = 0; i < MAX_Berth_Num; i++) is_grouped[i] = -1;
+        std::vector<int> is_grouped(MAX_Berth_Num, -1);
+        group = std::vector<std::vector<int> >(MAX_Berth_Num, std::vector<int>());
+        r_buyer_choose_berth = std::vector<std::vector<int> >(robot_buyer.size(), std::vector<int>());
         for (int i = 0; i < MAX_Berth_Num; i++) {
             if (is_grouped[i] != -1) continue;
             is_grouped[i] = i;
@@ -257,13 +179,13 @@ public:
             }
         }
         // 每个组所拥有的私有区域的面积
-        std::vector<int> berth_onwer_space[MAX_Berth_Num];
+        std::vector<std::vector<int> > berth_onwer_space(MAX_Berth_Num, std::vector<int>());
         // 空地大小
         int ground_num = 0;
         for (int x = 0; x < MAX_Line_Length; x++) {
             for (int y = 0; y < MAX_Col_Length; y++) {
                 // 排除障碍物和海洋
-                if (grids[x][y]->type == 1 || grids[x][y]->type == 2) continue;
+                if (checkRobotAble(Pos(x, y)) == false) continue;
                 ground_num++;
                 std::set<int> owner;
                 // 我们只考虑 MAX_Berth_Control_Length 帧内的情况
@@ -298,30 +220,30 @@ public:
         for (auto & i : group_sorted_id) {
             centerLogger.log(nowTime, "berth group{}, onwer_space{}, avg_onwer_space_length{}, 参数{}", i, berth_onwer_space[i].size(), avg_onwer_space_length[i], berth_onwer_space[i].size() / avg_onwer_space_length[i]);
         }
-        // 需要考虑的: 组可以接触到哪些机器人 组是否太烂了
+        // 需要考虑的: 组可以接触到哪些机器人购买点(一个购买点暂定一个组) 组是否太烂了
         std::vector<std::vector<int> > group_can_reach_robot(MAX_Berth_Num, std::vector<int>());
-        bool robot_selected[MAX_Robot_Num] = {0};
+        std::vector<bool> r_buyer_selected(robot_buyer.size(), false);
         bool need_select_worst = false;
         while (true) {
             bool flag = false;
-            // 按照优先级,每个组选择一个最近的机器人
+            // 按照优先级,每个组选择一个最近的机器人购买点
             for (auto & i : group_sorted_id) {
                 // 如果这个组的评分*3小于最好的组的评分,那么就不考虑这个组
                 if (berth_onwer_space[i].size() / avg_onwer_space_length[i] * Worst_Rate < berth_onwer_space[group_sorted_id.front()].size() / avg_onwer_space_length[group_sorted_id.front()] && need_select_worst == false) continue;
                 int min_dis = INT_MAX;
-                int min_robot_id = -1;
-                for (int robot_id = 0; robot_id < MAX_Robot_Num; robot_id++) {
-                    if (robot_selected[robot_id]) continue;
+                int min_r_buyer = -1;
+                for (int r_buyer = 0; r_buyer < robot_buyer.size(); r_buyer++) {
+                    if (r_buyer_selected[r_buyer]) continue;
                     for (auto & berth_id : group[i]) {
-                        if (berths[berth_id]->disWithTimeBerth[robot_pos[robot_id].x][robot_pos[robot_id].y] < min_dis) {
-                            min_dis = berths[berth_id]->disWithTimeBerth[robot_pos[robot_id].x][robot_pos[robot_id].y];
-                            min_robot_id = robot_id;
+                        if (berths[berth_id]->disWithTimeBerth[robot_buyer[r_buyer].pos.x][robot_buyer[r_buyer].pos.y] < min_dis) {
+                            min_dis = berths[berth_id]->disWithTimeBerth[robot_buyer[r_buyer].pos.x][robot_buyer[r_buyer].pos.y];
+                            min_r_buyer = r_buyer;
                         }
                     }
                 }
                 if (min_dis != INT_MAX) {
-                    group_can_reach_robot[i].push_back(min_robot_id);
-                    robot_selected[min_robot_id] = true;
+                    group_can_reach_robot[i].push_back(min_r_buyer);
+                    r_buyer_selected[min_r_buyer] = true;
                     flag = true;
                 }
             }
@@ -329,10 +251,10 @@ public:
             if (!flag) {
                 // 如果在need_select_worst状态下仍然没更新,那么就退出
                 if (need_select_worst) break;
-                // 如果一个机器人没有被选择,那说明 1. 没有组可以 reach 2. 组太烂了被 skip 了 组可能有多个组
+                // 如果一个机器人购买点没有被选择,那说明 1. 没有组可以 reach 2. 组太烂了被 skip 了 组可能有多个组
                 bool isEnd = true;
-                for (int i = 0; i < MAX_Robot_Num; i++) if (!robot_selected[i]) isEnd = false;
-                // 如果所有的机器人都被选择了,那么就退出. 不然设定 need_select_worst = true 继续跑
+                for (int i = 0; i < robot_buyer.size(); i++) if (!r_buyer_selected[i]) isEnd = false;
+                // 如果所有的机器人购买点都被选择了,那么就退出. 不然设定 need_select_worst = true 继续跑
                 if (isEnd) break;
                 else need_select_worst = true;
             }
@@ -341,7 +263,7 @@ public:
             centerLogger.log(nowTime, "group{} can reach robot:", i);
             for (auto & j : group_can_reach_robot[i]) {
                 centerLogger.log(nowTime, "    {}", j);
-                for (auto & berth_id : group[i]) robot_choose_berth[j].push_back(berth_id);
+                for (auto & berth_id : group[i]) r_buyer_choose_berth[j].push_back(berth_id);
             }
         }
     }
