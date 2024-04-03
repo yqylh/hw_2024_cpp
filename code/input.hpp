@@ -163,14 +163,15 @@ void solveFrame() {
             newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
             newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
             newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
-            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
         }
     }
     // 时间向前推进
     if (allPath.size() > 0) allPath.pop_front();
-
-    // berth_center->call_ship_and_berth_check();    
-    // do_special_frame();
+    // 船只调度
+    berth_center->call_ship_and_berth_check();
+    // 船只移动
+    for (auto & ship : ships) ship->move();
+    do_special_frame();
     
     puts("OK");
     fflush(stdout);

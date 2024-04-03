@@ -192,4 +192,25 @@ std::deque<Pos> findPathWithTime(Pos beginPos, Pos endPos) {
     return path;
 }
 
+Pos _arr_s[40010];
+Direction * sovleShip(Pos origin) {
+    Direction * result = new Direction;
+    result->setVisited(origin.x, origin.y);
+    int start = 0, end = 0;
+    _arr_s[end++] = origin;
+    while (start < end) {
+        Pos &now = _arr_s[start++];
+        for (int i = 0; i < 4; i++) {
+            Pos next = now + dir[i]; // 下一个点
+            if (checkShipAble(next) == false) continue; // 不是机器人可以走的地方
+            if (result->isVisited(next.x, next.y)) continue; //记录过前序, 跳过
+            result->setVisited(next.x, next.y);
+            result->setDir(next.x, next.y, ((i == 0 || i == 2) ? i + 1 : i - 1));
+            _arr_s[end++] = next;
+        }
+    }
+    return result;
+}
+
+
 #endif
