@@ -450,7 +450,7 @@ void Robot::checkCollision(std::unordered_map<Pos, Pos> &otherPos){
     }
     return;
 }
-Robot *robots[MAX_Robot_Num];
+std::vector<Robot *> robots;
 
 void solveRobot() {
     // 预处理每个机器人初始点到每个虚拟点的时间, 也就是机器人能到达的点
@@ -462,12 +462,12 @@ void solveRobot() {
 
 void solveCollision() {
     // 记录 friends
-    std::vector<std::vector<int>> friends(MAX_Robot_Num + 1, std::vector<int>(0));
+    std::vector<std::vector<int>> friends(MAX_Robot_Num, std::vector<int>(0));
     std::unordered_set<Pos> robotPos;
     // 计算每个节点的 friend 的 id
-    for (int i = 0; i <= robotNum; i++) {
+    for (int i = 0; i < MAX_Robot_Num; i++) {
         robotPos.insert(robots[i]->pos);
-        for (int j = i + 1; j <= robotNum; j++) {
+        for (int j = i + 1; j < MAX_Robot_Num; j++) {
             if (robots[i]->pos.length(robots[j]->pos) <= 2) {
                 friends[i].push_back(j);
                 friends[j].push_back(i);
@@ -475,8 +475,8 @@ void solveCollision() {
         }
     }
     // 记录周围的空闲度
-    int free[MAX_Robot_Num + 1] = {0};
-    for (int i = 0; i <= robotNum; i++) {
+    std::vector<int> free(MAX_Robot_Num, 0);
+    for (int i = 0; i < MAX_Robot_Num; i++) {
         for (int j = 0; j < 4; j++) {
             auto nextPos = robots[i]->pos + dir[j];
             if (nextPos.x < 0 || nextPos.x >= MAX_Line_Length || nextPos.y < 0 || nextPos.y >= MAX_Col_Length) {
@@ -503,7 +503,7 @@ void solveCollision() {
     // 初始化set，指定Lambda表达式作为比较器
     std::set<std::pair<int, int>, decltype(compare)> mySet(compare);
     // 按照 free 排序    id   free. 如果 free 相同按照 x y 排序
-    for (int i = 0; i <= robotNum; i++) {
+    for (int i = 0; i < MAX_Robot_Num; i++) {
         mySet.insert(std::make_pair(i, free[i]));
     }
     /**
@@ -512,7 +512,7 @@ void solveCollision() {
      * 3. 重复 1 2 步骤
     */
     std::unordered_map<int, std::vector<int>> group; group.clear();
-    bool visited[MAX_Robot_Num + 1] = {0};
+    std::vector<bool> visited(MAX_Robot_Num, false);
     while (!mySet.empty()) {
         auto it = mySet.begin();
         int u = it->first;

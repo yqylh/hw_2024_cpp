@@ -84,8 +84,8 @@ def remove_file(file_path, attempts=10):
                 
 
 def run_one(args, random_seed):
-    Win_Cmd = f'%CD%/../judge/PreliminaryJudge.exe -s {str(random_seed)} -m ../{args.map_folder}/{args.map} -r ./{args.map}{str(random_seed)}%Y-%m-%d.%H.%M.%S.rep ./main'
-    Linux_Cmd = f'../judge/PreliminaryJudge -s {str(random_seed)} -m ../{args.map_folder}/{args.map} -r ./{args.map}{str(random_seed)}%Y-%m-%d.%H.%M.%S.rep ./main'
+    Win_Cmd = f'%CD%/../judge/SemiFinalJudge.exe -s {str(random_seed)} -m ../{args.map_folder}/{args.map} -r ./{args.map}{str(random_seed)}%Y-%m-%d.%H.%M.%S.rep ./main'
+    Linux_Cmd = f'../judge/SemiFinalJudge -s {str(random_seed)} -m ../{args.map_folder}/{args.map} -r ./{args.map}{str(random_seed)}%Y-%m-%d.%H.%M.%S.rep ./main'
     
     if not os.path.exists('../log'):
         os.makedirs('../log')

@@ -13,49 +13,72 @@ void inputMap(){
     for (int i = 0; i < MAX_Line_Length; i++) {
         std::string line;
         getline(std::cin, line);
-    
         for (int j = 0; j < MAX_Col_Length; j++) {
-            if (line[j] == '.') {
-                grids[i][j] = new Grid(i, j, 0);
-            } else if (line[j] == '*') {
-                grids[i][j] = new Grid(i, j, 1);
-            } else if (line[j] == '#') {
-                grids[i][j] = new Grid(i, j, 2);
-            } else if (line[j] == 'A') {
-                robotNum++;
-                robots[robotNum] = new Robot(robotNum, i, j);
-                grids[i][j] = new Grid(i, j, 0);
-            } else if (line[j] == 'B') {
-                grids[i][j] = new Grid(i, j, 3);
-            } else {
-                throw;
+            switch (line[j]) {
+                case '.':
+                    grids[i][j] = new Grid(i, j, 0);
+                    break;
+                case '*':
+                    grids[i][j] = new Grid(i, j, 1);
+                    break;
+                case '#':
+                    grids[i][j] = new Grid(i, j, 2);
+                    break;
+                case 'B':
+                    grids[i][j] = new Grid(i, j, 3);
+                    break;
+                case '>':
+                    grids[i][j] = new Grid(i, j, 4);
+                    break;
+                case '~':
+                    grids[i][j] = new Grid(i, j, 5);
+                    break;
+                case 'R':
+                    grids[i][j] = new Grid(i, j, 6);
+                    break;
+                case 'S':
+                    grids[i][j] = new Grid(i, j, 7);
+                    break;
+                case 'K':
+                    grids[i][j] = new Grid(i, j, 8);
+                    break;
+                case 'C':
+                    grids[i][j] = new Grid(i, j, 9);
+                    break;
+                case 'c':
+                    grids[i][j] = new Grid(i, j, 11);
+                    break;
+                case 'T':
+                    grids[i][j] = new Grid(i, j, 12);
+                    break;
+                default:
+                    throw;
             }
         }
     }
+    scanf("%d", &MAX_Berth_Num);
     for (int i = 0; i < MAX_Berth_Num; i++) {
-        int id, x, y, time, velocity;
-        scanf("%d%d%d%d%d", &id, &x, &y, &time, &velocity);
-        berths[i] = new Berth(id, x, y, time, velocity);
-        berthLogger.log(nowTime, "Berth{0} :id={1} x={2} y={3} time={4} v={5}", i, id, x, y, time, velocity);
+        int id, x, y, velocity;
+        scanf("%d%d%d%d", &id, &x, &y, &velocity);
+        berths.emplace_back(new Berth(id, x, y, velocity));
+        berthLogger.log(nowTime, "Berth{0} :id={1} x={2} y={3} v={4}", i, id, x, y, velocity);
     }
     std::cin >> MAX_Capacity;
     std::string line;
     while(getline(std::cin, line) && line != "OK");
-    for (int i = 0; i < MAX_Ship_Num; i++) ships[i] = new Ship(i);
-    shipNum = MAX_Ship_Num - 1;
-    solveBerth();
-    solveRobot();
-    { // 因为要实现 header_only 的特性, center 和 robot不能互相引用, 所以只能在这里初始化
-        std::vector<Pos> robot_pos;
-        for (int i = 0; i <= robotNum; i++) robot_pos.push_back(robots[i]->pos);
-        berth_center->robot_pos = robot_pos;
-        berth_center->find_private_space();
-    }
+    // solveBerth();
+    // solveRobot();
+    // { // 因为要实现 header_only 的特性, center 和 robot不能互相引用, 所以只能在这里初始化
+    //     std::vector<Pos> robot_pos;
+    //     for (auto & robot : robots) robot_pos.push_back(robot->pos);
+    //     berth_center->robot_pos = robot_pos;
+    //     berth_center->find_private_space();
+    // }
     srand(time(0));
     puts("OK");
     fflush(stdout);
-    counter.registerVariable("shipNum", shipNum);
-    counter.registerVariable("robotNum", robotNum);
+    counter.registerVariable("shipNum", MAX_Ship_Num);
+    counter.registerVariable("robotNum", MAX_Robot_Num);
     counter.registerVariable("robot_move_length", 0);
     counter.registerVariable("robot_get_nums", 0);
     counter.registerVariable("robot_get_value", 0);
@@ -87,14 +110,21 @@ bool inputFrame() {
     for (int i = 1; i <= K; i++) {
         int x, y, value;
         scanf("%d%d%d", &x, &y, &value);
-        unsolvedItems.emplace_back(x, y, value);
-        unsolvedItems.back().beginTime = nowTime;
+        if (value != 0) {
+            unsolvedItems.emplace_back(x, y, value);
+            unsolvedItems.back().beginTime = nowTime;
+        }
     }
-    for (int i = 0; i <= robotNum; i++) {
-        scanf("%d%d%d%d", &robots[i]->bring, &robots[i]->pos.x, &robots[i]->pos.y, &robots[i]->status);
+    int R;
+    scanf("%d", &R);
+    for (int i = 1; i <= R; i++) {
+        int id, bring, x, y;
+        scanf("%d%d%d%d%d", &id, &bring, &x, &y);
     }
-    for (int i = 0; i <= shipNum; i++) {
-        scanf("%d%d", &ships[i]->status, &ships[i]->berthId);
+    int B;
+    for (int i = 1; i <= B; i++) {
+        int id, bring, x, y, direction, status;
+        scanf("%d%d%d%d%d%d", &id, &bring, &x, &y, &direction, &status);
     }
     std::string line;
     while(getline(std::cin, line) && line != "OK");
@@ -102,21 +132,21 @@ bool inputFrame() {
 }
 
 void solveFrame() {
-    flowLogger.log(nowTime, "当前帧数={0}", nowTime);
+    // flowLogger.log(nowTime, "当前帧数={0}", nowTime);
 
-    for (int i = 0; i <= robotNum; i++) robots[i]->action();
-    // 碰撞检测
-    solveCollision();
-    // 移动
-    for (int i = 0; i <= robotNum; i++) robots[i]->move();
-    pathLogger.log(nowTime, "allPath.size()={0}", allPath.size());
-    // 时间向前推进
-    if (allPath.size() > 0) allPath.pop_front();
+    // for (auto & robot : robots) robot->action();
+    // // 碰撞检测
+    // solveCollision();
+    // // 移动
+    // for (auto & robot : robots) robot->move();
+    // pathLogger.log(nowTime, "allPath.size()={0}", allPath.size());
+    // // 时间向前推进
+    // if (allPath.size() > 0) allPath.pop_front();
 
-    berth_center->call_ship_and_berth_check();    
-    bcenterlogger.log(nowTime, "ship_and_berth_check_ok");
+    // berth_center->call_ship_and_berth_check();    
+    // bcenterlogger.log(nowTime, "ship_and_berth_check_ok");
 
-    do_special_frame();
+    // do_special_frame();
     
     puts("OK");
     fflush(stdout);

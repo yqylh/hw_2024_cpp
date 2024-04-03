@@ -9,10 +9,9 @@ struct Berth {
     Pos pos;
     std::vector<Pos> usePos; // 使用的位置
     std::vector<Direction *> usePosDir; // 使用的位置 任何节点到这个位置的下一步方向
-    int time; // 运输到虚拟点的时间  
     int velocity; // 装载速度
     int disWithTimeBerth[MAX_Line_Length + 1][MAX_Col_Length + 1];
-
+    int time;
     //上面的是原始值，别改
     
     std::vector<int> shipId; // 表示当前泊位上的船的 id,可能有多个,用empty()判断是否有船
@@ -25,7 +24,7 @@ struct Berth {
     int sum_value;
     int total_value;
     int total_goods;
-    Berth(int id, int x, int y, int time, int velocity) : id(id), time(time), velocity(velocity) {
+    Berth(int id, int x, int y, int velocity) : id(id), velocity(velocity) {
         this->pos = Pos(x, y);
         goodsNum = 0;
         on_way_ship = 0;
@@ -66,7 +65,7 @@ struct Berth {
     }
 };
 
-Berth *berths[MAX_Berth_Num];
+std::vector<Berth *> berths;
 std::unordered_map<Pos, Berth*> pos2berth;
 
 void solveBerth() {

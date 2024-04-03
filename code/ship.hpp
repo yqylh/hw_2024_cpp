@@ -37,6 +37,6 @@ struct Ship {
     }
 };
 
-Ship *ships[MAX_Ship_Num];
+std::vector<Ship *> ships;
 
 #endif

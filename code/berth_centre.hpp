@@ -12,14 +12,13 @@
 */
 class Berth_center {
 public:
-    std::vector<int> robot_choose_berth[MAX_Robot_Num]; //机器人选择的泊位
+    std::vector<std::vector<int> > robot_choose_berth; //机器人选择的泊位
     std::vector<int> group_sorted_id; // 初始的分组排序
     std::vector<std::vector<int> > group;
     std::vector<Pos> robot_pos; // 机器人的初始位置
     std::vector<int> finish_berth; // 最后一轮的泊位
-    int finish_robot_berth[MAX_Robot_Num]; // 最后一轮的机器人泊位
+    std::vector<int>finish_robot_berth; // 最后一轮的机器人泊位
     Berth_center() {
-        for (int i = 0; i < MAX_Robot_Num; i++) robot_choose_berth->clear();
         group_sorted_id.clear();
         group = std::vector<std::vector<int> >(MAX_Berth_Num, std::vector<int>());
     }    
