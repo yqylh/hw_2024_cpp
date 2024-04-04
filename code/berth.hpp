@@ -9,10 +9,9 @@ struct Berth {
     Pos pos;
     std::vector<Pos> usePos; // 使用的位置
     std::vector<Direction *> usePosDir; // 使用的位置 任何节点到这个位置的下一步方向
-    int time; // 运输到虚拟点的时间  
     int velocity; // 装载速度
     int disWithTimeBerth[MAX_Line_Length + 1][MAX_Col_Length + 1];
-
+    int time;
     //上面的是原始值，别改
     
     std::vector<int> shipId; // 表示当前泊位上的船的 id,可能有多个,用empty()判断是否有船
@@ -25,7 +24,7 @@ struct Berth {
     int sum_value;
     int total_value;
     int total_goods;
-    Berth(int id, int x, int y, int time, int velocity) : id(id), time(time), velocity(velocity) {
+    Berth(int id, int x, int y, int velocity) : id(id), velocity(velocity) {
         this->pos = Pos(x, y);
         goodsNum = 0;
         on_way_ship = 0;
@@ -41,21 +40,22 @@ struct Berth {
     void findUsePos() {
         usePos.clear();
         std::vector<std::pair<Pos, int>> arr;
-        for (int i = 0; i <= 3; i++) {
-            for (int j = 0; j <= 3; j++) {
-                Pos temp = pos + Pos(i, j);
-                int haveGround = 0;
-                for (int d = 0; d <= 3; d++) {
-                    Pos temp2 = temp + dir[d];
-                    if (temp2.x < 0 || temp2.x >= MAX_Line_Length || temp2.y < 0 || temp2.y >= MAX_Col_Length) {
-                        continue;
-                    }
-                    if (robot_grids[temp2.x][temp2.y]->type == 0) {
-                        haveGround++;
-                    }
+        std::unordered_set<Pos> visited;
+        std::queue<Pos> q;
+        q.push(pos);
+        while (!q.empty()) {
+            auto top = q.front(); q.pop();
+            int haveGround = 0;
+            for (int d = 0; d <= 3; d++) {
+                Pos next = top + dir[d];
+                if (robot_grids[next.x][next.y]->type != -1 && robot_grids[next.x][next.y]->Grid::type != 3) haveGround++;
+                if (visited.find(next) != visited.end()) continue;
+                if (robot_grids[next.x][next.y]->Grid::type == 3) {
+                    q.push(next);
+                    visited.insert(next);
                 }
-                arr.emplace_back(temp, haveGround);
             }
+            arr.emplace_back(top, haveGround);
         }
         std::sort(arr.begin(), arr.end(), [](const std::pair<Pos, int> &a, const std::pair<Pos, int> &b) {
             return a.second > b.second;
@@ -66,7 +66,7 @@ struct Berth {
     }
 };
 
-Berth *berths[MAX_Berth_Num];
+std::vector<Berth *> berths;
 std::unordered_map<Pos, Berth*> pos2berth;
 
 void solveBerth() {

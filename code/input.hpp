@@ -27,8 +27,8 @@ void inputMap(){
             } else if (line[j] == '#') {
                 gengerate_grid(i, j, 2);
             } else if (line[j] == 'A') { //废弃
-                robotNum++;
-                robots[robotNum] = new Robot(robotNum, i, j);
+                // robotNum++;
+                // robots[robotNum] = new Robot(robotNum, i, j);
                 gengerate_grid(i, j, 0);
             } else if (line[j] == 'B') {
                 gengerate_grid(i, j, 3);
@@ -37,8 +37,10 @@ void inputMap(){
             } else if (line[j] == '~') {
                 gengerate_grid(i, j, 6);
             } else if (line[j] == 'R') {
+                berth_center->robot_buyer.emplace_back(Pos(i, j));
                 gengerate_grid(i, j, 7);
             } else if (line[j] == 'S') {
+                berth_center->ship_buyer.emplace_back(Pos(i, j));
                 gengerate_grid(i, j, 8);
             } else if (line[j] == 'K') {
                 gengerate_grid(i, j, 9);
@@ -53,31 +55,23 @@ void inputMap(){
             }
         }
     }
+    scanf("%d", &MAX_Berth_Num);
     for (int i = 0; i < MAX_Berth_Num; i++) {
-        int id, x, y, time, velocity;
-        scanf("%d%d%d%d%d", &id, &x, &y, &time, &velocity);
-        berths[i] = new Berth(id, x, y, time, velocity);
-        berthLogger.log(nowTime, "Berth{0} :id={1} x={2} y={3} time={4} v={5}", i, id, x, y, time, velocity);
+        int id, x, y, velocity;
+        scanf("%d%d%d%d", &id, &x, &y, &velocity);
+        berths.emplace_back(new Berth(id, x, y, velocity));
+        berthLogger.log(nowTime, "Berth{0} :id={1} x={2} y={3} v={4}", i, id, x, y, velocity);
     }
     std::cin >> MAX_Capacity;
     std::string line;
     while(getline(std::cin, line) && line != "OK");
-    for (int i = 0; i < MAX_Ship_Num; i++) ships[i] = new Ship(i);
-    shipNum = MAX_Ship_Num - 1;
-    while(getline(std::cin, line) && line != "OK");
-    // solveBerth();
-    // solveRobot();
-    // { // 因为要实现 header_only 的特性, center 和 robot不能互相引用, 所以只能在这里初始化
-    //     std::vector<Pos> robot_pos;
-    //     for (auto & robot : robots) robot_pos.push_back(robot->pos);
-    //     berth_center->robot_pos = robot_pos;
-    //     berth_center->find_private_space();
-    // }
+    solveBerth();
+    berth_center->find_private_space();
     srand(time(0));
     puts("OK");
     fflush(stdout);
-    counter.registerVariable("shipNum", shipNum);
-    counter.registerVariable("robotNum", robotNum);
+    counter.registerVariable("shipNum", MAX_Ship_Num);
+    counter.registerVariable("robotNum", MAX_Robot_Num);
     counter.registerVariable("robot_move_length", 0);
     counter.registerVariable("robot_get_nums", 0);
     counter.registerVariable("robot_get_value", 0);
@@ -118,12 +112,19 @@ bool inputFrame() {
     scanf("%d", &R);
     for (int i = 1; i <= R; i++) {
         int id, bring, x, y;
-        scanf("%d%d%d%d%d", &id, &bring, &x, &y);
+        scanf("%d%d%d%d", &id, &bring, &x, &y);
+        robots[id]->bring = bring;
+        robots[id]->pos = Pos(x, y);
     }
     int B;
+    scanf("%d", &B);
     for (int i = 1; i <= B; i++) {
         int id, bring, x, y, direction, status;
         scanf("%d%d%d%d%d%d", &id, &bring, &x, &y, &direction, &status);
+        ships[id]->capacity = bring;
+        ships[id]->pos = Pos(x, y);
+        ships[id]->direction = direction;
+        ships[id]->status = status;
     }
     std::string line;
     while(getline(std::cin, line) && line != "OK");
@@ -131,22 +132,34 @@ bool inputFrame() {
 }
 
 void solveFrame() {
-    // flowLogger.log(nowTime, "当前帧数={0}", nowTime);
-
-    // for (auto & robot : robots) robot->action();
-    // // 碰撞检测
-    // solveCollision();
-    // // 移动
-    // for (auto & robot : robots) robot->move();
-    // pathLogger.log(nowTime, "allPath.size()={0}", allPath.size());
-    // // 时间向前推进
-    // if (allPath.size() > 0) allPath.pop_front();
-
-    // berth_center->call_ship_and_berth_check();    
-    // bcenterlogger.log(nowTime, "ship_and_berth_check_ok");
-
-    // do_special_frame();
+    flowLogger.log(nowTime, "当前帧数={0}", nowTime);
     
+    for (auto & robot : robots) robot->action();
+    // 碰撞检测
+    // solveCollision();
+    // 移动
+    for (auto & robot : robots) robot->move();
+    if (nowTime == 1) {
+        bcenterlogger.log(nowTime, "购买机器人！");
+        for (auto & robotBuyer : berth_center->robot_buyer) {
+            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+        }
+        bcenterlogger.log(nowTime, "购买机器人完成！");
+    }
+    // 时间向前推进
+    if (allPath.size() > 0) allPath.pop_front();
+    bcenterlogger.log(nowTime, "时间向前推进完成！");
+    // 船只调度
+    berth_center->call_ship_and_berth_check();
+    bcenterlogger.log(nowTime, "船只调度完成！");
+    // 船只移动
+    for (auto & ship : ships) ship->move();
+    bcenterlogger.log(nowTime, "船只移动完成！");
+    do_special_frame();
+    bcenterlogger.log(nowTime, "一帧完成！");
     puts("OK");
     fflush(stdout);
 }

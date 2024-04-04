@@ -26,7 +26,7 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
     
     for (int i = 0; i < fixPos.size(); i++) {
         if (fixPos[i].x != -1 and i != nowRobotId) {
-            robot_grids[fixPos[i].x][fixPos[i].y]->robotOnIt = true;
+            robot_grids[fixPos[i].x][fixPos[i].y]->robotOnIt = true  * (1-robot_grids[fixPos[i].x][fixPos[i].y]->type);
         }
     }
 
@@ -79,13 +79,14 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
             if (lastSeenDis < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis]) {
                     if (tar.x == -1) continue;
-                    robot_grids[tar.x][tar.y]->robotOnIt = true;
+                    
+                    robot_grids[tar.x][tar.y]->robotOnIt = true * (1-robot_grids[tar.x][tar.y]->type);
                 }
             }
             if (lastSeenDis + 1 < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis + 1]) {
                     if (tar.x == -1) continue;
-                    robot_grids[tar.x][tar.y]->robotOnIt = true;
+                    robot_grids[tar.x][tar.y]->robotOnIt = true * (1-robot_grids[tar.x][tar.y]->type);
                 }
             }
         }
@@ -177,7 +178,7 @@ std::deque<Pos> findPathWithTime(Pos beginPos, Pos endPos) {
     std::deque<Pos> path;
     auto now = endPos;
     while (!(now == beginPos)) {
-        if (now.x < 0 or now.y < 0) {
+        if (robot_grids[now.x][now.y]->type != -1) {
             path.clear();
             return path;
         }
@@ -188,5 +189,28 @@ std::deque<Pos> findPathWithTime(Pos beginPos, Pos endPos) {
     std::reverse(path.begin(), path.end());
     return path;
 }
+
+Pos _arr_s[40010];
+Direction * sovleShip(Pos origin) {
+    shipLogger.log(nowTime, "sovleShip");
+    Direction * result = new Direction;
+    result->setVisited(origin.x, origin.y);
+    int start = 0, end = 0;
+    _arr_s[end++] = origin;
+    while (start < end) {
+        Pos &now = _arr_s[start++];
+        for (int i = 0; i < 4; i++) {
+            Pos next = now + dir[i]; // 下一个点
+            if (boat_grids[next.x][next.y]->type == -1) continue; // 不是机器人可以走的地方
+            if (result->isVisited(next.x, next.y)) continue; //记录过前序, 跳过
+            result->setVisited(next.x, next.y);
+            result->setDir(next.x, next.y, ((i == 0 || i == 2) ? i + 1 : i - 1));
+            _arr_s[end++] = next;
+        }
+    }
+    shipLogger.log(nowTime, "sovleShip finish");
+    return result;
+}
+
 
 #endif
