@@ -215,6 +215,7 @@ int _pre_dir_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
  * 4. 存路径：直行2、顺时针0、逆时针1
 */
 std::deque<int> *sovleShip(Pos origin, int direction, Pos target) {
+    allPathLogger.log(nowTime, "sovleShip origin{},{} direction{} target{},{}", origin.x, origin.y, direction, target.x, target.y);
     for (int i = 0; i < MAX_Line_Length; i++) {
         for (int j = 0; j < MAX_Col_Length; j++) {
             for (int k = 0; k < 4; k++) {
@@ -272,7 +273,7 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target) {
     while (true) {
         result->push_front(_pre_dir_s[now.x][now.y][now.direction]);
         now = _pre_s[now.x][now.y][now.direction];
-        if (now.toPos() == origin) break;
+        if (now.toPos() == origin && now.direction == direction) break;
         allPos += std::to_string(now.x) + "," + std::to_string(now.y) + "," + std::to_string(now.direction) + "<";
         allDir += std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
     }

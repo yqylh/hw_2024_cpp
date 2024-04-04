@@ -53,7 +53,7 @@ struct Ship {
     }
     // 去另一个港口
     void moveToBerth(int _berthId, Pos to) {
-        if (berthId != -2) dept();
+        if (berthId >= 0) dept();
         this->berthId = _berthId;
         // 这里不需要找路径,因为要先移动到主航道上,然后状态从 2 变成 0. path 设置成空
         path = nullptr;

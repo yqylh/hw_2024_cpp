@@ -1,1 +1,1 @@
-python run.py --debug True --map map1.txt --random_seed 10 --stdout 0
+python run.py --d 1 --map map2.txt --random_seed 10 --stdout 1

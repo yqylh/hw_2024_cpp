@@ -263,18 +263,15 @@ public:
     void normal_check_ship(int shipId){
         auto ship_ptr = ships[shipId];
         ship_ptr->output();
+        if (ship_ptr->status == 1) return;
         // 到达了销售点卖掉了. 或者船刚出生
         if ((ship_ptr->berthId == -2) || (ship_ptr->pos == ship_ptr->targetPos && ship_ptr->berthId == -1)) {
             int best_bert_id = ship_choose_berth();
-            if (best_bert_id == -1) {
-                if (ship_ptr->berthId == -2) {
-                    best_bert_id = 0;
-                } else {
-                    return;
-                }
-            }
+            // 一个个都没货是吧,死了得了
+            if (best_bert_id == -1) best_bert_id = 0;
             declare_ship(best_bert_id, shipId);
             ship_ptr->moveToBerth(best_bert_id, berths[best_bert_id]->pos);
+            shipLogger.log(nowTime, "center command ship{0} move_berth to berth{1}", ship_ptr->id, best_bert_id);
             return;
         }
         // 到达了目标泊位(而不是虚拟点), 并且船是运行状态,当前位置是靠泊区或者泊位 而且是我们要去的泊位

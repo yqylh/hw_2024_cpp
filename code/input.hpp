@@ -151,7 +151,6 @@ bool inputFrame() {
 
 void solveFrame() {
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
-    
     for (auto & robot : robots) robot->action();
     // 碰撞检测
     // solveCollision();
@@ -161,8 +160,10 @@ void solveFrame() {
         for (auto & robotBuyer : berth_center->robot_buyer) {
             newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
             newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
-            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
-            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            if (berth_center->robot_buyer.size() == 2) {
+                newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+                newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            }
         }
     }
     // 时间向前推进
