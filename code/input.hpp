@@ -55,6 +55,7 @@ void inputMap(){
             }
         }
     }
+    solveBoatGrid()
     scanf("%d", &MAX_Berth_Num);
     for (int i = 0; i < MAX_Berth_Num; i++) {
         int id, x, y, velocity;

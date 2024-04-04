@@ -143,6 +143,7 @@ public:
 class BoatGrid:public Grid{
 public:
     int type;
+    int reduced_type[4]; //约化地图
     /*
     -1  禁行
     0   通行
@@ -150,6 +151,10 @@ public:
     */
    BoatGrid():Grid(){
         this->type = -1;
+        this->reduced_type[0] = 0;
+        this->reduced_type[1] = 0;
+        this->reduced_type[2] = 0;
+        this->reduced_type[3] = 0;
    }
    BoatGrid(int x, int y, int type):Grid(x,y,type){
         this->type = gengerate_boat_type(type);
@@ -242,6 +247,41 @@ void solveAllGrid() {
     }
     flowLogger.log(nowTime, "main thread Finish");
     return;
+}
+
+void solveBoatGrid(){
+    /*
+    boat shifts →
+        0 (右): (0,0)(0,1)(0,2)(1,0)(1,1)(1,2)
+        1 (左): (0,0)(-1,0)(-2,0)(0,-1)(-1,-1)(-2,-1)
+        2 (上): (0,0)(0,1)(-1,0)(-1,1)(-2,0)(-2,1)
+        3 (下): (0,0)(1,0)(2,0)(0,-1)(1,-1)(2,-1)
+    */ 
+   Pos shifts[4][6] = {
+       {Pos(0,0),Pos(0,1),Pos(0,2),Pos(1,0),Pos(1,1),Pos(1,2)},
+       {Pos(0,0),Pos(-1,0),Pos(-2,0),Pos(0,-1),Pos(-1,-1),Pos(-2,-1)},
+       {Pos(0,0),Pos(0,1),Pos(-1,0),Pos(-1,1),Pos(-2,0),Pos(-2,1)},
+       {Pos(0,0),Pos(1,0),Pos(2,0),Pos(0,-1),Pos(1,-1),Pos(2,-1)}};
+
+    for (int i = 0; i < MAX_Line_Length; i++) {     //行
+        for (int j = 0; j < MAX_Col_Length; j++) {  //列
+        if (boat_grids[i][j]->type == -1) continue; //障碍物,跳过
+            for (int k = 0; k < 4; k++) {           //方向
+                for (int l = 0; l < 6; l++) {       //船占的六格
+                    Pos next = Pos(i, j) + shifts[k][l];
+                    if (next.x < 0 || next.x >= MAX_Line_Length || next.y < 0 || next.y >= MAX_Col_Length) continue;
+                    if (boat_grids[next.x][next.y]->type == -1) {
+                        boat_grids[i][j]->reduced_type[k] = -1; // 撞了
+                        break;
+                    }
+                    if (boat_grids[i][j]->type == 1) {
+                        boat_grids[i][j]->reduced_type[k] = 1;  // 在主航道
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
 
 int gengerate_robot_type(int type){
