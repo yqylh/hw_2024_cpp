@@ -90,7 +90,7 @@ public:
     }
     // 如果船在港口而且没装满，把货物运到船上
     void bert_ship_goods_check(int bert_id){
-        if (!berths[bert_id]->shipId.empty() && ships[berths[bert_id]->shipId[0]]->status == 1) {
+        if (!berths[bert_id]->shipId.empty() && ships[berths[bert_id]->shipId[0]]->status == 2) {
             if (berths[bert_id]->goodsNum > 0){
                 int loaded_goods = berths[bert_id]->goodsNum;
                 if (loaded_goods > berths[bert_id]->velocity) loaded_goods = berths[bert_id]->velocity;
@@ -109,7 +109,7 @@ public:
         // 因为先移动,所以先检查船的状态
         if (!berth_ptr->shipId.empty()) {
             auto ship_ptr = ships[berth_ptr->shipId[0]];
-            if (ship_ptr->status != 1) return;
+            if (ship_ptr->status != 2) return;
             // 让船去虚拟点的几种情况
             // line1: 如果船只装满了
             // line2: 或者是最后一轮了
@@ -120,6 +120,7 @@ public:
             ) {
                 berth_ptr->shipId.clear();
                 ship_ptr->goSell(delivery[0].pos);
+                shipLogger.log(nowTime, "center command ship{0} goSell", ship_ptr->id);
                 return;
             }
             // 让船去别的地方的情况
@@ -132,7 +133,7 @@ public:
                 berth_ptr->shipId.clear();
                 declare_ship(best_bert_id, ship_ptr->id);
                 ship_ptr->moveToBerth(best_bert_id, berths[best_bert_id]->pos);
-                shipLogger.log(nowTime, "centre command ship{0} move_berth to berth{1}", ship_ptr->id, best_bert_id);
+                shipLogger.log(nowTime, "center command ship{0} move_berth to berth{1}", ship_ptr->id, best_bert_id);
                 return;
             }
         }
@@ -260,25 +261,29 @@ public:
     }
     void finish_log();
     void normal_check_ship(int shipId){
-        shipLogger.log(nowTime, "ship{} status:{} pos:{},{} targetPos:{},{} berthId:{}",
-            ships[shipId]->id, ships[shipId]->status, ships[shipId]->pos.x, ships[shipId]->pos.y, ships[shipId]->targetPos.x, ships[shipId]->targetPos.y, ships[shipId]->berthId);
+        auto ship_ptr = ships[shipId];
+        ship_ptr->output();
         // 到达了销售点卖掉了. 或者船刚出生
-        if ((ships[shipId]->berthId == -2) || (ships[shipId]->pos == ships[shipId]->targetPos && ships[shipId]->berthId == -1)) {
+        if ((ship_ptr->berthId == -2) || (ship_ptr->pos == ship_ptr->targetPos && ship_ptr->berthId == -1)) {
             int best_bert_id = ship_choose_berth();
             if (best_bert_id == -1) {
-                if (ships[shipId]->berthId == -2) {
+                if (ship_ptr->berthId == -2) {
                     best_bert_id = 0;
                 } else {
                     return;
                 }
             }
             declare_ship(best_bert_id, shipId);
-            ships[shipId]->moveToBerth(best_bert_id, berths[best_bert_id]->pos);
+            ship_ptr->moveToBerth(best_bert_id, berths[best_bert_id]->pos);
             return;
         }
-        // 到达了目标泊位, 当前位置是靠泊区, 并且船是运行状态
-        if (ships[shipId]->berthId != -1 && ships[shipId]->status == 0 && grids[ships[shipId]->pos.x][ships[shipId]->pos.y]->type == 8) {
-            ships[shipId]->berth();
+        // 到达了目标泊位(而不是虚拟点), 并且船是运行状态,当前位置是靠泊区或者泊位 而且是我们要去的泊位
+        auto grids_ptr = grids[ship_ptr->pos.x][ship_ptr->pos.y];
+        if (ship_ptr->berthId != -1 
+            && ship_ptr->status == 0 
+            && (grids_ptr->type == 8 || grids_ptr->type == 3)
+            && ship_ptr->berthId == grids_ptr->berthId) {
+            ship_ptr->berth();
             return;
         }
     }
@@ -289,7 +294,7 @@ public:
             return;
         }
         for(int i = 0; i < MAX_Berth_Num; i++){
-            /* 检查港口火舞,有货物就卸货,不然考虑卸货问题*/
+            /* 检查港口船的状态*/
             normal_berth_check(i);
             // 卸货
             bert_ship_goods_check(i);

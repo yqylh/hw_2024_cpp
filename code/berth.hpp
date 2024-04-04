@@ -8,7 +8,6 @@ struct Berth {
     int id;
     Pos pos;
     std::vector<Pos> usePos; // 使用的位置
-    std::vector<Direction *> usePosDir; // 使用的位置 任何节点到这个位置的下一步方向
     int velocity; // 装载速度
     int disWithTimeBerth[MAX_Line_Length + 1][MAX_Col_Length + 1];
     int time;
@@ -64,6 +63,21 @@ struct Berth {
             usePos.push_back(arr[i].first);
         }
     }
+    void recordBerth() {
+        std::queue<Pos> q; q.push(pos);
+        while (!q.empty()) {
+            auto top = q.front(); q.pop();
+            for (int d = 0; d <= 3; d++) {
+                Pos next = top + dir[d];
+                if (checkPos(next) && (grids[next.x][next.y]->type == 3 || grids[next.x][next.y]->type == 8)) {
+                    if (grids[next.x][next.y]->berthId == -1) {
+                        grids[next.x][next.y]->berthId = id;
+                        q.push(next);
+                    }
+                }
+            }
+        }
+    }
 };
 
 std::vector<Berth *> berths;
@@ -73,9 +87,9 @@ void solveBerth() {
     // 预处理每个泊位到每个虚拟点的时间
     for (int i = 0; i < MAX_Berth_Num; i++) {
         berths[i]->findUsePos();
+        berths[i]->recordBerth();
         for (auto & pos : berths[i]->usePos) {
             pos2berth[pos] = berths[i];
-            berths[i]->usePosDir.push_back(sovleGrid(pos));
         }
         solveGridWithTime(berths[i]->pos, -1);
         for (int j = 0; j < MAX_Line_Length; j++) {

@@ -20,7 +20,6 @@ struct Robot{
     int choosed_berth_id; // 机器人选择的泊位
     int item_value; // 机器人选择的物品的价值
 
-    Direction *robotDir; // 机器人到达每个点的方向
     int lastWeak; // 上一次的弱智时间
     Pos lastWeakPos; // 上一次的弱智位置
     
@@ -37,7 +36,6 @@ struct Robot{
         this->status = 1;
         this->bring = 0;
         this->choosed_berth_id = -1;
-        this->robotDir = nullptr;
         this->havePath = false;
         this->wholePath.clear();
         this->lastWeak = -1;
