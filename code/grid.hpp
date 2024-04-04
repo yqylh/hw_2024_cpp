@@ -35,6 +35,54 @@ struct Direction {
     }
 };
 
+struct TeDirection { //用于船只的四向导航
+    int visited[4][BitsetSize]; // 用于记录是否访问过
+    std::bitset<BitsetSize * 2> dirNext; // 用于记录方向 00 表示右移一格 01 表示左移一格 10 表示上移一格 11 表示下移一格
+    TeDirection(){
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < BitsetSize; j++) {
+                visited[i][j] = 0x3f3f3f3f;
+            }
+        }
+        dirNext.reset();
+    }
+    int pos_to_dic(int pos) {
+        if (pos == 0) return 0;
+        if (pos == 1) return 1;
+        if (pos == 10 or pos == 2) return 2;
+        if (pos == 11 or pos == 3) return 3;
+        return -1;
+    }
+    int getVisitedIndex(int x, int y) {
+        return x * MAX_Col_Length + y;
+    }
+    int getDirIndex(int x, int y) {
+        return x * MAX_Col_Length * 2 + y * 2;
+    }
+    void setVisited(int x, int y, int pos,int dis) {
+        int dic = pos_to_dic(pos);
+        visited[dic][getVisitedIndex(x,y)] = dis;
+    }
+
+    int isVisited(int x, int y,int pos) {
+        int dic = pos_to_dic(pos);
+        return visited[dic][getVisitedIndex(x, y)];
+    }
+
+    void setDir(int x, int y, int d) {
+        int index = getDirIndex(x, y);
+        if (d & 1) dirNext[index] = 1;
+        if (d & 2) dirNext[index + 1] = 1;
+    }
+    int getDir(int x, int y) {
+        int ans = 0;
+        int index = getDirIndex(x, y);
+        if (dirNext[index] == 1) ans += 1;
+        if (dirNext[index + 1] == 1) ans += 2;
+        return ans;
+    }
+};
+
 class Grid {
 public:
     Pos pos; // 位置
@@ -75,7 +123,7 @@ public:
 int gengerate_robot_type(int type);
 int gengerate_boat_type(int type);
 
-class RoadGrid:public Grid{
+class RobotGrid:public Grid{
 public:
     int type;
     /*
@@ -83,12 +131,28 @@ public:
     0   通行
     1   主干道/主航道
     */
-   RoadGrid():Grid(){
+   Direction *gridDir_h, *gridDir_v;
+   RobotGrid():Grid(){
         this->type = -1;
    }
-   RoadGrid(int x, int y, int type ,int robot_or_boat):Grid(x,y,type){
-        if(robot_or_boat == 0) this->type = gengerate_robot_type(type);
-        if(robot_or_boat == 1) this->type = gengerate_boat_type(type);
+   RobotGrid(int x, int y, int type):Grid(x,y,type){
+        this->type = gengerate_robot_type(type);
+   }
+};
+
+class BoatGrid:public Grid{
+public:
+    int type;
+    /*
+    -1  禁行
+    0   通行
+    1   主干道/主航道
+    */
+   BoatGrid():Grid(){
+        this->type = -1;
+   }
+   BoatGrid(int x, int y, int type):Grid(x,y,type){
+        this->type = gengerate_boat_type(type);
    }
 };
 
@@ -111,8 +175,8 @@ struct Path {
 };
 
 // Grid *grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
-RoadGrid *robot_grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
-RoadGrid *boat_grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
+RobotGrid *robot_grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
+BoatGrid *boat_grids[MAX_Line_Length + 1][MAX_Col_Length + 1];
 
 // BFS用于寻路
 std::list<Pos> *findPath(Pos begin, Pos end) {

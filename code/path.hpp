@@ -3,6 +3,7 @@
 
 #include "config.hpp"
 #include "grid.hpp"
+#include <algorithm>
 
 
 struct TPos {
@@ -191,19 +192,31 @@ std::deque<Pos> findPathWithTime(Pos beginPos, Pos endPos) {
 }
 
 Pos _arr_s[40010];
-Direction * sovleShip(Pos origin) {
+int _arr_pos[40010];
+int cal_next_dis(int pos1,int pos2){
+    if (std::abs(pos1 - pos2) == 2) return 2;
+    return 1;
+}
+TeDirection * sovleShip(Pos origin,int pos) { 
+    //用于船只的各向异性BFS
+    //pos方向: 00 表示右移一格 01 表示左移一格 10 表示上移一格 11 表示下移一格 或 0 表示右移一格 1 表示左移一格 2 表示上移一格 3 表示下移一格
     shipLogger.log(nowTime, "sovleShip");
-    Direction * result = new Direction;
-    result->setVisited(origin.x, origin.y);
+    TeDirection * result = new TeDirection;
+    result->setVisited(origin.x, origin.y, pos, 0);
     int start = 0, end = 0;
     _arr_s[end++] = origin;
+    _arr_pos[end++] = pos;
     while (start < end) {
         Pos &now = _arr_s[start++];
+        int now_pos = _arr_pos[start - 1];
         for (int i = 0; i < 4; i++) {
-            Pos next = now + dir[i]; // 下一个点
-            if (boat_grids[next.x][next.y]->type == -1) continue; // 不是机器人可以走的地方
-            if (result->isVisited(next.x, next.y)) continue; //记录过前序, 跳过
-            result->setVisited(next.x, next.y);
+            Pos next = now + dir[i]; // 下一个点 
+            // int next_pos = i;
+            if (boat_grids[next.x][next.y]->type == -1) continue;           // 不是船可以走的地方,跳过
+            int now_dis = result->isVisited(now.x, now.y, now_pos);
+            int next_dis = now_dis + cal_next_dis(i, now_pos);              //计算从 此 到 下一个点的对应方向 的距离
+            if (result->isVisited(next.x, next.y, i) <= next_dis) continue; //如果已经记录过,并且距离更小,跳过
+            result->setVisited(next.x, next.y, i, next_dis);                //记录 (可能是覆盖记录)
             result->setDir(next.x, next.y, ((i == 0 || i == 2) ? i + 1 : i - 1));
             _arr_s[end++] = next;
         }

@@ -10,8 +10,8 @@
 #include "berth_centre.hpp"
 
 void gengerate_grid(int i, int j, int type){
-    robot_grids[i][j] = new RoadGrid(i,j,type,0);
-    boat_grids[i][j] = new RoadGrid(i,j,type,1);
+    robot_grids[i][j] = new RobotGrid(i,j,type);
+    boat_grids[i][j] = new BoatGrid(i,j,type);
 }
 
 void inputMap(){
