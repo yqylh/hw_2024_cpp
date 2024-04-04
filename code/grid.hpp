@@ -88,8 +88,9 @@ bool checkPos(Pos pos) {
  * @return true 表示可以走, false 表示不可以走
 */
 bool checkRobotAble(Pos pos) {
+    if (checkPos(pos) == false) return false;
     auto type = grids[pos.x][pos.y]->type;
-    return checkPos(pos) && (type == 0 || type == 3 || type == 4 || type == 6 || type == 9 || type == 11);
+    return (type == 0 || type == 3 || type == 4 || type == 6 || type == 9 || type == 11);
 }
 /**
  * @brief 检查船是否可以走这个位置
@@ -97,8 +98,9 @@ bool checkRobotAble(Pos pos) {
  * @return true 表示可以走, false 表示不可以走
 */
 bool checkShipAble(Pos pos) {
+    if (checkPos(pos) == false) return false;
     auto type = grids[pos.x][pos.y]->type;
-    return checkPos(pos) && (type == 1 || type == 3 || type == 5 || type == 7 || type == 8 || type == 9 || type == 11 || type == 12);
+    return (type == 1 || type == 3 || type == 5 || type == 7 || type == 8 || type == 9 || type == 11 || type == 12);
 }
 /**
  * @brief 检查这个位置是否是主道路
@@ -106,8 +108,9 @@ bool checkShipAble(Pos pos) {
  * @return true 表示是主道路, false 表示不是主道路
 */
 bool checkRobotNoColl(Pos pos) {
+    if (checkPos(pos) == false) return false;
     auto type = grids[pos.x][pos.y]->type;
-    return checkPos(pos) && (type == 3 || type == 4 || type == 6 || type == 11);
+    return (type == 3 || type == 4 || type == 6 || type == 11);
 }
 /**
  * @brief 检查这个位置是否是主航道
@@ -115,8 +118,9 @@ bool checkRobotNoColl(Pos pos) {
  * @return true 表示是主航道, false 表示不是主航道
 */
 bool checkShipNoColl(Pos pos) {
+    if (checkPos(pos) == false) return false;
     auto type = grids[pos.x][pos.y]->type;
-    return checkPos(pos) && (type == 3 || type == 5 || type == 7 || type == 8 || type == 11 || type == 12);
+    return (type == 3 || type == 5 || type == 7 || type == 8 || type == 11 || type == 12);
 }
 
 /**

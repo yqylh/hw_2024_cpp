@@ -45,7 +45,7 @@ int MAX_Robot_Num = 0; // 机器人数量 [)
 int MAX_Ship_Num = 0; // 船的数量 [)
 int MAX_Berth_Num = 0; // 泊位数量 [)
 int MAX_Capacity; // 船的容量
-int money = 0; // 当前金钱
+int money = 25000; // 当前金钱
 int nowTime = 0; // 当前帧数
 bool inputFlag = true; // 是否input是否结束
 

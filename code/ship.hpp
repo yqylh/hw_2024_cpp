@@ -81,5 +81,6 @@ std::vector<Ship *> ships;
 void newShip(int x, int y) {
     printf("lboat %d %d\n", x, y);
     ships.push_back(new Ship(MAX_Ship_Num++));
+    money -= 8000;
 }
 #endif

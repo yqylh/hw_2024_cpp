@@ -526,6 +526,7 @@ void newRobot(int x, int y) {
     printf("lbot %d %d\n", x, y);
     robots.push_back(new Robot(MAX_Robot_Num++, x, y));
     fixPos.emplace_back(Pos(-1, -1));
+    money -= 2000;
 }
 
 #endif

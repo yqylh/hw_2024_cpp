@@ -46,6 +46,7 @@ struct Berth {
             int haveGround = 0;
             for (int d = 0; d <= 3; d++) {
                 Pos next = top + dir[d];
+                if (checkPos(next) == false) continue;
                 if (checkRobotAble(next) && grids[next.x][next.y]->type != 3) haveGround++;
                 if (visited.find(next) != visited.end()) continue;
                 if (grids[next.x][next.y]->type == 3) {
