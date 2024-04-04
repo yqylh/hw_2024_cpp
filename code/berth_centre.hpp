@@ -112,11 +112,11 @@ public:
             if (ship_ptr->status != 2) return;
             // 让船去虚拟点的几种情况
             // line1: 如果船只装满了
-            // line2: 或者是最后一轮了
+            // line2: 或者是最后一轮了(暂时没法判断了)
             // line3: 如果港口没货物了, 并且船装满了百分之 ratio
             if (   ship_ptr->leftCapacity() == 0
-                || berth_ptr->time + nowTime + 2 > MAX_TIME
-                || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration && nowTime + berth_ptr->time * 2 + lastRoundRuningTime < MAX_TIME)
+                // || berth_ptr->time + nowTime + 2 > MAX_TIME
+                || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration /* && nowTime + berth_ptr->time * 2 + lastRoundRuningTime < MAX_TIME*/)
             ) {
                 berth_ptr->shipId.clear();
                 ship_ptr->goSell(delivery[0].pos);
@@ -126,7 +126,7 @@ public:
             // 让船去别的地方的情况
             // 港口没货了,并且船没装满Sell_Ration
             // 但是去了之后不能超时
-            if (berth_ptr->goodsNum == 0 && berth_ptr->time + nowTime + 10 + 500 < MAX_TIME) {
+            if (berth_ptr->goodsNum == 0 /*&& berth_ptr->time + nowTime + 10 + 500 < MAX_TIME*/) {
                 int best_bert_id = ship_choose_berth();
                 if (best_bert_id == -1) return;
                 if (berths[best_bert_id]->sum_value < Min_Next_Berth_Value) return;
@@ -163,7 +163,7 @@ public:
             // 选择分组内最优的泊位
             std::sort(group[i].begin(), group[i].end(), [](const int& a, const int& b) {
                 // MAX_Capacity / berths[i]->velocity + berths[i]->time
-                return MAX_Capacity / berths[a]->velocity + berths[a]->time < MAX_Capacity / berths[b]->velocity + berths[b]->time;
+                return MAX_Capacity / berths[a]->velocity/* + berths[a]->time*/ < MAX_Capacity / berths[b]->velocity/* + berths[b]->time*/;
             });
             centerLogger.log(nowTime, "group{}:", i);
             for (int j = 0; j < group[i].size(); j++) {

@@ -10,7 +10,6 @@ struct Berth {
     std::vector<Pos> usePos; // 使用的位置
     int velocity; // 装载速度
     int disWithTimeBerth[MAX_Line_Length + 1][MAX_Col_Length + 1];
-    int time;
     //上面的是原始值，别改
     
     std::vector<int> shipId; // 表示当前泊位上的船的 id,可能有多个,用empty()判断是否有船
