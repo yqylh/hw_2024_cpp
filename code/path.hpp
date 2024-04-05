@@ -148,9 +148,11 @@ void addPathToAllPath(std::deque<Pos> path, int nowRobotId) {
             // vector<Pos> size is equal to robotNum
             allPath.push_back(std::vector<Pos> (MAX_Robot_Num));
         }
+        if (nowRobotId >= allPath[nowFrame].size()) allPath[nowFrame].resize(MAX_Robot_Num);
         allPath[nowFrame][nowRobotId] = path[nowFrame];
     }
     for (int nowFrame = path.size(); nowFrame < allPath.size(); nowFrame++) {
+        if (nowRobotId >= allPath[nowFrame].size()) allPath[nowFrame].resize(MAX_Robot_Num);
         allPath[nowFrame][nowRobotId] = Pos(-1, -1);
     }
     fixPos[nowRobotId] = Pos(-1, -1);
@@ -158,6 +160,7 @@ void addPathToAllPath(std::deque<Pos> path, int nowRobotId) {
 
 void deletePathFromAllPath(int nowRobotId) {
     for (int nowFrame = 0; nowFrame < allPath.size(); nowFrame++) {
+        if (nowRobotId >= allPath[nowFrame].size()) continue;
         allPath[nowFrame][nowRobotId] = Pos(-1, -1);
     }
 }

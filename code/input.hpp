@@ -166,6 +166,11 @@ void solveFrame() {
             }
         }
     }
+    if (nowTime > 100 && nowTime < 3000 && money > 2000 && robots.size() < 15) {
+        for (auto & robotBuyer : berth_center->robot_buyer) {
+            if (money > 2000 && robots.size() < 15) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+        }
+    }
     // 时间向前推进
     if (allPath.size() > 0) allPath.pop_front();
     // 船只调度
