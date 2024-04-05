@@ -42,22 +42,49 @@ struct Navigator {
  * 1‘*’ ： 海洋                                   | 船可以走  会发生碰撞
  * 2‘#’ ： 障碍                                   | 谁都不可以走
  * 3‘B’ ： 泊位  同时算主干道主航道                  | 船和机器人都可以走 不会发生碰撞
+ * 
  * 4‘>’ ： 陆地主干道                              | 机器人可以走 不会发生碰撞
  * 5‘~’ ： 海洋主航道                              | 船可以走 不会发生碰撞
  * 6‘R’ ： 机器人购买地块，同时该地块也是主干道.        | 机器人可以走, 不会发生碰撞
  * 7‘S’ ： 船舶购买地块，同时该地块也是主航道           | 船可以走, 不会发生碰撞
+ * 
  * 8‘K’ ： 靠泊区 算主航道                          | 船可以走 不会发生碰撞
  * 9‘C’ ： 海陆立体交通地块                         | 船和机器人都可以走 会发生碰撞
- * 11‘c’ ： 海陆立体交通地块，同时为主干道和主航道      |船和机器人都可以走 不会发生碰撞
- * 12‘T’ ： 交货点 特殊的靠泊区 所以也算主航道         | 船可以走 不会发生碰撞
  * 10 : 机器人
+ * 11‘c’ ： 海陆立体交通地块，同时为主干道和主航道      |船和机器人都可以走 不会发生碰撞
+
+ * 12‘T’ ： 交货点 特殊的靠泊区 所以也算主航道         | 船可以走 不会发生碰撞
+
 */
 
+
+/*
+#define BLANK 0b0000 0000 0000 0001 
+#define SEA 0b0000 0000 0000 0010
+#define OBSTACLE 0b0000 0000 0000 0100
+#define BERTH 0b0000 0000 0000 1000 // ROBOT_NOCOL // SJHIP_NOCOL
+
+#define ROUTE 0b0000 0000 0001 0000 // ROBOT_NOCOL
+#define SEA_ROUTE 0b0000 0000 0010 0000 // SHIP_NOCOL
+#define ROBOT_BUYER 0b0000 0000 0100 0000 // ROBOT_NOCOL
+#define SHIP_BUYER 0b0000 0000 1000 0000 // SHIP_NOCOL
+
+#define BERTH_CENTER 0b0000 0001 0000 0000 // SHIP_NOCOL
+#define CROSS 0b0000 0010 0000 0000
+#define CROSS_ROUTE 0b0000 1000 0000 0000 // ROBOT_NOCOL // SHIP_NOCOL
+#define DELIVERY 0b0001 0000 0000 0000 // SHIP_NOCOL
+
+#define SHIP_NOCOL 0b0001 1001 1010 1000
+#define ROBOT_NOCOL 0b0000 1000 0101 1000
+
+#define ROBOT_ABLE 0b0000 1010 0101 1001
+#define SHIP_ABLE 0b0001 1011 1010 1010
+*/
 
 #define BLANK 0b0000000000000001 
 #define SEA 0b0000000000000010
 #define OBSTACLE 0b0000000000000100
-#define BERTH 0b0000000000001000 // ROBOT_NOCOL
+#define BERTH 0b0000000000001000 // ROBOT_NOCOL // SJHIP_NOCOL
 
 #define ROUTE 0b0000000000010000 // ROBOT_NOCOL
 #define SEA_ROUTE 0b0000000000100000 // SHIP_NOCOL
@@ -66,15 +93,20 @@ struct Navigator {
 
 #define BERTH_CENTER 0b0000000100000000 // SHIP_NOCOL
 #define CROSS 0b0000001000000000
-#define CROSS_ROUTE 0b0000010000000000 // ROBOT_NOCOL // SHIP_NOCOL
-#define DELIVERY 0b0000100000000000 // SHIP_NOCOL
+#define CROSS_ROUTE 0b0000100000000000 // ROBOT_NOCOL // SHIP_NOCOL
+#define DELIVERY 0b0001000000000000 // SHIP_NOCOL
 
-#define SHIP_NOCOL 0b0000110110100000
-#define ROBOT_NOCOL 0b0000010001011000
+#define SHIP_NOCOL 0b0001100110101000
+#define ROBOT_NOCOL 0b0000100001011000
+
+#define ROBOT_ABLE 0b0000101001011001
+#define SHIP_ABLE 0b0001101110101010
 
 #define NOT_VALID_GRID(x, y) (x < 0 or x >= MAX_Line_Length or y < 0 or y >= MAX_Col_Length)
 #define IS_SHIP_NOCOL(x) (x & SHIP_NOCOL)
 #define IS_ROBOT_NOCOL(x) (x & ROBOT_NOCOL)
+#define IS_ROBOT_ABLE(x) (x & ROBOT_ABLE)
+#define IS_SHIP_ABLE(x) (x & SHIP_ABLE)
 
 struct Grid {
     Pos pos; // 位置
