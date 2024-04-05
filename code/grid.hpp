@@ -52,24 +52,51 @@ struct Navigator {
  * 12‘T’ ： 交货点 特殊的靠泊区 所以也算主航道         | 船可以走 不会发生碰撞
  * 10 : 机器人
 */
+
+
+#define BLANK 0b0000000000000001 
+#define SEA 0b0000000000000010
+#define OBSTACLE 0b0000000000000100
+#define BERTH 0b0000000000001000 // ROBOT_NOCOL
+
+#define ROUTE 0b0000000000010000 // ROBOT_NOCOL
+#define SEA_ROUTE 0b0000000000100000 // SHIP_NOCOL
+#define ROBOT_BUYER 0b0000000001000000 // ROBOT_NOCOL
+#define SHIP_BUYER 0b0000000010000000 // SHIP_NOCOL
+
+#define BERTH_CENTER 0b0000000100000000 // SHIP_NOCOL
+#define CROSS 0b0000001000000000
+#define CROSS_ROUTE 0b0000010000000000 // ROBOT_NOCOL // SHIP_NOCOL
+#define DELIVERY 0b0000100000000000 // SHIP_NOCOL
+
+#define SHIP_NOCOL 0b0000110110100000
+#define ROBOT_NOCOL 0b0000010001011000
+
+#define NOT_VALID_GRID(x, y) (x < 0 or x >= MAX_Line_Length or y < 0 or y >= MAX_Col_Length)
+#define IS_SHIP_NOCOL(x) (x & SHIP_NOCOL)
+#define IS_ROBOT_NOCOL(x) (x & ROBOT_NOCOL)
+
 struct Grid {
     Pos pos; // 位置
     int type;
     bool robotOnIt;
     Navigator *gridDir; // 用来导航从起点到终点的路径
     int berthId; // 如果是泊位或者靠泊区,则记录泊位的 id
+    int bit_type;
     Grid(){
         this->pos = Pos(-1, -1);
         this->type = -1;
         this->gridDir = nullptr;
         this->robotOnIt = false;
         this->berthId = -1;
+        this->bit_type = 0;
     }
     Grid(int x, int y, int type) : type(type){
         this->pos = Pos(x, y);
         this->gridDir = nullptr;
         this->robotOnIt = false;
         this->berthId = -1;
+        this->bit_type = 1 << type;
     }
 };
 
@@ -154,6 +181,7 @@ ShipPos calShipRotPos(Pos pos, int dir, int rot) {
             return ShipPos(pos + Pos(1, -1) , 0);
         }
     }
+    return ShipPos(-1, -1, -1);
 }
 /**
  * @brief 计算船的六个位置

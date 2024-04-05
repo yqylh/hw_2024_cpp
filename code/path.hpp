@@ -25,8 +25,7 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
     memset(preWithTime, 0xff, sizeof(preWithTime));
     
     for (int i = 0; i < fixPos.size(); i++) {
-        if (fixPos[i].x != -1 and i != nowRobotId) {
-            if (checkRobotNoColl(fixPos[i])) continue;
+        if (i != nowRobotId and fixPos[i].x != -1 and not IS_ROBOT_NOCOL(grids[fixPos[i].x][fixPos[i].y]->bit_type)) {
             grids[fixPos[i].x][fixPos[i].y]->robotOnIt = true;
         }
     }
@@ -63,13 +62,13 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
             // remove last robot
             if (lastSeenDis != -1 and lastSeenDis < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis]) {
-                    if (tar.x == -1) continue;
+                    if (tar.x == -1 or NOT_VALID_GRID(tar.x, tar.y) or IS_ROBOT_NOCOL(grids[tar.x][tar.y]->bit_type)) continue;
                     grids[tar.x][tar.y]->robotOnIt = false;
                 }
             }
             if (lastSeenDis != -1 and lastSeenDis + 1 < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis + 1]) {
-                    if (tar.x == -1) continue;
+                    if (tar.x == -1 or NOT_VALID_GRID(tar.x, tar.y) or IS_ROBOT_NOCOL(grids[tar.x][tar.y]->bit_type)) continue;
                     grids[tar.x][tar.y]->robotOnIt = false;
                 }
             }
@@ -79,15 +78,13 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
             // add new robot
             if (lastSeenDis < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis]) {
-                    if (tar.x == -1) continue;
-                    if (checkRobotNoColl(tar)) continue;
+                    if (tar.x == -1 or NOT_VALID_GRID(tar.x, tar.y) or IS_ROBOT_NOCOL(grids[tar.x][tar.y]->bit_type)) continue;
                     grids[tar.x][tar.y]->robotOnIt = true;
                 }
             }
             if (lastSeenDis + 1 < allPath.size()) {
                 for (Pos tar : allPath[lastSeenDis + 1]) {
-                    if (tar.x == -1) continue;
-                    if (checkRobotNoColl(tar)) continue;
+                    if (tar.x == -1 or NOT_VALID_GRID(tar.x, tar.y) or IS_ROBOT_NOCOL(grids[tar.x][tar.y]->bit_type)) continue;
                     grids[tar.x][tar.y]->robotOnIt = true;
                 }
             }
@@ -122,19 +119,19 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
     
     if (lastSeenDis != -1 and lastSeenDis < allPath.size()) {
         for (Pos tar : allPath[lastSeenDis]) {
-            if (tar.x == -1) continue;
+            if (tar.x == -1 or NOT_VALID_GRID(tar.x, tar.y) or IS_ROBOT_NOCOL(grids[tar.x][tar.y]->bit_type)) continue;
             grids[tar.x][tar.y]->robotOnIt = false;
         }
     }
     if (lastSeenDis != -1 and lastSeenDis + 1 < allPath.size()) {
         for (Pos tar : allPath[lastSeenDis + 1]) {
-            if (tar.x == -1) continue;
+            if (tar.x == -1 or NOT_VALID_GRID(tar.x, tar.y) or IS_ROBOT_NOCOL(grids[tar.x][tar.y]->bit_type)) continue;
             grids[tar.x][tar.y]->robotOnIt = false;
         }
     }
     
     for (int i = 0; i < fixPos.size(); i++) {
-        if (fixPos[i].x != -1 and i != nowRobotId) {
+        if (i != nowRobotId and fixPos[i].x != -1 and not IS_ROBOT_NOCOL(grids[fixPos[i].x][fixPos[i].y]->bit_type)) {
             grids[fixPos[i].x][fixPos[i].y]->robotOnIt = false;
         }
     }
