@@ -9,6 +9,7 @@ private:
     std::unordered_map<std::string, int> variables;
     std::unordered_map<std::string, bool> locks;
     std::unordered_map<std::string, std::vector<int>> vectors;
+    std::unordered_map<std::string, std::vector<std::pair<int, int>>> vectors2d;
 
 public:
     // 注册变量
@@ -22,9 +23,22 @@ public:
         locks[name] = false;
     }
 
+    void registerVector2D(const std::string& name){
+        vectors2d[name] = std::vector<std::pair<int, int>>();
+        locks[name] = false;
+    }
+
     void push_back(const std::string& name, int value) {
+    // 给 vector 添加值
         if (vectors.find(name) != vectors.end() && !locks[name]) {
             vectors[name].push_back(value);
+        }
+    }
+
+    void push_back(const std::string& name, int value1 ,int value2) {
+    // 给 vector 添加值
+        if (vectors2d.find(name) != vectors2d.end() && !locks[name]) {
+            vectors2d[name].push_back(std::make_pair(value1, value2));
         }
     }
 
@@ -95,6 +109,13 @@ public:
             }
             outFile.close();
         }
+        for (const auto& vec : vectors2d){
+            std::ofstream outFile(filename + "_" + vec.first + ".txt");
+            for (int i = 0; i < vec.second.size(); i++) {
+                outFile << vec.second[i].first << " " << vec.second[i].second << std::endl;
+            }
+            outFile.close();
+        }
     }
 };
 
@@ -102,6 +123,8 @@ class Void_Counter {
 public:
     void registerVariable(const std::string& name, int initialValue = 0) {return;}
     void registerVector(const std::string& name) {return;}
+    void registerVector2D(const std::string& name)  {return;}
+    void push_back(const std::string& name, int value1 ,int value2) {return;}
     void push_back(const std::string& name, int value) {return;}
     void add(const std::string& name, int value) {return;}
     void max_put(const std::string& name, int value) {return;}
