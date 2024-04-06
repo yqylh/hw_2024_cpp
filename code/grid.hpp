@@ -115,6 +115,7 @@ struct Grid {
     Navigator *gridDir; // 用来导航从起点到终点的路径
     int berthId; // 如果是泊位或者靠泊区,则记录泊位的 id
     int bit_type;
+    int shipAble[4]; // 记录这个位置四个方向是否船是否可以停在这里
     Grid(){
         this->pos = Pos(-1, -1);
         this->type = -1;
@@ -268,6 +269,15 @@ int checkShipAllAble(Pos pos, int dir) {
     }
     return ret;
 }
+void PreproShipAllAble() {
+    for (int x = 0; x < MAX_Line_Length; x++) {
+        for (int y = 0; y < MAX_Col_Length; y++) {
+            for (int i = 0; i < 4; i++) {
+                grids[x][y]->shipAble[i] = checkShipAllAble(Pos(x, y), i);
+            }
+        }
+    }
+}
 
 int _dis_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
 ShipPos _pre_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
@@ -278,6 +288,7 @@ int _pre_dir_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
  * 3. SPFA 每个点要存某个方向有没有到达。已经到达的时间，因为主航道 delay
  * 4. 存路径：直行2、顺时针0、逆时针1
 */
+ShipPos _queue_ship[120010];
 std::deque<int> *sovleShip(Pos origin, int direction, Pos target) {
     allPathLogger.log(nowTime, "sovleShip origin{},{} direction{} target{},{}", origin.x, origin.y, direction, target.x, target.y);
     for (int i = 0; i < MAX_Line_Length; i++) {
@@ -289,38 +300,43 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target) {
             }
         }
     }
-    std::queue<ShipPos> q;
-    q.push(ShipPos(origin, direction));
+    int start = 0;
+    int end = 0;
+    _queue_ship[end++] = ShipPos(origin, direction);
     _dis_s[origin.x][origin.y][direction] = 0;
-    while (!q.empty()) {
-        ShipPos now = q.front(); q.pop();
+    while (start != end) {
+        ShipPos now = _queue_ship[start++];
+        if (start == 120010) start = 0;
         // 直行
         ShipPos next = now + dir[now.direction];
         // 判断是否可以走 0 表示不能走, 1 表示可以走(正常道路), 2 表示主航道道路
-        auto checkRes = checkShipAllAble(next.toPos(), next.direction);
+        auto checkRes = grids[next.x][next.y]->shipAble[next.direction];
         if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
             _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
             _pre_s[next.x][next.y][next.direction] = now;
             _pre_dir_s[next.x][next.y][next.direction] = 2;
-            q.push(next);
+            _queue_ship[end++] = next;
+            if (end == 120010) end = 0;
         }
         // 顺时针
         next = calShipRotPos(now.toPos(), now.direction, 0);
-        checkRes = checkShipAllAble(next.toPos(), next.direction);
+        checkRes = grids[next.x][next.y]->shipAble[next.direction];
         if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
             _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
             _pre_s[next.x][next.y][next.direction] = now;
             _pre_dir_s[next.x][next.y][next.direction] = 0;
-            q.push(next);
+            _queue_ship[end++] = next;
+            if (end == 120010) end = 0;
         }
         // 逆时针
         next = calShipRotPos(now.toPos(), now.direction, 1);
-        checkRes = checkShipAllAble(next.toPos(), next.direction);
+        checkRes = grids[next.x][next.y]->shipAble[next.direction];
         if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
             _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
             _pre_s[next.x][next.y][next.direction] = now;
             _pre_dir_s[next.x][next.y][next.direction] = 1;
-            q.push(next);
+            _queue_ship[end++] = next;
+            if (end == 120010) end = 0;
         }
     }
     std::deque<int> *result = new std::deque<int>;
@@ -331,18 +347,18 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target) {
             now.direction = i;
         }
     }
-    std::string allPos = std::to_string(target.x) + "," + std::to_string(target.y) + "," + std::to_string(now.direction) + "<";
-    std::string allDir = std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
+    // std::string allPos = std::to_string(target.x) + "," + std::to_string(target.y) + "," + std::to_string(now.direction) + "<";
+    // std::string allDir = std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
     // 每次找到前一个的位置
     while (true) {
         result->push_front(_pre_dir_s[now.x][now.y][now.direction]);
         now = _pre_s[now.x][now.y][now.direction];
         if (now.toPos() == origin && now.direction == direction) break;
-        allPos += std::to_string(now.x) + "," + std::to_string(now.y) + "," + std::to_string(now.direction) + "<";
-        allDir += std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
+        // allPos += std::to_string(now.x) + "," + std::to_string(now.y) + "," + std::to_string(now.direction) + "<";
+        // allDir += std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
     }
-    allPathLogger.log(nowTime, "allPos:{}", allPos);
-    allPathLogger.log(nowTime, "allDir:{}", allDir);
+    // allPathLogger.log(nowTime, "allPos:{}", allPos);
+    // allPathLogger.log(nowTime, "allDir:{}", allDir);
     return result;
 }
 
