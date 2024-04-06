@@ -30,8 +30,8 @@ LAND_SEA_TRAFFIC_COLOR = (216, 188, 109)  # 海陆立体交通地块
 MAIN_LAND_SEA_TRAFFIC_COLOR = (158, 200, 136)  # 海陆立体交通地块，同时为主干道和主航道
 DELIVERY_POINT_COLOR = (147, 112, 219)  # 交货点
 
-SHIPSHIFT = [[[0,0],[-1,0],[-2,0],[0,-1],[-1,-1],[-2,-1]],\
-            [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]],\
+SHIPSHIFT = [[[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]],\
+            [[0,0],[-1,0],[-2,0],[0,-1],[-1,-1],[-2,-1]],\
             [[0,0],[1,0],[0,-1],[1,-1],[0,-2],[1,-2]],\
             [[0,0],[-1,0],[0,1],[-1,1],[0,2],[-1,2]]]
 
@@ -269,13 +269,13 @@ class MapEditor:
                     Result.result[trobot_pos[i][1],trobot_pos[i][0]] = 4 if robotstat[now_time][i] != 2 else 13
                 else:
                     break
-            for i in range(20): #画船 0-3 右左上下
+            for i in range(20): #画船
                 if tship_pos[i][0] != -1:
                     hx = tship_pos[i][1]
                     hy = tship_pos[i][0]
                     for shift in SHIPSHIFT[tship_pos[i][2]]:
                         Result.result[hx + shift[0],hy + shift[1]] = 14
-                    Result.result[hx + shift[0],hy + shift[1]] = 15
+                    Result.result[hx,hy] = 15
                 else:
                     break
                     
@@ -428,8 +428,9 @@ class MapEditor:
             self.draw_gds()
             self.draw_button()
             self.draw_progress_bar(now_time/15000)
-            help = help = ["Replayer测试","当前robot:",str(now_robot),"当前frame:",str(now_time),\
-                           "当前倍速:",str(self.auto_play_speed)]
+            help = ["Replayer测试","","当前robot:",str(now_robot),"当前frame:",str(now_time),\
+                           "当前倍速:",str(self.auto_play_speed),\
+                            "","","FPS:{:.2f}".format(self.clock.get_fps())]
             self.draw_log(help)
             # self.draw_selection_box()
             pygame.display.flip()
