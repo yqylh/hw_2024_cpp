@@ -451,6 +451,7 @@ class MapEditor:
         global now_time
         global now_robot
         running = True
+        next_frame=0
         self.screen.fill(self.rgb_to_fill(OBSTACLE_COLOR))  # 用背景色填充屏幕
         self.draw_grid()
         while running:
@@ -483,14 +484,13 @@ class MapEditor:
             self.draw_log(help)
             # self.draw_selection_box()
             pygame.display.flip()
-            if 0 < self.auto_play_speed < 1:
-                self.clock.tick(60 * self.auto_play_speed)
-                next_frame = 1
-            else:
-                self.clock.tick(60)
-                next_frame = int(self.auto_play_speed)
+
+            self.clock.tick(60)
+            next_frame += self.auto_play_speed
+
             if self.auto_play:
-                now_time = min(max(now_time + next_frame,0),15000)
+                now_time = min(max(now_time + int(next_frame),0),15000)
+                next_frame = next_frame - int(next_frame)
                 if self.path_dead_time < now_time:
                     self.choose_path(now_robot)
 
