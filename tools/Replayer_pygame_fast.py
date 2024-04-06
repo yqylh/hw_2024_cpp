@@ -364,7 +364,7 @@ class MapEditor:
             elif start_time > now_time:
                 continue
             else:
-                pygame.draw.rect(self.screen, self.rgb_to_fill((255,255- int(val),255- int(val))), rect, 0)  # Change 1 to 0 for filled rects
+                pygame.draw.rect(self.screen, self.rgb_to_fill((255,238 - int(val),255)), rect, 0)  # Change 1 to 0 for filled rects
                 pygame.draw.rect(self.screen, pygame.Color('gray'), rect, 1) #绘制网格
 
     def draw_path(self,path):
