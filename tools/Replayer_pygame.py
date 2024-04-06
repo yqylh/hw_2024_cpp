@@ -392,6 +392,8 @@ def load_path(file_name):
                 else:
                     i += 1
                     x,y = lines[i].strip().split()
+                    x = int(x)
+                    y = int(y)
             path.append([x,y])
             i += 1
     print("load robot path success!")
