@@ -16,6 +16,9 @@ now_time = -1
 help = ["Replayer测试","当前robot:",str(now_robot),"当前frame:",str(now_time)]
 map_name = "my_map.txt"
 
+PATH_LINE_COLOR = (255, 120, 120) + (128,)
+
+
 # 定义颜色
 OBSTACLE_COLOR = (156, 140, 128)  # 障碍物
 LAND_COLOR = (201, 223, 153)  # 空地 (陆地)
@@ -329,9 +332,13 @@ class MapEditor:
                 deltime = 100000
             if deltime < min_time and robotpath_path[i] != []:
                 if len(robotpath_path[i]) + deltime > 0 and deltime < 0: #正在走的路
+                    print(len(robotpath_path[i]),deltime,time,now_time)
                     that_path_id = i
                     that_frame = time
                     break
+                elif deltime < 0:
+                    i += 1
+                    continue
                 min_time = deltime
                 that_frame = time
                 that_path_id = i
@@ -346,9 +353,10 @@ class MapEditor:
             self.path_dead_time = self.path_start_time + life_time
             self.path = path
             # debug()
-            print("start time: ",self.path_start_time)
+            print("\nstart time: ",self.path_start_time)
             print("life time:",life_time)
             print("deadtime:",self.path_dead_time)
+            print("now time",now_time)
             # print("path",path)
             self.path_change = True
 
@@ -370,6 +378,7 @@ class MapEditor:
     def draw_path(self,path):
         #带透明度,但更慢
         if self.path_change:
+            self.draw_grid()
             self.line_surface.fill((0, 0, 0, 0))
             plen = len(path)
             if plen == 0: return
@@ -378,7 +387,7 @@ class MapEditor:
             while(i<plen):
                 end_point = (path[i][1] * self.cell_size,path[i][0] * self.cell_size)
                 try:
-                    pygame.draw.line(self.line_surface, (128, 128, 128) + (128,), start_point, end_point, 3)
+                    pygame.draw.line(self.line_surface, PATH_LINE_COLOR, start_point, end_point, 3)
                 except:
                     print(start_point, end_point)
                 self.screen.blit(self.line_surface, (0, 0))
@@ -386,21 +395,26 @@ class MapEditor:
                 i+=1
                 self.path_change = False
         else:
-            self.screen.blit(self.line_surface, (0, 0))
+            self.screen.blit(self.line_surface, (0, 0))     
 
     def draw_path_fast(self,path):
-        plen = len(path)
-        if plen == 0: return
-        i = 1
-        start_point = (path[0][1] * self.cell_size ,path[0][0] * self.cell_size)
-        while(i<plen):
-            end_point = (path[i][1] * self.cell_size,path[i][0] * self.cell_size)
-            try:
-                pygame.draw.line(self.screen, (255, 0, 0), start_point, end_point, 3)
-            except:
-                print(start_point, end_point)
-            start_point = end_point
-            i+=1  
+        if self.path_change:
+            self.draw_grid()
+            plen = len(path)
+            if plen == 0: return
+            i = 1
+            start_point = (path[0][1] * self.cell_size ,path[0][0] * self.cell_size)
+            while(i<plen):
+                end_point = (path[i][1] * self.cell_size,path[i][0] * self.cell_size)
+                try:
+                    pygame.draw.line(self.screen, (255, 0, 0), start_point, end_point, 3)
+                except:
+                    print(start_point, end_point)
+                start_point = end_point
+                i+=1  
+                self.path_change = False
+        else:
+            pass
 
     def handle_mouse_down_2(self, pos):
         self.mouse_down = True
@@ -457,7 +471,7 @@ class MapEditor:
             self.draw_changed_grid()
             self.draw_robots()
             if self.path_start_time <= now_time:
-                self.draw_path_fast(self.path)
+                self.draw_path(self.path)
             self.draw_gds()
             self.draw_button()
             self.draw_progress_bar(now_time/15000)
