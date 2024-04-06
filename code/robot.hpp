@@ -234,6 +234,8 @@ void Robot::action() {
         if (bring == 0 && nowTime <= bringTimeLimit) {
             printf("get %d\n", id);
             flowLogger.log(nowTime, "get {0}", id);
+            counter.push_back("robot_pos",-1000,-2);
+            counter.push_back("robot_pos",id,2);
             counter.add("robot_get_nums", 1);
             counter.add("robot_get_value", item_value);
             // TODO: 需要检测一下是否真的拿到东西了？？？在前面判断一下，如果没有拿到，需要重新计算
@@ -252,6 +254,8 @@ void Robot::action() {
         if (bring == 1 && grids[pos.x][pos.y]->type == 3) {
             printf("pull %d\n", id);
             flowLogger.log(nowTime, "pull {0}", id);
+            counter.push_back("robot_pos",-1000,-2);
+            counter.push_back("robot_pos",id,1);
             bring = 0;
             if (choosed_berth_id != -1) {
                 berth_center->declare_robot_pull_good(choosed_berth_id, item_value);

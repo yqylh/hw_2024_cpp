@@ -45,6 +45,7 @@ color_map = [
     LAND_SEA_TRAFFIC_COLOR,  # 10 - 海陆立体交通地块
     MAIN_LAND_SEA_TRAFFIC_COLOR,  # 11 - 海陆立体交通地块，同时为主干道和主航道
     DELIVERY_POINT_COLOR,  # 12 - 交货点
+    (197,106,119), #13 - 标记带货的机器人
 ]
 
 BLACK_COLOR = (0, 0, 0)
@@ -56,6 +57,7 @@ class CResult:
 
 Result = CResult()
 robotpos = np.zeros((15000, 20, 2), dtype=np.int32) - 1
+robotstat = np.ones((15000, 20, 1), dtype=np.int32)
 
 robotpath_path = []
 robotpath_path2 = []
@@ -105,8 +107,8 @@ class MapEditor:
             Button(self.screen_width - 190, 170, 180, 40, "下个robot"),
         ]
         self.buttons2 = [
-            Button(self.screen_width - 190, 900, 180, 40, "自动播放"),
-            Button(self.screen_width - 190, 950, 180, 40, "暂停"),
+            Button(self.screen_width - 190, 900, 180, 40, "自动播放/暂停"),
+            Button(self.screen_width - 190, 950, 180, 40, "快进"),
         ]
         self. txts_pos = (self.screen_width - 190, 170 + 40)
         self.log_messages = []
@@ -119,6 +121,7 @@ class MapEditor:
         self.start_pos = None
         self.end_pos = None
         self.auto_play = False
+        self.auto_play_speed = 1
 
     def rgb_to_fill(self, rgb):
         return pygame.Color(*rgb)
@@ -145,15 +148,12 @@ class MapEditor:
                 elif button.text == "下个robot":
                     now_robot = min(20,now_robot+1)
                     self.choose_path(now_robot)
-                    
-
-                return
         for button in self.buttons2:
             if button.is_clicked(event):
                 if button.text == "自动播放/暂停":
                     self.auto_play = True if self.auto_play == False else False
-                elif button.text == "暂停":
-                    self.auto_play = False
+                elif button.text == "快进":
+                    self.auto_play_speed *= 2 if self.auto_play_speed <=16 else 1
 
         x, y = event.pos[0] // self.cell_size, event.pos[1] // self.cell_size
 
@@ -188,7 +188,7 @@ class MapEditor:
             trobot_pos = robotpos[now_time]
             for i in range(20):
                 if trobot_pos[i][0] != -1:
-                    Result.result[trobot_pos[i][1],trobot_pos[i][0]] = 4
+                    Result.result[trobot_pos[i][1],trobot_pos[i][0]] = 4 if robotstat[now_time][i] != 2 else 13
 
     def choose_path(self,robot_id = None):
         global now_time
@@ -293,13 +293,14 @@ class MapEditor:
             if self.path_start_time <= now_time:
                 self.draw_path(self.path)
             self.draw_button()
-            help = help = ["Replayer测试","当前robot:",str(now_robot),"当前frame:",str(now_time)]
+            help = help = ["Replayer测试","当前robot:",str(now_robot),"当前frame:",str(now_time),\
+                           "当前倍速:",str(self.auto_play_speed)]
             self.draw_log(help)
             # self.draw_selection_box()
             pygame.display.flip()
             self.clock.tick(60)
             if self.auto_play:
-                now_time += 1
+                now_time += 1 * self.auto_play_speed
                 if self.path_dead_time < now_time:
                     self.choose_path(now_robot)
 
@@ -354,12 +355,22 @@ def load_pos(file_name):
             x = int(x)
             y = int(y)
             if x == -1000:
-                id = y
-                robot_id = 0
-                i += 1
-                continue
+                if y != -2:
+                    id = y
+                    robot_id = 0
+                    i += 1
+                    continue
+                elif y == -2:
+                    i += 1
+                    x,y = lines[i].strip().split()
+                    robot_id = int(x)
+                    stat = int(y)
+                    robotstat[id,robot_id] = stat
+                    i+=1
+                    continue
             robotpos[id,robot_id,0] = x
             robotpos[id,robot_id,1] = y
+            robotstat[id,robot_id] = robotstat[id-1,robot_id]
             i += 1
             robot_id += 1
     print("load robot pos success!")
