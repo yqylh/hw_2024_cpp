@@ -30,6 +30,11 @@ LAND_SEA_TRAFFIC_COLOR = (216, 188, 109)  # 海陆立体交通地块
 MAIN_LAND_SEA_TRAFFIC_COLOR = (158, 200, 136)  # 海陆立体交通地块，同时为主干道和主航道
 DELIVERY_POINT_COLOR = (147, 112, 219)  # 交货点
 
+SHIPSHIFT = [[[0,0],[-1,0],[-2,0],[0,-1],[-1,-1],[-2,-1]],\
+            [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]],\
+            [[0,0],[1,0],[0,-1],[1,-1],[0,-2],[1,-2]],\
+            [[0,0],[-1,0],[0,1],[-1,1],[0,2],[-1,2]]]
+
 # 创建 color_map，按照索引与地图区块类型的映射关系
 color_map = [
     OBSTACLE_COLOR,  # 0 - 障碍
@@ -46,6 +51,8 @@ color_map = [
     MAIN_LAND_SEA_TRAFFIC_COLOR,  # 11 - 海陆立体交通地块，同时为主干道和主航道
     DELIVERY_POINT_COLOR,  # 12 - 交货点
     (197,106,119), #13 - 标记带货的机器人
+    (0,0,240), #14 -  船
+    (0,140,240), #14 -  船核心
 ]
 
 BLACK_COLOR = (0, 0, 0)
@@ -56,8 +63,10 @@ class CResult:
         self.ori_result = np.zeros((200, 200), dtype=np.int8)
 
 Result = CResult()
-robotpos = np.zeros((15000, 20, 2), dtype=np.int32) - 1
+robotpos = np.zeros((15000, 20, 2), dtype=np.int32) - 1 #x,y
 robotstat = np.ones((15000, 20, 1), dtype=np.int32)
+shippos = np.zeros((15000, 20, 3), dtype=np.int32) - 1 # x,y,direction
+# robotstat = np.ones((15000, 20, 1), dtype=np.int32)
 gds = []
 gds_dead = []
 
@@ -92,7 +101,7 @@ class MapEditor:
     def __init__(self, map_height=200, map_width=200, cell_size=6):
         pygame.init()
         self.screen_width = map_width * cell_size + 200
-        self.screen_height = map_height * cell_size
+        self.screen_height = map_height * cell_size + 75
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.clock = pygame.time.Clock()
 
@@ -111,6 +120,7 @@ class MapEditor:
         self.buttons2 = [
             Button(self.screen_width - 190, 900, 180, 40, "自动播放/暂停"),
             Button(self.screen_width - 190, 950, 180, 40, "快进"),
+            Button(self.screen_width - 190, 1000, 180, 40, "快退"),
         ]
         self. txts_pos = (self.screen_width - 190, 170 + 40)
         self.log_messages = []
@@ -125,6 +135,8 @@ class MapEditor:
         self.auto_play = False
         self.auto_play_speed = 1
         self.goods_alive_from = 0
+        self.path_change = False
+        self.line_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
 
     def rgb_to_fill(self, rgb):
         return pygame.Color(*rgb)
@@ -135,6 +147,20 @@ class MapEditor:
                 rect = pygame.Rect(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
                 pygame.draw.rect(self.screen, self.rgb_to_fill(color_map[Result.result[x][y]]), rect, 0)  # Change 1 to 0 for filled rects
                 pygame.draw.rect(self.screen, pygame.Color('gray'), rect, 1) #绘制网格
+
+    def upspeed(self):
+        if self.auto_play_speed > 0:
+            self.auto_play_speed = 2 * self.auto_play_speed if self.auto_play_speed <16 else self.auto_play_speed
+        else:
+            self.auto_play_speed = int(self.auto_play_speed / 2) if self.auto_play_speed != -1 else 1
+    
+    def downspeed(self):
+        if self.auto_play_speed > 1:
+            self.auto_play_speed = int(self.auto_play_speed / 2 )
+        elif self.auto_play_speed ==1:
+            self.auto_play_speed = -1
+        else:
+            self.auto_play_speed = 2 * self.auto_play_speed if self.auto_play_speed > -16 else self.auto_play_speed
 
     def handle_mouse_event(self, event):
         global now_time
@@ -155,10 +181,17 @@ class MapEditor:
             if button.is_clicked(event):
                 if button.text == "自动播放/暂停":
                     self.auto_play = True if self.auto_play == False else False
+                    if self.auto_play_speed < 0:
+                         self.auto_play_speed = 1
                 elif button.text == "快进":
-                    self.auto_play_speed = 2 * self.auto_play_speed if self.auto_play_speed <16 else 1
+                    self.upspeed()
+                elif button.text == "快退":
+                    self.downspeed()
 
-        x, y = event.pos[0] // self.cell_size, event.pos[1] // self.cell_size
+        # x, y = event.pos[0] // self.cell_size, event.pos[1] // self.cell_size
+        pro = self.get_progress_from_click(event.pos[0], event.pos[1])
+        if pro is not None:
+            now_time = int(15000 * pro)
 
         if event.button == 1:  # Left click
             pass
@@ -172,16 +205,57 @@ class MapEditor:
             text_surf = font.render(lines, True, (0, 0, 0))
             self.screen.blit(text_surf, (self.txts_pos[0], self.txts_pos[1] + i * 30))
 
+    def draw_progress_bar(self, progress):
+    # 进度条的位置和尺寸
+        x = 50
+        y = self.screen_height - 50
+        width = self.screen_width - 100
+        height = 25
+
+        # 绘制进度条背景
+        background_color = (200, 200, 200)  # 灰色背景
+        pygame.draw.rect(self.screen, background_color, (x, y, width, height))
+
+        # 绘制进度条前景（填充部分）
+        fill_color = (0, 255, 0)  # 绿色填充
+        filled_width = int(width * progress)  # 根据进度计算填充宽度
+        pygame.draw.rect(self.screen, fill_color, (x, y, filled_width, height))
+
+    def get_progress_from_click(self, x, y):
+        # 进度条的位置和尺寸
+        bar_x = 50
+        bar_y = self.screen_height - 50
+        bar_width = self.screen_width - 100
+        bar_height = 25
+
+        # 判断点击是否在进度条范围内
+        if bar_x <= x <= bar_x + bar_width and bar_y <= y <= bar_y + bar_height:
+            # 计算点击位置相对于进度条开始位置的偏移量，并计算比例
+            relative_x = x - bar_x
+            progress = relative_x / bar_width
+            return progress
+        else:
+            return None  # 或者根据你的需求返回0
+
     def handle_keyboard_event(self, event):
         global now_time
+        global now_robot
         if event.key == pygame.K_a or event.key == pygame.K_LEFT:
-            now_time = max(0,now_time-1)
+            if not self.auto_play:
+                now_time = max(0,now_time-1)
+            else:
+                self.downspeed()
         elif event.key == pygame.K_d or event.key == pygame.K_RIGHT:
-            now_time = min(15000,now_time+1)
+            if not self.auto_play:
+                now_time = min(15000,now_time+1)
+            else:
+                self.upspeed()
         elif event.key == pygame.K_w or event.key == pygame.K_UP:
-            pass
+            now_robot = max(0,now_robot-1)
+            self.choose_path(now_robot)
         elif event.key == pygame.K_s or event.key == pygame.K_DOWN:
-            pass
+            now_robot = min(20,now_robot+1)
+            self.choose_path(now_robot)
         elif event.key == pygame.K_SPACE:
             self.auto_play = True if self.auto_play == False else False
 
@@ -189,9 +263,22 @@ class MapEditor:
         Result.result = Result.ori_result.copy()
         if now_time > 0:
             trobot_pos = robotpos[now_time]
-            for i in range(20):
+            tship_pos = shippos[now_time]
+            for i in range(20): #画机器人
                 if trobot_pos[i][0] != -1:
                     Result.result[trobot_pos[i][1],trobot_pos[i][0]] = 4 if robotstat[now_time][i] != 2 else 13
+                else:
+                    break
+            for i in range(20): #画船 0-3 右左上下
+                if tship_pos[i][0] != -1:
+                    hx = tship_pos[i][1]
+                    hy = tship_pos[i][0]
+                    for shift in SHIPSHIFT[tship_pos[i][2]]:
+                        Result.result[hx + shift[0],hy + shift[1]] = 14
+                    Result.result[hx + shift[0],hy + shift[1]] = 15
+                else:
+                    break
+                    
 
     def choose_path(self,robot_id = None):
         global now_time
@@ -206,11 +293,15 @@ class MapEditor:
                 if robotpath_robot_id[i] != robot_id:
                     i += 1
                     continue
-            if time - now_time >= -5:
+            if time - now_time >= -32:
                 deltime = time - now_time
             else:
                 deltime = 100000
             if deltime < min_time and robotpath_path[i] != []:
+                if len(robotpath_path[i]) + deltime > 0 and deltime < 0: #正在走的路
+                    that_path_id = i
+                    that_frame = time
+                    break
                 min_time = deltime
                 that_frame = time
                 that_path_id = i
@@ -228,7 +319,8 @@ class MapEditor:
             print("start time: ",self.path_start_time)
             print("life time:",life_time)
             print("deadtime:",self.path_dead_time)
-            print("path",path)
+            # print("path",path)
+            self.path_change = True
 
     def draw_gds(self):
         for i in range(self.goods_alive_from,gds.shape[0]):
@@ -236,7 +328,7 @@ class MapEditor:
             y,x,start_time,dead_time,val = good[0] ,good[1] ,good[2] ,good[3] ,good[4]
             tdead_time = start_time + 1000
             if tdead_time < now_time:
-                self.goods_alive_from += 1
+                # self.goods_alive_from += 1
                 continue
             if dead_time < now_time:
                 continue
@@ -248,6 +340,27 @@ class MapEditor:
             self.screen.blit(surface, rect.topleft)
 
     def draw_path(self,path):
+        #带透明度,但更慢
+        if self.path_change:
+            self.line_surface.fill((0, 0, 0, 0))
+            plen = len(path)
+            if plen == 0: return
+            i = 1
+            start_point = (path[0][1] * self.cell_size ,path[0][0] * self.cell_size)
+            while(i<plen):
+                end_point = (path[i][1] * self.cell_size,path[i][0] * self.cell_size)
+                try:
+                    pygame.draw.line(self.line_surface, (128, 128, 128) + (128,), start_point, end_point, 3)
+                except:
+                    print(start_point, end_point)
+                self.screen.blit(self.line_surface, (0, 0))
+                start_point = end_point
+                i+=1
+                self.path_change = False
+        else:
+            self.screen.blit(self.line_surface, (0, 0))
+
+    def draw_path_fast(self,path):
         plen = len(path)
         if plen == 0: return
         i = 1
@@ -259,7 +372,7 @@ class MapEditor:
             except:
                 print(start_point, end_point)
             start_point = end_point
-            i+=1
+            i+=1  
 
     def handle_mouse_down_2(self, pos):
         self.mouse_down = True
@@ -308,9 +421,10 @@ class MapEditor:
             self.draw_grid()
             self.draw_robots()
             if self.path_start_time <= now_time:
-                self.draw_path(self.path)
+                self.draw_path_fast(self.path)
             self.draw_gds()
             self.draw_button()
+            self.draw_progress_bar(now_time/15000)
             help = help = ["Replayer测试","当前robot:",str(now_robot),"当前frame:",str(now_time),\
                            "当前倍速:",str(self.auto_play_speed)]
             self.draw_log(help)
@@ -318,7 +432,7 @@ class MapEditor:
             pygame.display.flip()
             self.clock.tick(60)
             if self.auto_play:
-                now_time += 1 * self.auto_play_speed
+                now_time = min(max(now_time + 1 * self.auto_play_speed,0),15000)
                 if self.path_dead_time < now_time:
                     self.choose_path(now_robot)
 
@@ -398,6 +512,30 @@ def load_pos(file_name):
         robot_id += 1
     print("load robot pos success!")
 
+def load_ship_pos(file_name):
+    with open(file_name, 'r') as file:
+        lines = file.readlines()
+    lin_len = len(lines)
+    i = 0
+    id = -1
+    ship_id = 0
+    while(i < lin_len):
+        x,y = lines[i].strip().split()
+        x = int(x)
+        y = int(y)
+        if x == -1000:
+            id = y
+            ship_id = 0
+            i += 1
+            continue
+        shippos[id,ship_id,0] = x
+        shippos[id,ship_id,1] = y
+        dir,stat = lines[i+1].strip().split()
+        shippos[id,ship_id,2] = int(dir)
+        i += 2
+        ship_id += 1
+    print("load ship pos success!")
+
 def load_path(file_name):
     with open(file_name, 'r') as file:
         lines = file.readlines()
@@ -431,9 +569,9 @@ def load_path(file_name):
         path.append([x,y])
         i += 1
     print("load robot path success!")
-    print(len(robotpath_path))
-    print(len(robotpath_frame))
-    print(len(robotpath_robot_id))
+    # print(len(robotpath_path))
+    # print(len(robotpath_frame))
+    # print(len(robotpath_robot_id))
     # for i in range(len(robotpath_robot_id)):
     #     print(robotpath_frame[i],robotpath_robot_id[i])
 
@@ -462,11 +600,13 @@ def load_gds(file_name):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Map Editor')
     parser.add_argument('--cell_size', '-c', nargs='?',type=int,default=5, help='Cell size')
-    parser.add_argument('--map_name', '-m', nargs='?',type=str,default='my_map.txt', help='Cell size')
+    parser.add_argument('--load', '-l','-m', nargs='?',type=str,default='../allMaps/map1.txt', help='Load map')
+
     parser.add_argument('--robot_path_file','-ra', nargs='?',type=str,default='../log/counter.txt_robot_path.txt')
     parser.add_argument('--robot_pos_file','-ro', nargs='?',type=str,default='../log/counter.txt_robot_pos.txt')
     parser.add_argument('--goods_pos_file','-rg', nargs='?',type=str,default='../log/counter.txt_gds.txt')
-    parser.add_argument('--load', '-l', nargs='?',type=str,default='../allMaps/map1.txt', help='Load map')
+    parser.add_argument('--ship_pos_file','-rs', nargs='?',type=str,default='../log/counter.txt_ship_pos.txt')
+    
     args = parser.parse_args()
 
     if args.load:
@@ -474,9 +614,9 @@ if __name__ == "__main__":
         Result.result = map
         Result.ori_result = map.copy()
 
-    map_name = args.map_name
     load_gds(args.goods_pos_file)
     load_pos(args.robot_pos_file)
+    load_ship_pos(args.ship_pos_file)
     load_path(args.robot_path_file)
 
     editor = MapEditor()

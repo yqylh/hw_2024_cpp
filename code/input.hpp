@@ -100,6 +100,7 @@ void inputMap(){
     counter.registerVector("robot_move_length_vector");
     counter.registerVector2D("robot_path");
     counter.registerVector2D("robot_pos");
+    counter.registerVector2D("ship_pos");
     counter.registerVector2D("gds");
 }
 
@@ -145,6 +146,7 @@ bool inputFrame() {
     }
     int B;
     scanf("%d", &B);
+    counter.push_back("ship_pos",-1000,nowTime);
     for (int i = 1; i <= B; i++) {
         int id, bring, x, y, direction, status;
         scanf("%d%d%d%d%d%d", &id, &bring, &x, &y, &direction, &status);
@@ -152,6 +154,8 @@ bool inputFrame() {
         ships[id]->pos = Pos(x, y);
         ships[id]->direction = direction;
         ships[id]->status = status;
+        counter.push_back("ship_pos",x,y);
+        counter.push_back("ship_pos",direction,status);
     }
     std::string line;
     while(getline(std::cin, line) && line != "OK");
