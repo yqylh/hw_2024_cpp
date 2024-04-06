@@ -58,6 +58,8 @@ class CResult:
 Result = CResult()
 robotpos = np.zeros((15000, 20, 2), dtype=np.int32) - 1
 robotstat = np.ones((15000, 20, 1), dtype=np.int32)
+gds = []
+gds_dead = []
 
 robotpath_path = []
 robotpath_path2 = []
@@ -122,6 +124,7 @@ class MapEditor:
         self.end_pos = None
         self.auto_play = False
         self.auto_play_speed = 1
+        self.goods_alive_from = 0
 
     def rgb_to_fill(self, rgb):
         return pygame.Color(*rgb)
@@ -153,7 +156,7 @@ class MapEditor:
                 if button.text == "自动播放/暂停":
                     self.auto_play = True if self.auto_play == False else False
                 elif button.text == "快进":
-                    self.auto_play_speed *= 2 if self.auto_play_speed <=16 else 1
+                    self.auto_play_speed = 2 * self.auto_play_speed if self.auto_play_speed <16 else 1
 
         x, y = event.pos[0] // self.cell_size, event.pos[1] // self.cell_size
 
@@ -203,7 +206,7 @@ class MapEditor:
                 if robotpath_robot_id[i] != robot_id:
                     i += 1
                     continue
-            if time - now_time>0:
+            if time - now_time >= -5:
                 deltime = time - now_time
             else:
                 deltime = 100000
@@ -227,7 +230,22 @@ class MapEditor:
             print("deadtime:",self.path_dead_time)
             print("path",path)
 
-        
+    def draw_gds(self):
+        for i in range(self.goods_alive_from,gds.shape[0]):
+            good = gds[i]
+            y,x,start_time,dead_time,val = good[0] ,good[1] ,good[2] ,good[3] ,good[4]
+            tdead_time = start_time + 1000
+            if tdead_time < now_time:
+                self.goods_alive_from += 1
+                continue
+            if dead_time < now_time:
+                continue
+            if start_time > now_time:
+                continue
+            rect = pygame.Rect(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
+            surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+            surface.fill((255, 128, 128, val))  # 半透明白色
+            self.screen.blit(surface, rect.topleft)
 
     def draw_path(self,path):
         plen = len(path)
@@ -268,7 +286,6 @@ class MapEditor:
             button.color = button.set_color
             button.draw(self.screen)
 
-
     def run(self):
         global now_time
         global now_robot
@@ -292,6 +309,7 @@ class MapEditor:
             self.draw_robots()
             if self.path_start_time <= now_time:
                 self.draw_path(self.path)
+            self.draw_gds()
             self.draw_button()
             help = help = ["Replayer测试","当前robot:",str(now_robot),"当前frame:",str(now_time),\
                            "当前倍速:",str(self.auto_play_speed)]
@@ -346,67 +364,72 @@ def load_map(file):
 def load_pos(file_name):
     with open(file_name, 'r') as file:
         lines = file.readlines()
-        lin_len = len(lines)
-        i = 0
-        id = -1
-        robot_id = 0
-        while(i < lin_len):
-            x,y = lines[i].strip().split()
-            x = int(x)
-            y = int(y)
-            if x == -1000:
-                if y != -2:
-                    id = y
-                    robot_id = 0
-                    i += 1
-                    continue
-                elif y == -2:
-                    i += 1
-                    x,y = lines[i].strip().split()
-                    robot_id = int(x)
-                    stat = int(y)
-                    robotstat[id,robot_id] = stat
-                    i+=1
-                    continue
-            robotpos[id,robot_id,0] = x
-            robotpos[id,robot_id,1] = y
-            robotstat[id,robot_id] = robotstat[id-1,robot_id]
-            i += 1
-            robot_id += 1
+    lin_len = len(lines)
+    i = 0
+    id = -1
+    robot_id = 0
+    while(i < lin_len):
+        x,y = lines[i].strip().split()
+        x = int(x)
+        y = int(y)
+        if x == -1000:
+            if y != -2:
+                id = y
+                robot_id = 0
+                i += 1
+                continue
+            elif y == -2:
+                i += 1
+                x,y = lines[i].strip().split()
+                robot_id = int(x)
+                stat = int(y)
+                robotstat[id,robot_id] = stat
+                if stat == 2: #拿了货物,要把gds对应位置货物删掉
+                    gx = robotpos[id,robot_id,0]
+                    gy = robotpos[id,robot_id,1]
+                    gdsid = (gds[:,0] == gx) & (gds[:,1] == gy)
+                    gds[gdsid,3] = id
+                i+=1
+                continue
+        robotpos[id,robot_id,0] = x
+        robotpos[id,robot_id,1] = y
+        robotstat[id,robot_id] = robotstat[id-1,robot_id]
+        i += 1
+        robot_id += 1
     print("load robot pos success!")
 
 def load_path(file_name):
     with open(file_name, 'r') as file:
         lines = file.readlines()
-        lin_len = len(lines)
-        i = 0
-        id = -1
-        robot_id = 0
-        path = []
-        while(i < lin_len):
-            x,y = lines[i].strip().split()
-            x = int(x)
-            y = int(y)
-            if x == -1000:
-                if y != 2:
-                    if path != []:
-                        robotpath_path.append(path)
-                        robotpath_frame.append(id)
-                        robotpath_robot_id.append(robot_id)
-                    i += 1
-                    x,y = lines[i].strip().split()
-                    robot_id = int(x)
-                    id = int(y)
-                    path = []
-                    i += 1
-                    continue
-                else:
-                    i += 1
-                    x,y = lines[i].strip().split()
-                    x = int(x)
-                    y = int(y)
-            path.append([x,y])
-            i += 1
+    lin_len = len(lines)
+    i = 0
+    id = -1
+    robot_id = 0
+    path = []
+    while(i < lin_len):
+        x,y = lines[i].strip().split()
+        x = int(x)
+        y = int(y)
+        if x == -1000:
+            if y != 2:
+                if path != []:
+                    robotpath_path.append(path)
+                    robotpath_frame.append(id)
+                    robotpath_robot_id.append(robot_id)
+                i += 1
+                x,y = lines[i].strip().split()
+                robot_id = int(x)
+                id = int(y)
+                path = []
+                i += 1
+                continue
+            else:
+                i += 1
+                x,y = lines[i].strip().split()
+                x = int(x)
+                y = int(y)
+        path.append([x,y])
+        i += 1
     print("load robot path success!")
     print(len(robotpath_path))
     print(len(robotpath_frame))
@@ -414,7 +437,27 @@ def load_path(file_name):
     # for i in range(len(robotpath_robot_id)):
     #     print(robotpath_frame[i],robotpath_robot_id[i])
 
-    
+def load_gds(file_name):
+    global gds
+    with open(file_name, 'r') as file:
+        lines = file.readlines()
+    lin_len = len(lines)
+    frame = -1
+    i = 0
+    while (i < lin_len - 1):
+        x,y = lines[i].strip().split()
+        x = int(x)
+        y = int(y)
+        if x == -1000:
+            if y > 0:
+                frame = int(y)
+                i+=1
+            continue
+        _,val = lines[i+1].strip().split()
+        val = int(val)
+        gds.append([x,y,frame,frame + 1000,val])
+        i+=2
+    gds = np.asarray(gds)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Map Editor')
@@ -422,6 +465,7 @@ if __name__ == "__main__":
     parser.add_argument('--map_name', '-m', nargs='?',type=str,default='my_map.txt', help='Cell size')
     parser.add_argument('--robot_path_file','-ra', nargs='?',type=str,default='../log/counter.txt_robot_path.txt')
     parser.add_argument('--robot_pos_file','-ro', nargs='?',type=str,default='../log/counter.txt_robot_pos.txt')
+    parser.add_argument('--goods_pos_file','-rg', nargs='?',type=str,default='../log/counter.txt_gds.txt')
     parser.add_argument('--load', '-l', nargs='?',type=str,default='../allMaps/map1.txt', help='Load map')
     args = parser.parse_args()
 
@@ -431,6 +475,7 @@ if __name__ == "__main__":
         Result.ori_result = map.copy()
 
     map_name = args.map_name
+    load_gds(args.goods_pos_file)
     load_pos(args.robot_pos_file)
     load_path(args.robot_path_file)
 

@@ -100,6 +100,7 @@ void inputMap(){
     counter.registerVector("robot_move_length_vector");
     counter.registerVector2D("robot_path");
     counter.registerVector2D("robot_pos");
+    counter.registerVector2D("gds");
 }
 
 void do_special_frame() {
@@ -121,12 +122,15 @@ bool inputFrame() {
     }
     int K;
     scanf("%d", &K);
+    counter.push_back("gds",-1000,nowTime);
     for (int i = 1; i <= K; i++) {
         int x, y, value;
         scanf("%d%d%d", &x, &y, &value);
         if (value != 0) {
             unsolvedItems.emplace_back(x, y, value);
             unsolvedItems.back().beginTime = nowTime;
+            counter.push_back("gds",x,y);
+            counter.push_back("gds",-1,value);
         }
     }
     int R;
