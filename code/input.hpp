@@ -85,6 +85,7 @@ void inputMap(){
     while(getline(std::cin, line) && line != "OK");
     solveBerth();
     berth_center->find_private_space();
+    PreproShipAllAble();
     srand(time(0));
     puts("OK");
     fflush(stdout);
