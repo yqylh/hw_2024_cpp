@@ -279,7 +279,6 @@ class MapEditor:
                 else:
                     break
                     
-
     def choose_path(self,robot_id = None):
         global now_time
         global now_robot
@@ -388,8 +387,12 @@ class MapEditor:
         self.end_pos = None
 
     def handle_mouse_move(self, pos):
+        global now_time
         if self.mouse_down:
             self.end_pos = pos
+            pro = self.get_progress_from_click(pos[0], pos[1])
+            if pro is not None:
+                now_time = int(15000 * pro)
 
     def draw_button(self):
         for button in self.buttons:
