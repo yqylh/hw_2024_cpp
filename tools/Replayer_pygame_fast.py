@@ -188,7 +188,9 @@ class MapEditor:
     def downspeed(self):
         if self.auto_play_speed > 1:
             self.auto_play_speed = int(self.auto_play_speed / 2 )
-        elif self.auto_play_speed ==1:
+        elif 0.0675 <= self.auto_play_speed <= 1:
+            self.auto_play_speed = self.auto_play_speed / 2
+        elif self.auto_play_speed == 0.0675:
             self.auto_play_speed = -1
         else:
             self.auto_play_speed = 2 * self.auto_play_speed if self.auto_play_speed > -16 else self.auto_play_speed
@@ -332,7 +334,6 @@ class MapEditor:
                 deltime = 100000
             if deltime < min_time and robotpath_path[i] != []:
                 if len(robotpath_path[i]) + deltime > 0 and deltime < 0: #正在走的路
-                    print(len(robotpath_path[i]),deltime,time,now_time)
                     that_path_id = i
                     that_frame = time
                     break
@@ -390,10 +391,11 @@ class MapEditor:
                     pygame.draw.line(self.line_surface, PATH_LINE_COLOR, start_point, end_point, 3)
                 except:
                     print(start_point, end_point)
-                self.screen.blit(self.line_surface, (0, 0))
+                
                 start_point = end_point
                 i+=1
-                self.path_change = False
+            self.screen.blit(self.line_surface, (0, 0))
+            self.path_change = False
         else:
             self.screen.blit(self.line_surface, (0, 0))     
 
@@ -449,6 +451,7 @@ class MapEditor:
         global now_time
         global now_robot
         running = True
+        next_frame=0
         self.screen.fill(self.rgb_to_fill(OBSTACLE_COLOR))  # 用背景色填充屏幕
         self.draw_grid()
         while running:
@@ -481,9 +484,13 @@ class MapEditor:
             self.draw_log(help)
             # self.draw_selection_box()
             pygame.display.flip()
+
             self.clock.tick(60)
+            next_frame += self.auto_play_speed
+
             if self.auto_play:
-                now_time = min(max(now_time + 1 * self.auto_play_speed,0),15000)
+                now_time = min(max(now_time + int(next_frame),0),15000)
+                next_frame = next_frame - int(next_frame)
                 if self.path_dead_time < now_time:
                     self.choose_path(now_robot)
 
