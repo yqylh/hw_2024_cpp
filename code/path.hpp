@@ -95,7 +95,7 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
             }
         }
 
-        if (grids[now.x][now.y]->robotOnIt) continue;
+        // if (grids[now.x][now.y]->robotOnIt) continue;
         
 
         for (int i = 0; i < 4; i++) {

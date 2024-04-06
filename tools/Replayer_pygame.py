@@ -236,7 +236,10 @@ class MapEditor:
         start_point = (path[0][1] * self.cell_size ,path[0][0] * self.cell_size)
         while(i<plen):
             end_point = (path[i][1] * self.cell_size,path[i][0] * self.cell_size)
-            pygame.draw.line(self.screen, (255, 0, 0), start_point, end_point, 3)
+            try:
+                pygame.draw.line(self.screen, (255, 0, 0), start_point, end_point, 3)
+            except:
+                print(start_point, end_point)
             start_point = end_point
             i+=1
 
@@ -375,14 +378,14 @@ def load_path(file_name):
             y = int(y)
             if x == -1000:
                 if y != 2:
-                    i += 1
-                    x,y = lines[i].strip().split()
-                    robot_id = int(x)
-                    id = int(y)
                     if path != []:
                         robotpath_path.append(path)
                         robotpath_frame.append(id)
                         robotpath_robot_id.append(robot_id)
+                    i += 1
+                    x,y = lines[i].strip().split()
+                    robot_id = int(x)
+                    id = int(y)
                     path = []
                     i += 1
                     continue
