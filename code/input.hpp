@@ -98,6 +98,8 @@ void inputMap(){
     counter.registerVariable("robot_move_length_max", 0);
     counter.registerVariable("robot_move_length_min", 40000);
     counter.registerVector("robot_move_length_vector");
+    counter.registerVector2D("robot_path");
+    counter.registerVector2D("robot_pos");
 }
 
 void do_special_frame() {
@@ -129,11 +131,13 @@ bool inputFrame() {
     }
     int R;
     scanf("%d", &R);
+    counter.push_back("robot_pos",-1000,nowTime);
     for (int i = 1; i <= R; i++) {
         int id, bring, x, y;
         scanf("%d%d%d%d", &id, &bring, &x, &y);
         robots[id]->bring = bring;
         robots[id]->pos = Pos(x, y);
+        counter.push_back("robot_pos",x,y);
     }
     int B;
     scanf("%d", &B);

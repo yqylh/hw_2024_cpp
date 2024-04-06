@@ -290,12 +290,19 @@ void Robot::action() {
 
     // 没拿东西找东西，先计算item的dis，然后传入item的坐标，再计算港口的dis
     if (bring == 0) {
+        counter.push_back("robot_path",-1000,-1000);  //初始化记录
+        counter.push_back("robot_path",id,nowTime);     //记录id
         auto itemPath = actionFindItem();
         // 可能为空，如果为空，也不用去找港口的路
         if (itemPath.size() > 0) {
             // 起始点：当前点，目标点：item的位置
             // 起始时间：0，到item的时间为：itemPath.size() - 1
             wholePath = itemPath;
+            for(auto & tpos : wholePath){
+                counter.push_back("robot_path",tpos.x,tpos.y);
+            }
+            
+            // TODO: VISPATH wholePath 记得输出机器人id，这时候找到的是单程的，如果没找到往返的，只需要输出这个就可以，但是，下面的路径肯定包含这个路径
             havePath = true;
             addPathToAllPath(wholePath, id);
             auto itemPos = itemPath.back();
@@ -311,6 +318,11 @@ void Robot::action() {
                 //注意，由于上一个path的终点是item的位置，这里的起点也是item位置，所以不需要再计算一次，应该把item pop出去
                 berthPath.pop_front();
                 wholePath.insert(wholePath.end(), berthPath.begin(), berthPath.end());
+                // TODO: VISPATH wholePath 记得输出机器人id，这时候找到的是往返的（回港口的）
+                counter.push_back("robot_path",-1000,2);
+                for (auto & tpos : berthPath){
+                    counter.push_back("robot_path",tpos.x,tpos.y);
+                }
                 havePath = true;
                 // 直接用wholePath，就不需要考虑从哪个时间加入了
                 addPathToAllPath(wholePath, id);
