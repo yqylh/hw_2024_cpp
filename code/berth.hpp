@@ -8,6 +8,7 @@ struct Berth {
     int id;
     Pos pos;
     std::vector<Pos> usePos; // 使用的位置
+    std::vector<Navigator *> usePosNavigator; // 使用的位置的导航器
     int velocity; // 装载速度
     int disWithTimeBerth[MAX_Line_Length + 1][MAX_Col_Length + 1];
     //上面的是原始值，别改
@@ -61,6 +62,7 @@ struct Berth {
         });
         for (int i = 0; i < 2; i++) {
             usePos.push_back(arr[i].first);
+            usePosNavigator.push_back(sovleGrid(arr[i].first));
         }
     }
     void recordBerth() {

@@ -48,12 +48,8 @@ int MAX_Capacity; // 船的容量
 int money = 25000; // 当前金钱
 int nowTime = 0; // 当前帧数
 bool inputFlag = true; // 是否input是否结束
-
-/**
- * 预处理&多线程控制相关变量
-*/
-auto programStart = high_resolution_clock::now(); // 计时器
-
+std::vector<int> robotPriority; // 机器人的优先级
+int priorityTimeControl = -1; // 优先级控制时间
 
 /**
  * 超参数  160 80 0.85 200 是一组经典参数,适合大部分地图能跑一个不错的成绩
@@ -71,6 +67,8 @@ double Sell_Ration = 0.7; // 还剩多少港口空了就去卖, 0.5~1
 int Min_Next_Berth_Value = 1700; // another 港口的货物价值少于这个值就不去, 0~1000
 int Only_Run_On_Berth_with_Ship = 2500; // 最后这些帧,只在有船的泊位上运行,
 int lastRoundRuningTime = 600; // 估计的最后一轮的运行时间
+int maxRobotNum = 17;
+int maxShipNum = 2;
 
 // 暂时不要调的参数,不一定有用 | 策略已经放弃了
 int Min_Next_Berth_Goods = 10; // another 港口的货物少于这个值就不去, 0~100

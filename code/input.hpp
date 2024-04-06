@@ -166,7 +166,7 @@ void solveFrame() {
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
     for (auto & robot : robots) robot->action();
     // 碰撞检测
-    // solveCollision();
+    solveCollision();
     // 移动
     for (auto & robot : robots) robot->move();
     if (nowTime == 1) {
@@ -179,18 +179,16 @@ void solveFrame() {
             }
         }
     }
-    if (nowTime > 100 && nowTime < 5000 && money > 2000 && robots.size() < 17){
+    if (nowTime > 100 && nowTime < 5000 && money > 2000 && robots.size() < maxRobotNum){
         for (auto & robotBuyer : berth_center->robot_buyer) {
-            if (money > 2000 && robots.size() < 17) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            if (money > 2000 && robots.size() < maxRobotNum) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
         }
     }
-    if (nowTime > 5000 && nowTime < 10000 && money > 8000 && ships.size() < 2) {
+    if (nowTime > 5000 && nowTime < 10000 && money > 8000 && ships.size() < maxShipNum) {
         for (auto & shipBuyer : berth_center->ship_buyer) {
-            if (money > 8000 && ships.size() < 2) newShip(shipBuyer.pos.x, shipBuyer.pos.y);
+            if (money > 8000 && ships.size() < maxShipNum) newShip(shipBuyer.pos.x, shipBuyer.pos.y);
         }
     }
-    // 时间向前推进
-    if (allPath.size() > 0) allPath.pop_front();
     // 船只调度
     berth_center->call_ship_and_berth_check();
     // 船只移动
