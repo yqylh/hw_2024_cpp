@@ -54,7 +54,7 @@ public:
             }
         }
         if (max_goods_id == -1) {
-            TEST(fout << "ship_choose_berth error" << std::endl;)
+            bugs("ship_choose_berth error");
             // throw;
         }
         return max_goods_id;
@@ -115,8 +115,8 @@ public:
             // line2: 或者是最后一轮了(暂时没法判断了)
             // line3: 如果港口没货物了, 并且船装满了百分之 ratio
             if (   ship_ptr->leftCapacity() == 0
-                // || berth_ptr->time + nowTime + 2 > MAX_TIME
-                || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration /* && nowTime + berth_ptr->time * 2 + lastRoundRuningTime < MAX_TIME*/)
+                || nowTime + 350 > MAX_TIME
+                || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration  && nowTime + 350 * 2 + lastRoundRuningTime < MAX_TIME)
             ) {
                 berth_ptr->shipId.clear();
                 ship_ptr->goSell(delivery[0].pos);
@@ -300,7 +300,7 @@ public:
         for (int i = 0; i < MAX_Ship_Num; i++) {
             normal_check_ship(i);
         }
-        if (nowTime == 15000) finish_log();
+        if (nowTime > 14940) finish_log();
     }
 };
 
@@ -308,6 +308,9 @@ Berth_center *berth_center = new Berth_center();
 
 // 最后一回合的 统计信息
 void Berth_center::finish_log() {
+    static bool flag = false;
+    if (flag) return;
+    flag = true;
     int leftTotal = 0;
     for (int i = 0; i < MAX_Berth_Num; i++) {
         berthLogger.log(nowTime, "berth{},goodsNum:{}", i, berths[i]->sum_value);

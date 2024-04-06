@@ -92,27 +92,27 @@ public:
 
     void writeToFile(const std::string& filename) {
         std::ofstream outFile(filename, std::ios::app);
-        outFile << "============================================" << std::endl;
+        outFile << "============================================" << "\n";
         for (const auto& var : variables) {
-            outFile << "Variable: " << var.first << ",\t Value: " << var.second << ",\t Locked: " << (locks[var.first] ? "Yes" : "No") << std::endl;
+            outFile << "Variable: " << var.first << ",\t Value: " << var.second << ",\t Locked: " << (locks[var.first] ? "Yes" : "No") << "\n";
         }
-        outFile << "=====================" << std::endl;
-        outFile << "avg_robot_move_length: " << (getValue("robot_move_length") / getValue("robot_get_nums")) << std::endl;
-        outFile << "max_robot_move_length: " << getValue("robot_move_length_max") << std::endl;
-        outFile << "min_robot_move_length: " << getValue("robot_move_length_min") << std::endl;
-        outFile << "============================================" << std::endl;
+        outFile << "=====================" << "\n";
+        outFile << "avg_robot_move_length: " << (getValue("robot_move_length") / getValue("robot_get_nums")) << "\n";
+        outFile << "max_robot_move_length: " << getValue("robot_move_length_max") << "\n";
+        outFile << "min_robot_move_length: " << getValue("robot_move_length_min") << "\n";
+        outFile << "============================================" << "\n";
         outFile.close();
         for (const auto& vec : vectors) {
             std::ofstream outFile(filename + "_" + vec.first + ".txt");
             for (int i = 0; i < vec.second.size(); i++) {
-                outFile << vec.second[i] << std::endl;
+                outFile << vec.second[i] << "\n";
             }
             outFile.close();
         }
         for (const auto& vec : vectors2d){
             std::ofstream outFile(filename + "_" + vec.first + ".txt");
             for (int i = 0; i < vec.second.size(); i++) {
-                outFile << vec.second[i].first << " " << vec.second[i].second << std::endl;
+                outFile << vec.second[i].first << " " << vec.second[i].second << "\n";
             }
             outFile.close();
         }

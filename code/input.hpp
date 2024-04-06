@@ -179,9 +179,14 @@ void solveFrame() {
             }
         }
     }
-    if (nowTime > 100 && nowTime < 3000 && money > 2000 && robots.size() < 15) {
+    if (nowTime > 100 && nowTime < 5000 && money > 2000 && robots.size() < 19){
         for (auto & robotBuyer : berth_center->robot_buyer) {
-            if (money > 2000 && robots.size() < 15) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            if (money > 2000 && robots.size() < 19) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+        }
+    }
+    if (nowTime > 5000 && nowTime < 10000 && money > 8000 && ships.size() < 2) {
+        for (auto & shipBuyer : berth_center->ship_buyer) {
+            if (money > 8000 && ships.size() < 2) newShip(shipBuyer.pos.x, shipBuyer.pos.y);
         }
     }
     // 时间向前推进

@@ -124,8 +124,18 @@ FileLogger allPathLogger("../log/allPath_log.txt");
     #define CREATEMAP(x)
 #endif
 
-void quickFix(int flag) {
-    TEST(fout << "flag" << flag << std::endl;)
+template<typename T>
+void bugs_output(T x) {
+#ifdef DEBUG
+    fout << x << " ";
+#endif
+}
+template<typename... Args>
+void bugs(Args... args) {
+#ifdef DEBUG
+    (..., bugs_output(args));
+    fout << std::endl;
+#endif
 }
 
 #endif
