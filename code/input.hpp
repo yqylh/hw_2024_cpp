@@ -179,9 +179,9 @@ void solveFrame() {
             }
         }
     }
-    if (nowTime > 100 && nowTime < 5000 && money > 2000 && robots.size() < 19){
+    if (nowTime > 100 && nowTime < 5000 && money > 2000 && robots.size() < 17){
         for (auto & robotBuyer : berth_center->robot_buyer) {
-            if (money > 2000 && robots.size() < 19) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            if (money > 2000 && robots.size() < 17) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
         }
     }
     if (nowTime > 5000 && nowTime < 10000 && money > 8000 && ships.size() < 2) {
