@@ -294,7 +294,7 @@ class MapEditor:
 
     def draw_robots(self):
         Result.re_result()
-        if now_time > 0:
+        if 0< now_time < 15000:
             trobot_pos = robotpos[now_time]
             tship_pos = shippos[now_time]
             for i in range(30): #画机器人
@@ -491,7 +491,7 @@ class MapEditor:
 
             if self.auto_play:
                 next_frame += self.auto_play_speed
-                now_time = min(max(now_time + int(next_frame),0),15000)
+                now_time = min(max(now_time + int(next_frame),0),14999)
                 next_frame = next_frame - int(next_frame)
                 if self.path_dead_time < now_time:
                     self.choose_path(now_robot)

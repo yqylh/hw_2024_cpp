@@ -112,7 +112,7 @@ void do_special_frame() {
         counter.add("robot_get_value_before_lastgame", counter.getValue("robot_get_value"));
         counter.lock("robot_get_value_before_lastgame");
     }
-    if (nowTime == 14950) counter.writeToFile("../log/counter.txt");
+    if (nowTime == 14999) counter.writeToFile("../log/counter.txt");
 }
 
 
