@@ -125,6 +125,8 @@ class MapEditor:
         self.map_height = map_height
         self.map_width = map_width
         self.cell_size = cell_size
+        self.robot_cnt = 0
+        self.ship_cnt = 0
 
         self.buttons = [
             Button(self.screen_width - 190, 20, 180, 40, "前进一帧"),
@@ -205,10 +207,12 @@ class MapEditor:
                 elif button.text == "后退一帧":
                     now_time = max(0,now_time-1)
                 elif button.text == "上个robot":
-                    now_robot = max(-1,now_robot-1)
+                    now_robot = now_robot - 1 if now_robot > 0 else self.robot_cnt
+                    now_robot = now_robot if now_robot <= self.robot_cnt else 0
                     self.choose_path(now_robot)
                 elif button.text == "下个robot":
-                    now_robot = min(30,now_robot+1)
+                    now_robot = now_robot + 1 if now_robot < self.robot_cnt else 0
+                    now_robot = now_robot if now_robot >= 0 else self.robot_cnt
                     self.choose_path(now_robot)
         for button in self.buttons2:
             if button.is_clicked(event):
@@ -283,22 +287,28 @@ class MapEditor:
                 now_time = min(15000,now_time+1)
             else:
                 self.upspeed()
+                    
         elif event.key == pygame.K_w or event.key == pygame.K_UP:
-            now_robot = max(-1,now_robot-1)
+            now_robot = now_robot - 1 if now_robot > 0 else self.robot_cnt
+            now_robot = now_robot if now_robot <= self.robot_cnt else 0
             self.choose_path(now_robot)
         elif event.key == pygame.K_s or event.key == pygame.K_DOWN:
-            now_robot = min(30,now_robot+1)
+            now_robot = now_robot + 1 if now_robot < self.robot_cnt else 0
+            now_robot = now_robot if now_robot >= 0 else self.robot_cnt
             self.choose_path(now_robot)
         elif event.key == pygame.K_SPACE:
             self.auto_play = True if self.auto_play == False else False
 
     def draw_robots(self):
+        self.robot_cnt = 0
+        self.ship_cnt = 0
         Result.re_result()
         if 0< now_time < 15000:
             trobot_pos = robotpos[now_time]
             tship_pos = shippos[now_time]
             for i in range(30): #画机器人
                 if trobot_pos[i][0] != -1:
+                    self.robot_cnt += 1
                     if robotstat[now_time][i] != 2:
                         Result.updata_results(trobot_pos[i][1],trobot_pos[i][0], 4)  
                     else:
@@ -307,6 +317,7 @@ class MapEditor:
                     break
             for i in range(20): #画船
                 if tship_pos[i][0] != -1:
+                    self.ship_cnt += 1
                     hx = tship_pos[i][1]
                     hy = tship_pos[i][0]
                     for shift in SHIPSHIFT[tship_pos[i][2]]:
@@ -425,6 +436,7 @@ class MapEditor:
         # print(pos_t0, pos_t1,pos[0], pos[1])
         pos = (pos_t0 * self.cell_size, pos_t1 * self.cell_size)
         self.start_pos = pos
+        print(pos_t1, pos_t0)
 
     def handle_mouse_up_2(self, pos):
         self.mouse_down = False
@@ -471,13 +483,14 @@ class MapEditor:
             # self.screen.fill(self.rgb_to_fill(OBSTACLE_COLOR),self.reats_witoutmap1)
             pygame.draw.rect(self.screen, self.rgb_to_fill(OBSTACLE_COLOR),self.reats_witoutmap2)
             pygame.draw.rect(self.screen, self.rgb_to_fill(OBSTACLE_COLOR),self.reats_witoutmap1)
+            self.draw_gds()
             self.draw_changed_grid()
             self.draw_robots()
             if self.path_start_time <= now_time:
                 self.draw_path(self.path)
             elif self.path_start_time - now_time > 2: #还有很久才开始?换!
                 self.choose_path(now_robot)
-            self.draw_gds()
+            
             self.draw_button()
             self.draw_progress_bar(now_time/15000)
             help = ["Replayer测试","","快退有bug","","当前robot:",str(now_robot),"当前frame:",str(now_time),\

@@ -356,10 +356,11 @@ void Robot::move() {
     int nextDir = getDirWithPath(nowPos, nextPos);
     // 把当前位置弹出
     wholePath.pop_front();
+    flowLogger.log(nowTime, "move {0} {1}", id, nextDir);
+
+    if (nextDir == -1) return;
     printf("move %d %d\n", id , nextDir);
     counter.add("robot_move_length", 1);
-
-    flowLogger.log(nowTime, "move {0} {1}", id, nextDir);
 }
 
 

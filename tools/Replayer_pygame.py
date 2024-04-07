@@ -421,11 +421,13 @@ class MapEditor:
                     self.handle_mouse_move(event.pos)
 
             self.screen.fill(self.rgb_to_fill(OBSTACLE_COLOR))  # 用背景色填充屏幕
+            self.draw_gds()
+            
             self.draw_grid()
             self.draw_robots()
             if self.path_start_time <= now_time:
                 self.draw_path_fast(self.path)
-            self.draw_gds()
+            
             self.draw_button()
             self.draw_progress_bar(now_time/15000)
             help = ["Replayer测试","","当前robot:",str(now_robot),"当前frame:",str(now_time),\
