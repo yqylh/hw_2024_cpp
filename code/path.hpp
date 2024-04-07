@@ -120,7 +120,7 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
         }
 
         
-        if (now_dis - disWithTime[now.x][now.y] <= 5) {
+        if (now_dis - disWithTime[now.x][now.y] <= 2) {
             _queueRobot[end++] = TPos(now, now_dis + 1);
             if (end == 40010) end = 0;
         }
