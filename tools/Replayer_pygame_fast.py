@@ -488,9 +488,9 @@ class MapEditor:
             pygame.display.flip()
 
             self.clock.tick(60)
-            next_frame += self.auto_play_speed
 
             if self.auto_play:
+                next_frame += self.auto_play_speed
                 now_time = min(max(now_time + int(next_frame),0),15000)
                 next_frame = next_frame - int(next_frame)
                 if self.path_dead_time < now_time:
