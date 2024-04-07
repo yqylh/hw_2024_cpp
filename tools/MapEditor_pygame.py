@@ -20,6 +20,7 @@ DOCKING_AREA_COLOR = (203, 196, 255)  # 靠泊区
 LAND_SEA_TRAFFIC_COLOR = (216, 188, 109)  # 海陆立体交通地块
 MAIN_LAND_SEA_TRAFFIC_COLOR = (158, 200, 136)  # 海陆立体交通地块，同时为主干道和主航道
 DELIVERY_POINT_COLOR = (147, 112, 219)  # 交货点
+SHIP_CENTER_COLOR = (90, 93, 98)  # 船泊位中心点
 
 # 创建 color_map，按照索引与地图区块类型的映射关系
 color_map = [
@@ -36,6 +37,7 @@ color_map = [
     LAND_SEA_TRAFFIC_COLOR,  # 10 - 海陆立体交通地块
     MAIN_LAND_SEA_TRAFFIC_COLOR,  # 11 - 海陆立体交通地块，同时为主干道和主航道
     DELIVERY_POINT_COLOR,  # 12 - 交货点
+    SHIP_CENTER_COLOR, # 13  # 船泊位中心点
 ]
 
 BLACK_COLOR = (0, 0, 0)
@@ -121,6 +123,7 @@ class MapEditor:
             Button(self.screen_width - 190, 900, 180, 40, "海陆立体交通",color = color_map[10]),
             Button(self.screen_width - 190, 950, 180, 40, "主干海陆立体",color = color_map[11]),
             Button(self.screen_width - 190, 1000, 180, 40, "交货点",    color = color_map[12]),
+            Button(self.screen_width - 190, 1050, 180, 40, "船中心点",    color = color_map[13]),
         ]
         self. txts_pos = (self.screen_width - 190, 170 + 40)
         self.log_messages = []
@@ -332,15 +335,17 @@ def save_map():
     print("Saving map as " + map_name)
     with open(map_name, 'w') as map_file:
         to_save_result = Result.result.T
-        for line in to_save_result:
-            for grid_content in line:
+        center_list = []
+        print(len(to_save_result))
+        for x, line in enumerate(to_save_result):
+            for y, grid_content in enumerate(line):
                 if grid_content == 0:
                     map_file.write('#')
                 if grid_content == 1:
                     map_file.write('.')
                 if grid_content == 2:
                     map_file.write('*')
-                if grid_content == 3:
+                if grid_content == 3 or grid_content == 13:
                     map_file.write('B')
                 if grid_content == 4:
                     map_file.write('A')
@@ -360,7 +365,12 @@ def save_map():
                     map_file.write('c')
                 if grid_content == 12:
                     map_file.write('T')
+                if grid_content == 13:
+                    center_list.append([y, x])
             map_file.write('\n')
+        map_file.write(f"{len(center_list)}\n")
+        for centerId, center in enumerate(center_list):
+            map_file.write(f"{center[0]} {center[1]} 0 2\n")
     print("Map saved as " + map_name)
 
 def load_map(file):
@@ -370,8 +380,10 @@ def load_map(file):
             lines.append(line.strip())
     map_height = len(lines)
     map_width = len(lines[0])
-    result = np.zeros((map_width, map_height), dtype=np.int8)
+    result = np.zeros((200, 200), dtype=np.int8)
     for i, line in enumerate(lines):
+        if i >= 200:
+            break
         for j, grid_content in enumerate(line):
             if grid_content == '#':
                 result[j][i] = 0    #障碍
@@ -399,6 +411,8 @@ def load_map(file):
                 result[j][i] = 11   #海陆立体交通地块，同时为主干道和主航道
             if grid_content == 'T':
                 result[j][i] = 12   #交货点
+            if j >= 200:
+                break
     return result
     
 
