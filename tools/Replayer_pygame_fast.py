@@ -78,8 +78,8 @@ class CResult:
         self.result = self.ori_result.copy()
 
 Result = CResult()
-robotpos = np.zeros((15000, 20, 2), dtype=np.int32) - 1 #x,y
-robotstat = np.ones((15000, 20, 1), dtype=np.int32)
+robotpos = np.zeros((15000, 30, 2), dtype=np.int32) - 1 #x,y
+robotstat = np.ones((15000, 30, 1), dtype=np.int32)
 shippos = np.zeros((15000, 20, 3), dtype=np.int32) - 1 # x,y,direction
 # robotstat = np.ones((15000, 20, 1), dtype=np.int32)
 gds = []
@@ -188,9 +188,9 @@ class MapEditor:
     def downspeed(self):
         if self.auto_play_speed > 1:
             self.auto_play_speed = int(self.auto_play_speed / 2 )
-        elif 0.0675 <= self.auto_play_speed <= 1:
+        elif 0.0625 < self.auto_play_speed <= 1:
             self.auto_play_speed = self.auto_play_speed / 2
-        elif self.auto_play_speed == 0.0675:
+        elif self.auto_play_speed == 0.0625:
             self.auto_play_speed = -1
         else:
             self.auto_play_speed = 2 * self.auto_play_speed if self.auto_play_speed > -16 else self.auto_play_speed
@@ -205,10 +205,10 @@ class MapEditor:
                 elif button.text == "后退一帧":
                     now_time = max(0,now_time-1)
                 elif button.text == "上个robot":
-                    now_robot = max(0,now_robot-1)
+                    now_robot = max(-1,now_robot-1)
                     self.choose_path(now_robot)
                 elif button.text == "下个robot":
-                    now_robot = min(20,now_robot+1)
+                    now_robot = min(30,now_robot+1)
                     self.choose_path(now_robot)
         for button in self.buttons2:
             if button.is_clicked(event):
@@ -284,10 +284,10 @@ class MapEditor:
             else:
                 self.upspeed()
         elif event.key == pygame.K_w or event.key == pygame.K_UP:
-            now_robot = max(0,now_robot-1)
+            now_robot = max(-1,now_robot-1)
             self.choose_path(now_robot)
         elif event.key == pygame.K_s or event.key == pygame.K_DOWN:
-            now_robot = min(20,now_robot+1)
+            now_robot = min(30,now_robot+1)
             self.choose_path(now_robot)
         elif event.key == pygame.K_SPACE:
             self.auto_play = True if self.auto_play == False else False
@@ -297,7 +297,7 @@ class MapEditor:
         if now_time > 0:
             trobot_pos = robotpos[now_time]
             tship_pos = shippos[now_time]
-            for i in range(20): #画机器人
+            for i in range(30): #画机器人
                 if trobot_pos[i][0] != -1:
                     if robotstat[now_time][i] != 2:
                         Result.updata_results(trobot_pos[i][1],trobot_pos[i][0], 4)  
@@ -328,7 +328,7 @@ class MapEditor:
                 if robotpath_robot_id[i] != robot_id:
                     i += 1
                     continue
-            if time - now_time >= -32:
+            if time - now_time >= -200:
                 deltime = time - now_time
             else:
                 deltime = 100000
@@ -475,6 +475,8 @@ class MapEditor:
             self.draw_robots()
             if self.path_start_time <= now_time:
                 self.draw_path(self.path)
+            elif self.path_start_time - now_time > 2: #还有很久才开始?换!
+                self.choose_path(now_robot)
             self.draw_gds()
             self.draw_button()
             self.draw_progress_bar(now_time/15000)
@@ -491,87 +493,6 @@ class MapEditor:
             if self.auto_play:
                 now_time = min(max(now_time + int(next_frame),0),15000)
                 next_frame = next_frame - int(next_frame)
-                if self.path_dead_time < now_time:
-                    self.choose_path(now_robot)
-
-    def run_debug(self):
-        global now_time
-        global now_robot
-        running = True
-        while running:
-            start_time = time.time()  # 开始计时
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    self.handle_mouse_event(event)
-                    self.handle_mouse_down_2(event.pos)
-                elif event.type == pygame.MOUSEBUTTONUP:
-                    self.handle_mouse_up_2(event.pos)
-                elif event.type == pygame.KEYDOWN:
-                    self.handle_keyboard_event(event)
-                elif event.type == pygame.MOUSEMOTION:
-                    self.handle_mouse_move(event.pos)
-
-            # 用背景色填充屏幕
-            fill_start = time.time()
-            self.screen.fill(self.rgb_to_fill(OBSTACLE_COLOR))
-            fill_end = time.time()
-
-            # 绘制网格
-            grid_start = time.time()
-            self.draw_grid()
-            grid_end = time.time()
-
-            # 绘制其它元素...
-            robots_start = time.time()
-            self.draw_robots()
-            robots_end = time.time()
-
-            if self.path_start_time <= now_time:
-                path_start = time.time()
-                self.draw_path_fast(self.path)
-                path_end = time.time()
-
-            gds_start = time.time()
-            self.draw_gds()
-            gds_end = time.time()
-
-            button_start = time.time()
-            self.draw_button()
-            button_end = time.time()
-
-            progress_start = time.time()
-            self.draw_progress_bar(now_time / 15000)
-            progress_end = time.time()
-
-            # 日志和FPS
-            log_start = time.time()
-            help = ["Replayer测试", "", "当前robot:", str(now_robot), "当前frame:", str(now_time),
-                    "当前倍速:", str(self.auto_play_speed),
-                    "", "", "FPS:{:.2f}".format(self.clock.get_fps())]
-            self.draw_log(help)
-            log_end = time.time()
-
-            pygame.display.flip()
-            end_time = time.time()  # 结束计时
-
-            # 输出每个部分的耗时
-            print(f"Fill Screen: {fill_end - fill_start:.5f} sec")
-            print(f"Draw Grid: {grid_end - grid_start:.5f} sec")
-            print(f"Draw Robots: {robots_end - robots_start:.5f} sec")
-            if self.path_start_time <= now_time:
-                print(f"Draw Path: {path_end - path_start:.5f} sec")
-            print(f"Draw GDS: {gds_end - gds_start:.5f} sec")
-            print(f"Draw Button: {button_end - button_start:.5f} sec")
-            print(f"Draw Progress Bar: {progress_end - progress_start:.5f} sec")
-            print(f"Draw Log: {log_end - log_start:.5f} sec")
-            print(f"Total Frame Time: {end_time - start_time:.5f} sec\n")
-
-            self.clock.tick(60)
-            if self.auto_play:
-                now_time = min(max(now_time + 1 * self.auto_play_speed, 0), 15000)
                 if self.path_dead_time < now_time:
                     self.choose_path(now_robot)
 
