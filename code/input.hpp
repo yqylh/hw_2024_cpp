@@ -102,6 +102,8 @@ void inputMap(){
     counter.registerVector2D("robot_pos");
     counter.registerVector2D("ship_pos");
     counter.registerVector2D("gds");
+    counter.registerVariable("sum_goods", 0);
+    counter.registerVariable("sum_goods_value", 0);
 }
 
 void do_special_frame() {
@@ -133,6 +135,8 @@ bool inputFrame() {
             counter.push_back("gds",x,y);
             counter.push_back("gds",-1,value);
         }
+        counter.add("sum_goods", 1);
+        counter.add("sum_goods_value", value);
     }
     int R;
     scanf("%d", &R);

@@ -153,7 +153,9 @@ std::deque<Pos> Robot::actionFindItem() {
                 continue;
             }
             //考虑时间价值 *(1 + (1000 + i->beginTime - nowTime) / 2000.0)
-            auto tempValue = double(i->value) / (toItemDis + toBertDis) ;
+
+            double time_eff = std::exp((nowTime - i->beginTime) / 500.0);
+            auto tempValue = double(i->value) * time_eff / (toItemDis  + toBertDis) ;
             if (tempValue > value){
                 minDis = toItemDis;
                 targetItem = i;
@@ -182,7 +184,8 @@ std::deque<Pos> Robot::actionFindItem() {
                 i++;
                 continue;
             }
-            auto tempValue = double(i->value) / (toItemDis * 2.0) ;
+            double time_eff = std::exp((nowTime - i->beginTime) / 500.0);
+            auto tempValue = double(i->value) * time_eff / (toItemDis * 2.0);
             if (tempValue > value){
                 minDis = toItemDis;
                 targetItem = i;
