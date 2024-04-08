@@ -116,6 +116,8 @@ struct Grid {
     int berthId; // 如果是泊位或者靠泊区,则记录泊位的 id
     int bit_type;
     int shipAble[4]; // 记录这个位置四个方向是否船是否可以停在这里
+
+    int belongToBerth; // 这个格子是属于哪个港口的独占区，-1表示公共区域
     Grid(){
         this->pos = Pos(-1, -1);
         this->type = -1;
@@ -123,6 +125,7 @@ struct Grid {
         this->robotOnIt = false;
         this->berthId = -1;
         this->bit_type = 0;
+        this->belongToBerth = -1;
     }
     Grid(int x, int y, int type) : type(type){
         this->pos = Pos(x, y);
@@ -130,6 +133,7 @@ struct Grid {
         this->robotOnIt = false;
         this->berthId = -1;
         this->bit_type = 1 << type;
+        this->belongToBerth = -1;
     }
 };
 

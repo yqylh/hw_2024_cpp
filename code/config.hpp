@@ -77,6 +77,9 @@ int lastRoundRuningTime = 600; // 估计的最后一轮的运行时间
 int Min_Next_Berth_Goods = 10; // another 港口的货物少于这个值就不去, 0~100
 int Last_Round_delay_time = 4500; // 预留给最后一轮的时间,含去 回 去
 
+const int _maxRobotCnt = 17;
+const int _maxShipCnt = 2;
+
 
 Pos dir[4] = {Pos(0, 1), Pos(0, -1), Pos(-1, 0), Pos(1, 0)};
 // 0 表示右移一格 1 表示左移一格 2 表示上移一格 3 表示下移一格
@@ -104,6 +107,7 @@ FileLogger flowLogger("../log/flow_log.txt");
 FileLogger bcenterlogger("../log/bcenter_log.txt");
 FileLogger pathLogger("../log/path_log.txt");
 FileLogger allPathLogger("../log/allPath_log.txt");
+FileLogger estimatorLogger("../log/estimator_log.txt");
 
 #ifdef DEBUG
     #define TEST(x) x

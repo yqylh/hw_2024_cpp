@@ -22,13 +22,16 @@ struct Robot{
 
     int lastWeak; // 上一次的弱智时间
     Pos lastWeakPos; // 上一次的弱智位置
-    
+
+    int bindToBerth; // 机器人绑定的泊位
+
     bool havePath;
     std::deque<Pos> wholePath; // 机器人的路径，front为当前位置
     Pos tarItemPos;
 
     Robot() {
         this->id = -1;
+        this->bindToBerth = -1;
     }
     Robot(int id, int x, int y) {
         this->id = id;
@@ -41,6 +44,7 @@ struct Robot{
         this->lastWeak = -1;
         this->lastWeakPos = Pos(-1, -1);
         this->tarItemPos = Pos(-1, -1);
+        this->bindToBerth = -1;
     }
     void action(); // 计算机器人的路径和生成行动
     void move(); // 生成机器人的移动指令
@@ -62,6 +66,33 @@ std::deque<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=
     }
     // 但是港口距离的计算和第一段到item的距离无关
     int minDis = 0x3f3f3f3f;
+    // 绑定了港口，直接去港口
+    if (bindToBerth != -1) {
+        Berth* now_berth = berths[bindToBerth];
+        Pos choosed_berth_pos = Pos(-1,-1);
+        
+        for(Pos sub_berths : now_berth->usePos){
+            if(disWithTime[sub_berths.x][sub_berths.y] == 0x3f3f3f3f) continue;
+            if (disWithTime[sub_berths.x][sub_berths.y]< minDis){
+                minDis = disWithTime[sub_berths.x][sub_berths.y];
+                choosed_berth_pos = sub_berths;
+            }   
+        }
+        if (minDis != 0x3f3f3f3f) {
+            choosed_berth_id = bindToBerth;
+            beginPos = beginPos == Pos(-1, -1) ? pos : beginPos;
+
+            auto tarPath = findPathWithTime(beginPos, choosed_berth_pos);
+            if (tarPath.size() > 0) {
+                // berth_center->declare_robot_choose_berth(choosed_berth_id);
+                return tarPath;
+            } else {
+                pathLogger.log(nowTime, "rid={},toBerth={},noPath", id, choosed_berth_id);
+            }
+        }
+    }
+
+    /*
     if (choosed_berth_id != -1) {
         Berth* now_berth = berths[choosed_berth_id];
         Pos choosed_berth_pos = Pos(-1,-1);
@@ -85,6 +116,9 @@ std::deque<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=
             }
         }
     }
+    */
+
+    // 如果没有绑定港口，或者绑定的港口不可达，那么就找一个最近的港口
     if (minDis == 0x3f3f3f3f) {
         auto robot_berths = berth_center->get_robot_berth(id);
         for (auto & berth : robot_berths) {
@@ -121,7 +155,7 @@ std::deque<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=
             }
         }
     }
-
+    
     return std::deque<Pos>();
 }
 
@@ -132,6 +166,69 @@ std::deque<Pos> Robot::actionFindItem() {
     int minDis = 0x3f3f3f3f;
     auto berth_select = -1;
     auto targetItem = unsolvedItems.end();
+    // 首先找绑定区域内的，按理说绑定了的机器人一定能清理干净区域内的所有物品，绝对不能找别人区域内的
+    for(auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
+        if (i->checkDead()) {
+            unsolvedItems.erase(i++);
+            continue;
+        }
+        auto itemPos = i->pos;
+        // 如果绑定了，并且(物品不在绑定区内 且 物品不在开放区内），就不考虑，即一定不去别人家拿东西
+        if (bindToBerth != -1 and (grids[itemPos.x][itemPos.y]->belongToBerth != bindToBerth and grids[itemPos.x][itemPos.y]->belongToBerth != -1)) {
+            i++;
+            continue;
+        }
+        // 如果没有绑定，也不能去别人家拿东西
+        if (bindToBerth == -1 and grids[itemPos.x][itemPos.y]->belongToBerth != -1) {
+            i++;
+            continue;
+        }
+
+        int toBerthTime = 0x3f3f3f3f;
+        // 如果没有绑定港口，默认按照最近的港口时间来计算
+        if (bindToBerth == -1) {
+            for (auto &berth : berths) {
+                if (berth->disWithTimeBerth[i->pos.x][i->pos.y] < toBerthTime) {
+                    toBerthTime = berth->disWithTimeBerth[i->pos.x][i->pos.y];
+                }
+            }
+        } else {
+            toBerthTime = berths[bindToBerth]->disWithTimeBerth[i->pos.x][i->pos.y];
+        }
+        
+
+
+        auto toItemDis = disWithTime[itemPos.x][itemPos.y];
+        // auto toBertDis = berths[choosed_berth_id]->disWithTime[i->pos.x][i->pos.y];
+        // 判断是否可达
+
+        if (toItemDis == 0x3f3f3f3f) {
+            i++;
+            continue;
+        }
+        // 判断是否超时
+        if (nowTime + toItemDis + 1 > i->beginTime + Item_Continue_Time) {
+            i++;
+            continue;
+        }
+        double time_eff = std::exp((nowTime - i->beginTime) / 500.0);
+        auto tempValue = double(i->value) * time_eff / (toItemDis + toBerthTime);
+
+        // 如果物品属于公共区域，施加惩罚项
+        
+        if (grids[itemPos.x][itemPos.y]->belongToBerth == -1) {
+            tempValue *= 0.5;
+        }
+        
+
+        if (tempValue > value){
+            minDis = toItemDis;
+            targetItem = i;
+            value = tempValue;
+        }
+        i++;
+    }
+    /*
     auto robot_berths = berth_center->get_robot_berth(id);
     for (auto & berth : robot_berths) {
         for (auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
@@ -165,6 +262,7 @@ std::deque<Pos> Robot::actionFindItem() {
             i++;
         }
     }
+    
     if (minDis == 0x3f3f3f3f) {
         // 如果没有选择港口,那么先退化到shc方案
         for(auto i = unsolvedItems.begin(); i != unsolvedItems.end();) {
@@ -175,6 +273,12 @@ std::deque<Pos> Robot::actionFindItem() {
             auto toItemDis = disWithTime[i->pos.x][i->pos.y];
             // auto toBertDis = berths[choosed_berth_id]->disWithTime[i->pos.x][i->pos.y];
             // 判断是否可达
+            int minToBerthTime = 0;
+            for (auto &berth : berths) {
+                if (berth->disWithTimeBerth[i->pos.x][i->pos.y] < minToBerthTime) {
+                    minToBerthTime = berth->disWithTimeBerth[i->pos.x][i->pos.y];
+                }
+            }
             if (toItemDis == 0x3f3f3f3f) {
                 i++;
                 continue;
@@ -185,7 +289,7 @@ std::deque<Pos> Robot::actionFindItem() {
                 continue;
             }
             double time_eff = std::exp((nowTime - i->beginTime) / 500.0);
-            auto tempValue = double(i->value) * time_eff / (toItemDis * 2.0);
+            auto tempValue = double(i->value) * time_eff / (toItemDis + minToBerthTime);
             if (tempValue > value){
                 minDis = toItemDis;
                 targetItem = i;
@@ -194,6 +298,7 @@ std::deque<Pos> Robot::actionFindItem() {
             i++;
         }
     }
+    */
 
     if (minDis != 0x3f3f3f3f && targetItem != unsolvedItems.end()) {
         int targetItemIndex = std::distance(unsolvedItems.begin(), targetItem);
@@ -546,6 +651,17 @@ void solveCollision() {
 void newRobot(int x, int y) {
     printf("lbot %d %d\n", x, y);
     robots.push_back(new Robot(MAX_Robot_Num++, x, y));
+    for (int i = 0; i < _buyRobotQueue.size(); i++) {
+        int berthId = _buyRobotQueue[i].berthId;
+        int toBerthDis = berths[berthId]->disWithTimeBerth[x][y];
+        if (toBerthDis == 0x3f3f3f3f) continue;
+
+        robots.back()->bindToBerth = berthId;
+        robotLogger.log(nowTime, "rid={},toBerth={},dis={}", robots.back()->id, berthId, toBerthDis);
+        _buyRobotQueue.erase(_buyRobotQueue.begin() + i);
+        break;
+    }
+
     fixPos.emplace_back(Pos(-1, -1));
     money -= 2000;
 }

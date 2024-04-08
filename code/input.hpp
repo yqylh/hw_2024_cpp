@@ -8,6 +8,7 @@
 #include "item.hpp"
 #include "logger.hpp"
 #include "berth_centre.hpp"
+#include "estimator.hpp"
 
 //  * 0‘.’ ： 空地                                   | 机器人可以走  会发生碰撞
 //  * 1‘*’ ： 海洋                                   | 船可以走  会发生碰撞
@@ -24,12 +25,14 @@
 
 
 void inputMap(){
+    int totalSpawnPlace;
     for (int i = 0; i < MAX_Line_Length; i++) {
         std::string line;
         getline(std::cin, line);
         for (int j = 0; j < MAX_Col_Length; j++) {
             switch (line[j]) {
                 case '.':
+                    totalSpawnPlace++;
                     grids[i][j] = new Grid(i, j, 0);
                     break;
                 case '*':
@@ -86,9 +89,12 @@ void inputMap(){
     solveBerth();
     berth_center->find_private_space();
     PreproShipAllAble();
+    initBerthEstimator(totalSpawnPlace, MAX_Berth_Num);
+
     srand(time(0));
     puts("OK");
     fflush(stdout);
+    
     counter.registerVariable("shipNum", MAX_Ship_Num);
     counter.registerVariable("robotNum", MAX_Robot_Num);
     counter.registerVariable("robot_move_length", 0);
@@ -166,6 +172,7 @@ bool inputFrame() {
     return true;
 }
 
+
 void solveFrame() {
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
     for (auto & robot : robots) robot->action();
@@ -183,14 +190,16 @@ void solveFrame() {
             }
         }
     }
-    if (nowTime > 100 && nowTime < 5000 && money > 2000 && robots.size() < 17){
+
+    // int buyRobotNum = _maxRobotCnt < _buyRobotQueue.size() + 2 ? _maxRobotCnt : _buyRobotQueue.size() + 2;
+    if (nowTime > 100 && nowTime < 7500 && money > 2000 && robots.size() < _maxRobotCnt){
         for (auto & robotBuyer : berth_center->robot_buyer) {
-            if (money > 2000 && robots.size() < 17) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
+            if (money > 2000 && robots.size() < _maxRobotCnt) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
         }
     }
-    if (nowTime > 5000 && nowTime < 10000 && money > 8000 && ships.size() < 2) {
+    if (nowTime > 5000 && nowTime < 10000 && money > 8000 && ships.size() < _maxShipCnt) {
         for (auto & shipBuyer : berth_center->ship_buyer) {
-            if (money > 8000 && ships.size() < 2) newShip(shipBuyer.pos.x, shipBuyer.pos.y);
+            if (money > 8000 && ships.size() < _maxShipCnt) newShip(shipBuyer.pos.x, shipBuyer.pos.y);
         }
     }
     // 时间向前推进

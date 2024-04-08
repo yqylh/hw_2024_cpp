@@ -53,6 +53,8 @@ public:
                 max_goods_id = i;
             }
         }
+        
+        // centerLogger.log(nowTime, "ship_choose_berth:{}with goods:{}", max_goods_id, max_goods);
         if (max_goods_id == -1) {
             bugs("ship_choose_berth error");
             // throw;
