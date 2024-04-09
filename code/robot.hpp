@@ -664,6 +664,7 @@ void newRobot(int x, int y) {
 
     fixPos.emplace_back(Pos(-1, -1));
     money -= 2000;
+    berth_center->robot_pos.emplace_back(x, y);
 }
 
 #endif

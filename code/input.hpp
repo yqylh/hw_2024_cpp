@@ -87,8 +87,8 @@ void inputMap(){
     std::string line;
     while(getline(std::cin, line) && line != "OK");
     solveBerth();
-    berth_center->find_private_space();
     PreproShipAllAble();
+    berth_center->find_private_space();
     initBerthEstimator(totalSpawnPlace, MAX_Berth_Num);
 
     srand(time(0));
@@ -189,6 +189,7 @@ void solveFrame() {
                 newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
             }
         }
+        berth_center->update_robot_choose_berth();
     }
 
     // int buyRobotNum = _maxRobotCnt < _buyRobotQueue.size() + 2 ? _maxRobotCnt : _buyRobotQueue.size() + 2;
@@ -196,6 +197,7 @@ void solveFrame() {
         for (auto & robotBuyer : berth_center->robot_buyer) {
             if (money > 2000 && robots.size() < _maxRobotCnt) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
         }
+        berth_center->update_robot_choose_berth();
     }
     if (nowTime > 5000 && nowTime < 10000 && money > 8000 && ships.size() < _maxShipCnt) {
         for (auto & shipBuyer : berth_center->ship_buyer) {
