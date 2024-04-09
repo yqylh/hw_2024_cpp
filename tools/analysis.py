@@ -103,3 +103,23 @@ def analyse_robot_path(file_path,map = None):
     plt.title('Path Length Distribution')
     save_name = 'path_length_distribution.png' if map is None else f'path_length_distribution_{map}.png'
     plt.savefig('../log/'+save_name)
+
+def analyze_goods_detailed_distribution(file_path,map = None):
+    goods_value = []
+    with open(file_path, 'r') as file:
+        for line in file:
+            x,y = line.strip().split()
+            x = int(x)
+            y = int(y)
+            if x == -1:
+                goods_value.append(y)
+    plt.clf()
+    plt.hist(goods_value, bins=range(0, 200,5), edgecolor='black')
+    plt.xlabel('Goods Value')
+    plt.ylabel('Frequency')
+    plt.title('Goods Value Distribution')
+    save_name = 'goods_value_distribution.png' if map is None else f'goods_value_distribution_{map}.png'
+    plt.savefig('../log/'+save_name)
+
+analyze_goods_detailed_distribution("../log/counter.txt_gds.txt")
+ 
