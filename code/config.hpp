@@ -82,6 +82,10 @@ int Last_Round_delay_time = 4500; // 预留给最后一轮的时间,含去 回 �
 const int _maxRobotCnt = 17;
 const int _maxShipCnt = 2;
 
+const double _itemAtEnd = 4800;
+const double _pulledItemAtEnd = 1900;
+
+int exptRobotCnt = 0;
 
 Pos dir[4] = {Pos(0, 1), Pos(0, -1), Pos(-1, 0), Pos(1, 0)};
 // 0 表示右移一格 1 表示左移一格 2 表示上移一格 3 表示下移一格

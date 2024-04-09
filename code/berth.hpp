@@ -111,12 +111,15 @@ void solveBerth() {
 struct BuyRobotSorter {
     int berthId;
     double avgDistange; // second priority
+    double reqTotal;
     int buyId; // first priority
+    bool buyed = false;
     bool operator < (const BuyRobotSorter &a) const {
         if (buyId != a.buyId) return buyId < a.buyId;
-        return avgDistange < a.avgDistange;
+        return reqTotal > a.reqTotal;
     }
 };
+
 std::vector<BuyRobotSorter> _buyRobotQueue;
 
 void initBerthEstimator(const int &totalSpawnPlace, const int &berthNumber) {
@@ -132,25 +135,50 @@ void initBerthEstimator(const int &totalSpawnPlace, const int &berthNumber) {
      */
     int avgRobotPerBerth = _maxRobotCnt / berthNumber;
     std::vector<std::vector<Pos>> beginPosList(berthNumber);
-    std::vector<double> robotControlLengths(berthNumber, 9999.0);
-    std::vector<double> controlNumber(berthNumber, avgRobotPerBerth);
+    std::vector<double> robotControlLengths(berthNumber, 99999.0);
+    std::vector<double> controlNumber(berthNumber, 9999999.0);
     for (int i = 0; i < berthNumber; i++) {
         for (auto & pos : berths[i]->usePos) {
             beginPosList[i].push_back(pos);
         }
     }
     berthEstimator.checkBerthAll(beginPosList, controlNumber, robotControlLengths);
-    std::vector<BuyRobotSorter> buyRobotSorter;
+    double estRobotFull = 0;
 
     for (int i = 0; i < berthNumber; i++) {
+        estRobotFull += berthEstimator.berthState[i].avgNewItemPerPull(totalSpawnPlace);
+    }
+    estimatorLogger.log(0, "estRobotFull={},{}", estRobotFull, estRobotFull * _pulledItemAtEnd / _itemAtEnd);
+    for (int i = 0; i < berthNumber; i++) {
+        controlNumber[i] = berthEstimator.berthState[i].avgNewItemPerPull(totalSpawnPlace) * _pulledItemAtEnd / _itemAtEnd;
+        estimatorLogger.log(0, "berthId={},controlNumber={}", i, controlNumber[i]);
+    }
+
+    berthEstimator.reset();
+    berthEstimator.checkBerthAll(beginPosList, controlNumber, robotControlLengths);
+
+    std::vector<BuyRobotSorter> buyRobotSorter;
+    for (int i = 0; i < berthNumber; i++) {
+
         auto avgNewItemPerPull = berthEstimator.berthState[i].avgNewItemPerPull(totalSpawnPlace);
-        int robotNumber = int(avgNewItemPerPull + 0.5);
+        int robotNumber = int(avgNewItemPerPull + 1.0);
+        
         for (int j = 1; j <= robotNumber; j++) {
-            _buyRobotQueue.push_back({i, berthEstimator.berthState[i].avgDistanceToItem(), j});
+            _buyRobotQueue.push_back({i, berthEstimator.berthState[i].avgDistanceToItem(), (double)robotNumber, j, false});
+            exptRobotCnt += 1;
+            // out << i << " " << robotNumber << " " <<  exptRobotCnt << std::endl;
         }
-        estimatorLogger.log(0, "berthId={} totalGrid={} totalItemGrid={} avgDistanceToItem={}, avgNewItemPerPull={}", i, berthEstimator.berthState[i].totalGrid, berthEstimator.berthState[i].totalItemGrid, berthEstimator.berthState[i].avgDistanceToItem(), avgNewItemPerPull);
+        
+        estimatorLogger.log(0, "berthId={},totalGrid={},totalItemGrid={},avgDistanceToItem={},avgNewItemPerPull={},totalItemGrid/avgDistanceToItem={}",
+                            i, 
+                            berthEstimator.berthState[i].totalGrid, 
+                            berthEstimator.berthState[i].totalItemGrid, 
+                            berthEstimator.berthState[i].avgDistanceToItem(), 
+                            avgNewItemPerPull, 
+                            berthEstimator.berthState[i].totalItemGrid / berthEstimator.berthState[i].avgDistanceToItem());
     }
     std::sort(_buyRobotQueue.begin(), _buyRobotQueue.end());
+    estimatorLogger.log(0, "totalRobot={},queueSize={}", exptRobotCnt, _buyRobotQueue.size());
 
 #ifdef DEBUG
     std::ofstream out("../log/berthbelong.txt");
