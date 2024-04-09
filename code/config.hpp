@@ -49,6 +49,8 @@ int MAX_Capacity; // 船的容量
 int money = 25000; // 当前金钱
 int nowTime = 0; // 当前帧数
 bool inputFlag = true; // 是否input是否结束
+std::vector<int> robotPriority; // 机器人的优先级
+int priorityTimeControl = -1; // 优先级控制时间
 
 /**
  * 预处理&多线程控制相关变量
@@ -70,13 +72,20 @@ int MAX_Berth_Merge_Length = 80; // 泊位合并长度,用来判断是否可以�
 int Worst_Rate = 3; // 用来筛选多差的港口不要选, 1~10
 double Sell_Ration = 0.7; // 还剩多少港口空了就去卖, 0.5~1
 int Min_Next_Berth_Value = 1700; // another 港口的货物价值少于这个值就不去, 0~1000
-int Only_Run_On_Berth_with_Ship = 2500; // 最后这些帧,只在有船的泊位上运行,
+int Only_Run_On_Berth_with_Ship = 350; // 最后这些帧,只在有船的泊位上运行,
 int lastRoundRuningTime = 600; // 估计的最后一轮的运行时间
 
 // 暂时不要调的参数,不一定有用 | 策略已经放弃了
 int Min_Next_Berth_Goods = 10; // another 港口的货物少于这个值就不去, 0~100
 int Last_Round_delay_time = 4500; // 预留给最后一轮的时间,含去 回 去
 
+const int _maxRobotCnt = 17;
+const int _maxShipCnt = 2;
+
+const double _itemAtEnd = 4800;
+const double _pulledItemAtEnd = 1900;
+
+int exptRobotCnt = 0;
 
 Pos dir[4] = {Pos(0, 1), Pos(0, -1), Pos(-1, 0), Pos(1, 0)};
 // 0 表示右移一格 1 表示左移一格 2 表示上移一格 3 表示下移一格
@@ -104,6 +113,7 @@ FileLogger flowLogger("../log/flow_log.txt");
 FileLogger bcenterlogger("../log/bcenter_log.txt");
 FileLogger pathLogger("../log/path_log.txt");
 FileLogger allPathLogger("../log/allPath_log.txt");
+FileLogger estimatorLogger("../log/estimator_log.txt");
 
 #ifdef DEBUG
     #define TEST(x) x

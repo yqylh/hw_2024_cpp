@@ -23,7 +23,7 @@ std::vector<Pos> fixPos(MAX_Robot_Num, Pos(-1, -1));
 TPos _queueRobot[40010];
 
 void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
-    int waitTime = 5;
+    int waitTime = 2;
     memset(disWithTime, 0x3f, sizeof(disWithTime));
     memset(preWithTime, 0xff, sizeof(preWithTime));
     memset(delayWithTime, 0, sizeof(delayWithTime));

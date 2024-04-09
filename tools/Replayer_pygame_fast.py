@@ -65,6 +65,7 @@ class CResult:
     def __init__(self) -> None:
         self.result = np.zeros((200, 200), dtype=np.int8)
         self.ori_result = np.zeros((200, 200), dtype=np.int8)
+        self.belongMap = np.zeros((200, 200), dtype=np.int8)
         self.update_xys = []
         self.last_update_xyzs = []
     
@@ -117,7 +118,7 @@ class MapEditor:
         pygame.init()
         self.screen_width = map_width * cell_size + 200
         self.screen_height = map_height * cell_size + 75
-        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
+        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.SRCALPHA)
         self.clock = pygame.time.Clock()
 
         self.font = pygame.font.Font("llt.ttf", 32)
@@ -139,7 +140,7 @@ class MapEditor:
             Button(self.screen_width - 190, 950, 180, 40, "快进"),
             Button(self.screen_width - 190, 1000, 180, 40, "快退"),
         ]
-        self. txts_pos = (self.screen_width - 190, 170 + 40)
+        self.txts_pos = (self.screen_width - 190, 170 + 40)
         self.log_messages = []
 
         self.path = []
@@ -153,7 +154,23 @@ class MapEditor:
         self.auto_play_speed = 1
         self.goods_alive_from = 0
         self.path_change = False
+        self.draw_belong = True
+        
         self.line_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        self.belong_surface = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        self.belong_surface.fill((0, 0, 0, 0))
+        
+        belong_color_list = ['#946ABB', '#F68F35', '#237EBD', '#E87FC8', '#2DA631', '#59CBD3', '#95655C', '#828282']
+        
+        for x in range(self.map_width):
+            for y in range(self.map_height):
+                if Result.belongMap[x][y] != 0:
+                    color = belong_color_list[Result.belongMap[x][y] - 1]
+                    rect = pygame.Rect(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
+                    pygame.draw.rect(self.belong_surface, color, rect, 0)
+                    
+        self.belong_surface.set_alpha(32)
+        
         self.reats_witoutmap1 = (map_width * cell_size,0,200,map_height * cell_size)
         self.reats_witoutmap2 = (0,map_height * cell_size,map_width * cell_size,75)
 
@@ -298,6 +315,8 @@ class MapEditor:
             self.choose_path(now_robot)
         elif event.key == pygame.K_SPACE:
             self.auto_play = True if self.auto_play == False else False
+        elif event.key == pygame.K_b:
+            self.draw_belong = True if self.draw_belong == False else False
 
     def draw_robots(self):
         self.robot_cnt = 0
@@ -386,7 +405,7 @@ class MapEditor:
             else:
                 pygame.draw.rect(self.screen, self.rgb_to_fill((255,238 - int(val),255)), rect, 0)  # Change 1 to 0 for filled rects
                 pygame.draw.rect(self.screen, pygame.Color('gray'), rect, 1) #绘制网格
-
+    
     def draw_path(self,path):
         #带透明度,但更慢
         if self.path_change:
@@ -491,6 +510,11 @@ class MapEditor:
             elif self.path_start_time - now_time > 2: #还有很久才开始?换!
                 self.choose_path(now_robot)
             
+            # 有bug:
+            if self.draw_belong:
+                self.screen.blit(self.belong_surface, (0, 0))
+            
+            
             self.draw_button()
             self.draw_progress_bar(now_time/15000)
             help = ["Replayer测试","","快退有bug","","当前robot:",str(now_robot),"当前frame:",str(now_time),\
@@ -546,6 +570,22 @@ def load_map(file):
             if grid_content == 'T':
                 result[j][i] = 12   #交货点
     print("map load success")
+    return result
+
+def load_belong_berth(file):
+    lines = []
+    with open(file, 'r') as map_file:
+        for line in map_file:
+            lines.append(line.strip())
+    if len(lines) == 0:
+        return None
+    map_height = len(lines)
+    map_width = len(lines[0])
+    result = np.zeros((map_width, map_height), dtype=np.int8)
+    for i, line in enumerate(lines):
+        for j, grid_content in enumerate(line):
+            result[j][i] = int(grid_content)
+    print("map belonging success")
     return result
 
 def load_pos(file_name):
@@ -686,6 +726,8 @@ if __name__ == "__main__":
         map = load_map(args.load)
         Result.result = map
         Result.ori_result = map.copy()
+        
+    Result.belongMap = load_belong_berth("../log/berthbelong.txt")
 
     load_gds(args.goods_pos_file)
     load_pos(args.robot_pos_file)

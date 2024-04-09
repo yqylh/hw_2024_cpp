@@ -116,6 +116,8 @@ struct Grid {
     int berthId; // 如果是泊位或者靠泊区,则记录泊位的 id
     int bit_type;
     int shipAble[4]; // 记录这个位置四个方向是否船是否可以停在这里
+
+    int belongToBerth; // 这个格子是属于哪个港口的独占区，-1表示公共区域
     Grid(){
         this->pos = Pos(-1, -1);
         this->type = -1;
@@ -123,6 +125,7 @@ struct Grid {
         this->robotOnIt = false;
         this->berthId = -1;
         this->bit_type = 0;
+        this->belongToBerth = -1;
     }
     Grid(int x, int y, int type) : type(type){
         this->pos = Pos(x, y);
@@ -130,6 +133,7 @@ struct Grid {
         this->robotOnIt = false;
         this->berthId = -1;
         this->bit_type = 1 << type;
+        this->belongToBerth = -1;
     }
 };
 
@@ -289,7 +293,7 @@ int _pre_dir_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
  * 4. 存路径：直行2、顺时针0、逆时针1
 */
 ShipPos _queue_ship[120010];
-std::deque<int> *sovleShip(Pos origin, int direction, Pos target) {
+std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath = true) {
     allPathLogger.log(nowTime, "sovleShip origin{},{} direction{} target{},{}", origin.x, origin.y, direction, target.x, target.y);
     for (int i = 0; i < MAX_Line_Length; i++) {
         for (int j = 0; j < MAX_Col_Length; j++) {
@@ -350,7 +354,7 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target) {
     // std::string allPos = std::to_string(target.x) + "," + std::to_string(target.y) + "," + std::to_string(now.direction) + "<";
     // std::string allDir = std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
     // 每次找到前一个的位置
-    while (true) {
+    while (true && needPath) {
         result->push_front(_pre_dir_s[now.x][now.y][now.direction]);
         now = _pre_s[now.x][now.y][now.direction];
         if (now.toPos() == origin && now.direction == direction) break;
@@ -381,6 +385,14 @@ Navigator * sovleGrid(Pos origin) {
         }
     }
     return result;
+}
+
+void resetbelong() {
+    for (int i = 0; i < MAX_Line_Length; i++) {
+        for (int j = 0; j < MAX_Col_Length; j++) {
+            grids[i][j]->belongToBerth = -1;
+        }
+    }
 }
 
 #endif

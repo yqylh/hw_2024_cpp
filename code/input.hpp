@@ -8,6 +8,7 @@
 #include "item.hpp"
 #include "logger.hpp"
 #include "berth_centre.hpp"
+#include "estimator.hpp"
 
 //  * 0‘.’ ： 空地                                   | 机器人可以走  会发生碰撞
 //  * 1‘*’ ： 海洋                                   | 船可以走  会发生碰撞
@@ -24,12 +25,14 @@
 
 
 void inputMap(){
+    int totalSpawnPlace = 0;
     for (int i = 0; i < MAX_Line_Length; i++) {
         std::string line;
         getline(std::cin, line);
         for (int j = 0; j < MAX_Col_Length; j++) {
             switch (line[j]) {
                 case '.':
+                    totalSpawnPlace++;
                     grids[i][j] = new Grid(i, j, 0);
                     break;
                 case '*':
@@ -84,11 +87,14 @@ void inputMap(){
     std::string line;
     while(getline(std::cin, line) && line != "OK");
     solveBerth();
-    berth_center->find_private_space();
     PreproShipAllAble();
-    srand(time(0));
+    berth_center->find_private_space();
+    initBerthEstimator(totalSpawnPlace, MAX_Berth_Num);
+
+    // srand(time(0));
     puts("OK");
     fflush(stdout);
+    
     counter.registerVariable("shipNum", MAX_Ship_Num);
     counter.registerVariable("robotNum", MAX_Robot_Num);
     counter.registerVariable("robot_move_length", 0);
@@ -115,6 +121,11 @@ void do_special_frame() {
         counter.lock("robot_get_value_before_lastgame");
     }
     if (nowTime == 14999) counter.writeToFile("../log/counter.txt");
+    if (nowTime == 14999) {
+        for (auto berth : berths) {
+            berthLogger.log(nowTime, "Berth={},sum_goods={},sum_value={}", berth->id, berth->total_goods, berth->total_value); 
+        }
+    }
 }
 
 
@@ -166,6 +177,43 @@ bool inputFrame() {
     return true;
 }
 
+void buyRobot() {
+    // 按顺序选择买去哪个港口的机器人
+    for (int i = 0; i < _buyRobotQueue.size(); i++) {
+        if (_buyRobotQueue[i].buyed)
+            continue;
+        int berthId = _buyRobotQueue[i].berthId;
+        int minDis = 0x3f3f3f3f;
+        int choosedBuyerId = -1;
+
+        // 遍历所有的buyer看能否买到
+        for (int j = 0; j < berth_center->robot_buyer.size(); j++) {
+            auto buyerX = berth_center->robot_buyer[j].pos.x;
+            auto buyerY = berth_center->robot_buyer[j].pos.y;
+            int berthToBuyerDis = berths[berthId]->disWithTimeBerth[buyerX][buyerY];
+
+            // 能买到，找最近的一个买
+            if (berthToBuyerDis < minDis) {
+                minDis = berthToBuyerDis;
+                choosedBuyerId = j;
+            }
+        }
+
+        // 如果能买到，且钱够，且机器人数量不超过预期，就买
+        if (minDis != 0x3f3f3f3f && ((nowTime != 1 and money > 2000) or (nowTime == 1 and money > 10000)) && robots.size() < exptRobotCnt) {
+            newRobot(berth_center->robot_buyer[choosedBuyerId].pos.x, berth_center->robot_buyer[choosedBuyerId].pos.y, berthId);
+            _buyRobotQueue[i].buyed = true;
+        } 
+    }
+}
+
+void buyShip() {
+    for (auto & shipBuyer : berth_center->ship_buyer) {
+        if ((nowTime == 1 or (nowTime > 5000 and nowTime < 100000) ) and money > 8000 && ships.size() < _maxShipCnt) newShip(shipBuyer.pos.x, shipBuyer.pos.y);
+        break;
+    }
+}
+
 void solveFrame() {
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
     for (auto & robot : robots) robot->action();
@@ -173,26 +221,6 @@ void solveFrame() {
     // solveCollision();
     // 移动
     for (auto & robot : robots) robot->move();
-    if (nowTime == 1) {
-        for (auto & robotBuyer : berth_center->robot_buyer) {
-            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
-            newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
-            if (berth_center->robot_buyer.size() == 2) {
-                newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
-                newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
-            }
-        }
-    }
-    if (nowTime > 100 && nowTime < 5000 && money > 2000 && robots.size() < 17){
-        for (auto & robotBuyer : berth_center->robot_buyer) {
-            if (money > 2000 && robots.size() < 17) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
-        }
-    }
-    if (nowTime > 5000 && nowTime < 10000 && money > 8000 && ships.size() < 2) {
-        for (auto & shipBuyer : berth_center->ship_buyer) {
-            if (money > 8000 && ships.size() < 2) newShip(shipBuyer.pos.x, shipBuyer.pos.y);
-        }
-    }
     // 时间向前推进
     if (allPath.size() > 0) allPath.pop_front();
     // 船只调度
@@ -201,6 +229,14 @@ void solveFrame() {
     for (auto & ship : ships) ship->move();
     do_special_frame();
     
+    if (robots.size() < exptRobotCnt) {
+        buyRobot();
+        berth_center->update_robot_choose_berth();
+    }
+
+    // TODO: 在机器人拿货速度大于船运货速度时，买新的船
+    if (ships.size() < _maxShipCnt) buyShip();
+
     puts("OK");
     fflush(stdout);
 }
