@@ -174,15 +174,13 @@ std::deque<Pos> Robot::actionFindItem() {
         }
         auto itemPos = i->pos;
         // 如果绑定了，并且(物品不在绑定区内 且 物品不在开放区内），就不考虑，即一定不去别人家拿东西
+        /*
         if (bindToBerth != -1 and (grids[itemPos.x][itemPos.y]->belongToBerth != bindToBerth and grids[itemPos.x][itemPos.y]->belongToBerth != -1)) {
             i++;
             continue;
         }
-        // 如果没有绑定，也不能去别人家拿东西
-        if (bindToBerth == -1 and grids[itemPos.x][itemPos.y]->belongToBerth != -1) {
-            i++;
-            continue;
-        }
+        */
+        // 如果没有绑定，随便拿吧
 
         int toBerthTime = 0x3f3f3f3f;
         // 如果没有绑定港口，默认按照最近的港口时间来计算
@@ -196,7 +194,6 @@ std::deque<Pos> Robot::actionFindItem() {
             toBerthTime = berths[bindToBerth]->disWithTimeBerth[i->pos.x][i->pos.y];
         }
         
-
 
         auto toItemDis = disWithTime[itemPos.x][itemPos.y];
         // auto toBertDis = berths[choosed_berth_id]->disWithTime[i->pos.x][i->pos.y];
@@ -214,12 +211,10 @@ std::deque<Pos> Robot::actionFindItem() {
         double time_eff = std::exp((nowTime - i->beginTime) / 500.0);
         auto tempValue = double(i->value) * time_eff / (toItemDis + toBerthTime);
 
-        // 如果物品属于公共区域，施加惩罚项
-        
-        if (grids[itemPos.x][itemPos.y]->belongToBerth == -1) {
-            tempValue *= 0.5;
+        // 如果绑定了港口，而且物品不在绑定区内，那么价值降低
+        if (bindToBerth != -1 and (grids[itemPos.x][itemPos.y]->belongToBerth != bindToBerth and grids[itemPos.x][itemPos.y]->belongToBerth != -1)) {
+            tempValue *= 0.25;
         }
-        
 
         if (tempValue > value){
             minDis = toItemDis;
@@ -441,10 +436,11 @@ void Robot::action() {
                 pathLogger.log(nowTime, "id={},itemTar=({},{}),berthTar=({},{}),pathSize={}", id, itemPos.x, itemPos.y, berthPath.back().x, berthPath.back().y, wholePath.size());
             }
         }
+
     } 
     // TODO: 没位置去的机器人别堵路啊，能不能死一死（？
     if (wholePath.size() == 0) {
-        robotLogger.log(nowTime, "noPath id={},bring={},havePath={},pathSize={}", id, bring, havePath, wholePath.size());
+        robotLogger.log(nowTime, "noPath id={},bring={},havePath={}, x={}, y={}", id, bring, havePath, pos.x, pos.y);
         havePath = false;
         updateFixPos(pos, id);
     }
@@ -648,19 +644,12 @@ void solveCollision() {
 }
 
 
-void newRobot(int x, int y) {
+void newRobot(int x, int y, int berthId) {
     printf("lbot %d %d\n", x, y);
     robots.push_back(new Robot(MAX_Robot_Num++, x, y));
-    for (int i = 0; i < _buyRobotQueue.size(); i++) {
-        int berthId = _buyRobotQueue[i].berthId;
-        int toBerthDis = berths[berthId]->disWithTimeBerth[x][y];
-        if (toBerthDis == 0x3f3f3f3f) continue;
+    robots.back()->bindToBerth = berthId;
 
-        robots.back()->bindToBerth = berthId;
-        robotLogger.log(nowTime, "rid={},toBerth={},dis={}", robots.back()->id, berthId, toBerthDis);
-        _buyRobotQueue.erase(_buyRobotQueue.begin() + i);
-        break;
-    }
+    robotLogger.log(nowTime, "rid={},bindToBerth={},queueSize={},x={},y={},money={}", robots.back()->id, berthId, robots.size(), x, y, money);
 
     fixPos.emplace_back(Pos(-1, -1));
     money -= 2000;

@@ -387,4 +387,12 @@ Navigator * sovleGrid(Pos origin) {
     return result;
 }
 
+void resetbelong() {
+    for (int i = 0; i < MAX_Line_Length; i++) {
+        for (int j = 0; j < MAX_Col_Length; j++) {
+            grids[i][j]->belongToBerth = -1;
+        }
+    }
+}
+
 #endif

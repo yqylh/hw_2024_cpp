@@ -87,4 +87,6 @@ void newShip(int x, int y) {
     ships.push_back(new Ship(MAX_Ship_Num++));
     money -= 8000;
 }
+
+
 #endif

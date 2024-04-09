@@ -288,10 +288,6 @@ public:
     }
     // 每一轮都要执行的检查状态
     void call_ship_and_berth_check(){
-        if (nowTime == 1) {
-            newShip(ship_buyer[0].pos.x, ship_buyer[0].pos.y);
-            return;
-        }
         for(int i = 0; i < MAX_Berth_Num; i++){
             /* 检查港口船的状态*/
             normal_berth_check(i);

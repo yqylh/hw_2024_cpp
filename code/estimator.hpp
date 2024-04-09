@@ -34,9 +34,9 @@ public:
 
     inline double avgNewItemPerPull(const int &totalSpawnGrid) {
         if (totalItemGrid == 0) return 0;
-        auto avgDistance = this->avgDistanceToItem();
-        double spawnRatePerFrame = 4900.0 / 15000.0;
-        double spwanRatePerFrameInArea = spawnRatePerFrame * (double)totalItemGrid / totalSpawnGrid;
+        double avgDistance = this->avgDistanceToItem();
+        double spawnRatePerFrame = _itemAtEnd / 15000.0;
+        double spwanRatePerFrameInArea = (double)spawnRatePerFrame * (double)totalItemGrid / (double)totalSpawnGrid;
         double avgPullTime = avgDistance * 2.0;
         return spwanRatePerFrameInArea * avgPullTime;
     }
@@ -53,6 +53,12 @@ public:
     BerthEstimator(int totalSpawnPlace, int berthNumber) {
         this->totalSpawnPlace = totalSpawnPlace;
         berthState = std::vector<BerthState>(berthNumber);
+    }
+
+    void reset() {
+        resetbelong();
+        berthState = std::vector<BerthState>(berthState.size());
+        _berthDone = std::vector<bool>(_berthDone.size(), false);
     }
     
     void checkBertehWithRobotNum(const std::vector<Pos> &beginPosList, const int &berthId, const double &controlNumber, const double &robotControlLength) {
@@ -108,6 +114,8 @@ public:
         estimatorLogger.log(0, "avgNewItemPerPull={}", berthState[berthId].avgNewItemPerPull(totalSpawnPlace));
     }
 
+
+    // 这个函数会更改：grids, berthState, _berthDone
     void checkBerthAll(const std::vector<std::vector<Pos>> &beginPosLists, const std::vector<double> &controlNumbers, const std::vector<double> &robotControlLengths) {
         _berthDone = std::vector<bool>(beginPosLists.size(), false);
         
@@ -135,7 +143,8 @@ public:
 
             if (grids[now.x][now.y]->belongToBerth != -1) continue;
             if (_berthDone[berthId]) continue;
-            if (nowDis > robotControlLengths[berthId]) {
+            auto avgDistance = berthState[berthId].avgDistanceToItem();
+            if (avgDistance > robotControlLengths[berthId]) {
                 _berthDone[berthId] = true;
                 continue;
             }
