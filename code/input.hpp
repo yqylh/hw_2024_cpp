@@ -84,8 +84,8 @@ void inputMap(){
     std::string line;
     while(getline(std::cin, line) && line != "OK");
     solveBerth();
-    berth_center->find_private_space();
     PreproShipAllAble();
+    berth_center->find_private_space();
     srand(time(0));
     puts("OK");
     fflush(stdout);
@@ -178,11 +178,13 @@ void solveFrame() {
                 newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
             }
         }
+        berth_center->update_robot_choose_berth();
     }
     if (nowTime > 100 && nowTime < 5000 && money > 2000 && robots.size() < maxRobotNum){
         for (auto & robotBuyer : berth_center->robot_buyer) {
             if (money > 2000 && robots.size() < maxRobotNum) newRobot(robotBuyer.pos.x, robotBuyer.pos.y);
         }
+        berth_center->update_robot_choose_berth();
     }
     if (nowTime > 5000 && nowTime < 10000 && money > 8000 && ships.size() < maxShipNum) {
         for (auto & shipBuyer : berth_center->ship_buyer) {

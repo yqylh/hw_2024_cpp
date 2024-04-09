@@ -91,7 +91,8 @@ bool Robot::actionFindItem() {
                 continue;
             }
             //考虑时间价值 *(1 + (1000 + i->beginTime - nowTime) / 2000.0)
-            auto tempValue = double(i->value) / (toItemDis + toBertDis) ;
+            double time_eff = std::exp((nowTime - i->beginTime) / 500.0);
+            auto tempValue = double(i->value) * time_eff / (toItemDis  + toBertDis) ;
             if (tempValue > value){
                 minDis = toItemDis;
                 targetItem = i;
@@ -358,6 +359,7 @@ void newRobot(int x, int y) {
     printf("lbot %d %d\n", x, y);
     robots.push_back(new Robot(MAX_Robot_Num++, x, y));
     money -= 2000;
+    berth_center->robot_pos.emplace_back(x, y);
 }
 
 #endif
