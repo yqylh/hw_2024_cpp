@@ -421,6 +421,7 @@ int _ship_map_front_pos[120010];
 std::deque<int> *return_path(int now);
 std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath = true) {
     Navigator_ship *map = new Navigator_ship;
+    Navigator_ship *map_main_channel = new Navigator_ship;
     int start = 0, end = 0;
     _queue_ship[end++] = ShipPos(origin, direction);
     while (start < end){
@@ -432,6 +433,15 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath 
         for (int i = 0; i < 3; i++) { // 遍历三个方向
             if (map->isVisited(next[i].x, next[i].y, next[i].direction)) continue;
             if (grids[next[i].x][next[i].y]->shipAble[next[i].direction] == 0) continue;
+            else if (grids[next[i].x][next[i].y]->shipAble[next[i].direction] == 2){ // 主航道, 相当于这次不能走,下次才能走
+                if (map_main_channel->isVisited(next[i].x, next[i].y, next[i].direction) == 0) {
+                    map_main_channel->setVisited(next[i].x, next[i].y, next[i].direction);
+                    _ship_map_front[end] = start - 1;
+                    _ship_map_front_pos[end] = 4;
+                    _queue_ship[end++] = now;
+                    continue;
+                }
+            }
             map->setVisited(next[i].x, next[i].y, next[i].direction);
             _ship_map_front[end] = start - 1;   // 记录前一个位置
             _ship_map_front_pos[end] = i;       // 记录来这个位置的方向
