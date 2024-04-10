@@ -118,6 +118,7 @@ FileLogger estimatorLogger("../log/estimator_log.txt");
 #ifdef DEBUG
     #define TEST(x) x
     std::ofstream fout("output.txt"); // 测试用输出
+    std::ofstream tout("time.txt");
 #else
     #define TEST(x) 
 #endif
@@ -148,5 +149,25 @@ void bugs(Args... args) {
     fout << std::endl;
 #endif
 }
+class Timer {
+public:
+#ifdef DEBUG
+    template<typename Func, typename... Args>
+    static auto measure(const std::string& description, Func func, Args&&... args) -> decltype(func(std::forward<Args>(args)...)) {
+        auto start = std::chrono::high_resolution_clock::now();
+        auto result = func(std::forward<Args>(args)...);
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = end - start;
+        tout << description << "\t - Elapsed time: \t" << elapsed.count() * 1000 << "micro seconds.\n";
+        return result;
+    }
+#else
+    template<typename Func, typename... Args>
+    static auto measure(const std::string& description, Func func, Args&&... args) -> decltype(func(std::forward<Args>(args)...)) {
+        return func(std::forward<Args>(args)...);
+    }
+#endif
+};
+
 
 #endif

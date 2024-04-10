@@ -65,7 +65,8 @@ struct Ship {
         if (targetPos == pos) return;
         // 没有到达目标位置 如果路径为空,则找路径
         if (path == nullptr) {
-            path = sovleShip(pos, direction, targetPos);
+            path = sovleShip( pos, direction, targetPos, true);
+            // path = Timer::measure("sovleShip_ori",sovleShip_ori, pos, direction, targetPos, true);
         }
         if (path->empty()) {
             path = nullptr;
