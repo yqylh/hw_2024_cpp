@@ -312,7 +312,7 @@ void PreproShipAllAble() {
     }
 }
 
-// int _dis_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
+int _dis_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
 // ShipPos _pre_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
 // int _pre_dir_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
 /**
