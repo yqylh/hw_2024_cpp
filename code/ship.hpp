@@ -2,6 +2,7 @@
 #define __SHIP_H__
 #include "config.hpp"
 #include "berth.hpp"
+#include <chrono>
 
 int tmpTotalGoods = 0;
 
