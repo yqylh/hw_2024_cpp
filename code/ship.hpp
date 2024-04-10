@@ -17,6 +17,7 @@ struct Ship {
     */
     int berthId;
     std::deque<int> *path; // 船的路径, 0 表示顺时针, 1 表示逆时针 2 表示直线
+    int pathLengthLimit; // 船的路径长度限制
     int isLastRound; // 是否是最后一轮
     Pos targetPos; // 目标位置
     Ship(int id): id(id) {
@@ -44,7 +45,10 @@ struct Ship {
         status = 1;
     }
     // 去卖
-    void goSell(Pos delivery) {
+    void goSell(Pos delivery, int maxLengthLimit) {
+        if (maxLengthLimit >= (INT_MAX / 2 - 10)) this->pathLengthLimit = maxLengthLimit;
+        else this->pathLengthLimit = maxLengthLimit * 1.5 + 10;
+        allPathLogger.log(nowTime, "ship{} go{}{}, maxLen{}", id, delivery.x, delivery.y, maxLengthLimit);
         dept();
         this->berthId = -1;
         // 这里不需要找路径,因为要先移动到主航道上,然后状态从 2 变成 0. path 设置成空
@@ -52,7 +56,10 @@ struct Ship {
         targetPos = delivery;
     }
     // 去另一个港口
-    void moveToBerth(int _berthId, Pos to) {
+    void moveToBerth(int _berthId, Pos to, int maxLengthLimit = INT_MAX) {
+        if (maxLengthLimit >= (INT_MAX / 2 - 10)) this->pathLengthLimit = maxLengthLimit;
+        else this->pathLengthLimit = maxLengthLimit * 1.5 + 10;
+        allPathLogger.log(nowTime, "ship{} moveToBerth{}{}, maxLen{}", id, to.x, to.y, maxLengthLimit);
         if (berthId >= 0) dept();
         this->berthId = _berthId;
         // 这里不需要找路径,因为要先移动到主航道上,然后状态从 2 变成 0. path 设置成空
@@ -64,7 +71,7 @@ struct Ship {
         if (targetPos == pos) return;
         // 没有到达目标位置 如果路径为空,则找路径
         if (path == nullptr) {
-            path = sovleShip(pos, direction, targetPos);
+            path = sovleShip(pos, direction, targetPos, pathLengthLimit);
         }
         if (path->empty()) {
             path = nullptr;

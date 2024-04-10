@@ -293,7 +293,7 @@ int _pre_dir_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
  * 4. 存路径：直行2、顺时针0、逆时针1
 */
 ShipPos _queue_ship[120010];
-std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath = true) {
+std::deque<int> *sovleShip(Pos origin, int direction, Pos target, int lengthLimit = INT_MAX, bool needPath = true) {
     allPathLogger.log(nowTime, "sovleShip origin{},{} direction{} target{},{}", origin.x, origin.y, direction, target.x, target.y);
     for (int i = 0; i < MAX_Line_Length; i++) {
         for (int j = 0; j < MAX_Col_Length; j++) {
@@ -316,6 +316,7 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath 
         // 判断是否可以走 0 表示不能走, 1 表示可以走(正常道路), 2 表示主航道道路
         auto checkRes = grids[next.x][next.y]->shipAble[next.direction];
         if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
+            if (_dis_s[now.x][now.y][now.direction] + checkRes > lengthLimit) continue;
             _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
             _pre_s[next.x][next.y][next.direction] = now;
             _pre_dir_s[next.x][next.y][next.direction] = 2;
@@ -326,6 +327,7 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath 
         next = calShipRotPos(now.toPos(), now.direction, 0);
         checkRes = grids[next.x][next.y]->shipAble[next.direction];
         if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
+            if (_dis_s[now.x][now.y][now.direction] + checkRes > lengthLimit) continue;
             _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
             _pre_s[next.x][next.y][next.direction] = now;
             _pre_dir_s[next.x][next.y][next.direction] = 0;
@@ -336,6 +338,7 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath 
         next = calShipRotPos(now.toPos(), now.direction, 1);
         checkRes = grids[next.x][next.y]->shipAble[next.direction];
         if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
+            if (_dis_s[now.x][now.y][now.direction] + checkRes > lengthLimit) continue;
             _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
             _pre_s[next.x][next.y][next.direction] = now;
             _pre_dir_s[next.x][next.y][next.direction] = 1;

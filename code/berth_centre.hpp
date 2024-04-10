@@ -45,6 +45,12 @@ public:
     std::vector<std::vector<int> > robot_choose_berth; //机器人选择的泊位
     // 泊位到最近的销售点的距离
     std::vector<std::pair<Pos, int>> delivery2berth;
+    // 泊位到泊位的距离
+    std::vector<std::vector<int>> berth2berth;
+    // 泊位到所有轮船购买点的距离
+    std::vector<std::vector<int>> berth2shipBuyer;
+    // 泊位到所有销售点的距离
+    std::vector<std::vector<int>> delivery2berthAll;
 
     Berth_center() {
         robot_buyer.clear();
@@ -130,7 +136,7 @@ public:
                 || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration  && nowTime + 350 * 2 + lastRoundRuningTime < MAX_TIME)
             ) {
                 berth_ptr->shipId.clear();
-                ship_ptr->goSell(delivery2berth[bert_id].first);
+                ship_ptr->goSell(delivery2berth[bert_id].first, delivery2berth[bert_id].second);
                 shipLogger.log(nowTime, "center command ship{0} goSell", ship_ptr->id);
                 return;
             }
@@ -143,24 +149,55 @@ public:
                 if (berths[best_bert_id]->sum_value < Min_Next_Berth_Value) return;
                 berth_ptr->shipId.clear();
                 declare_ship(best_bert_id, ship_ptr->id);
-                ship_ptr->moveToBerth(best_bert_id, berths[best_bert_id]->pos);
+                ship_ptr->moveToBerth(best_bert_id, berths[best_bert_id]->pos, berth2berth[bert_id][best_bert_id]);
                 shipLogger.log(nowTime, "center command ship{0} move_berth to berth{1}", ship_ptr->id, best_bert_id);
                 return;
             }
         }
     }
+    // 计算泊位到销售点的距离 和 泊位到泊位的距离
     void solvedelivery2berth() {
         delivery2berth = std::vector<std::pair<Pos, int>>(MAX_Berth_Num, std::make_pair(Pos(-1, -1), INT_MAX));
+        berth2berth = std::vector<std::vector<int>>(MAX_Berth_Num, std::vector<int>(MAX_Berth_Num, INT_MAX));
+        berth2shipBuyer = std::vector<std::vector<int>>(MAX_Berth_Num, std::vector<int>(ship_buyer.size(), INT_MAX));
+        delivery2berthAll = std::vector<std::vector<int>>(MAX_Berth_Num, std::vector<int>(delivery.size(), INT_MAX));
+        // 遍历所有的泊位
         for (int i = 0; i < MAX_Berth_Num; i++) {
             auto berth_ptr = berths[i];
             for (int d = 0; d < 4; d++) {
                 if (checkShipAllAble(berth_ptr->pos, d) == false) continue;
-                sovleShip(berth_ptr->pos, d, berth_ptr->pos, false);
+                sovleShip(berth_ptr->pos, d, berth_ptr->pos, INT_MAX, false );
+                // 计算泊位到销售点的最短距离
                 for (auto & delivery_pos : delivery) {
                     for (int _d = 0; _d < 4; _d++) {
                         if (_dis_s[delivery_pos.pos.x][delivery_pos.pos.y][_d] < delivery2berth[i].second) {
                             delivery2berth[i].first = delivery_pos.pos;
                             delivery2berth[i].second = _dis_s[delivery_pos.pos.x][delivery_pos.pos.y][_d];
+                        }
+                    }
+                }
+                // 计算泊位到泊位的距离
+                for (int j = 0; j < MAX_Berth_Num; j++) {
+                    if (i == j) continue;
+                    for (int _d = 0; _d < 4; _d++) {
+                        if (_dis_s[berths[j]->pos.x][berths[j]->pos.y][_d] < berth2berth[i][j]) {
+                            berth2berth[i][j] = _dis_s[berths[j]->pos.x][berths[j]->pos.y][_d];
+                        }
+                    }
+                }
+                // 计算泊位到所有轮船购买点的距离
+                for (int j = 0; j < ship_buyer.size(); j++) {
+                    for (int _d = 0; _d < 4; _d++) {
+                        if (_dis_s[ship_buyer[j].pos.x][ship_buyer[j].pos.y][_d] < berth2shipBuyer[i][j]) {
+                            berth2shipBuyer[i][j] = _dis_s[ship_buyer[j].pos.x][ship_buyer[j].pos.y][_d];
+                        }
+                    }
+                }
+                // 计算泊位到所有销售点的距离
+                for (int j = 0; j < delivery.size(); j++) {
+                    for (int _d = 0; _d < 4; _d++) {
+                        if (_dis_s[delivery[j].pos.x][delivery[j].pos.y][_d] < delivery2berthAll[i][j]) {
+                            delivery2berthAll[i][j] = _dis_s[delivery[j].pos.x][delivery[j].pos.y][_d];
                         }
                     }
                 }
@@ -308,7 +345,23 @@ public:
             // 一个个都没货是吧,死了得了
             if (best_bert_id == -1) best_bert_id = 0;
             declare_ship(best_bert_id, shipId);
-            ship_ptr->moveToBerth(best_bert_id, berths[best_bert_id]->pos);
+            int maxLengthLimit = INT_MAX;
+            if (ship_ptr->berthId == -2) {
+                for (int i = 0; i < ship_buyer.size(); i++) {
+                    if (ship_ptr->pos == ship_buyer[i].pos) {
+                        maxLengthLimit = berth2shipBuyer[best_bert_id][i];
+                        break;
+                    }
+                }
+            } else {
+                for (int i = 0; i < delivery.size(); i++) {
+                    if (ship_ptr->pos == delivery[i].pos) {
+                        maxLengthLimit = delivery2berthAll[best_bert_id][i];
+                        break;
+                    }
+                }
+            }
+            ship_ptr->moveToBerth(best_bert_id, berths[best_bert_id]->pos, maxLengthLimit);
             shipLogger.log(nowTime, "center command ship{0} move_berth to berth{1}", ship_ptr->id, best_bert_id);
             return;
         }

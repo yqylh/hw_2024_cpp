@@ -76,6 +76,9 @@ void inputMap(){
             }
         }
     }
+    if (grids[0][0]->type == 1) {
+        _maxShipCnt = 1;
+    }
     scanf("%d", &MAX_Berth_Num);
     for (int i = 0; i < MAX_Berth_Num; i++) {
         int id, x, y, velocity;
