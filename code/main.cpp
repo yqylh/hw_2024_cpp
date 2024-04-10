@@ -14,9 +14,9 @@ int main() {
 #endif
     inputMap();
     while (1) {
-        inputFrame();
+        Timer::measure("input_frame",inputFrame);
         if (inputFlag == false) break;
-        solveFrame();
+        Timer::measure("solve_Frame",solveFrame);
     }
     return 0;
 }
