@@ -27,6 +27,8 @@
 using namespace std::chrono;
 #include "logger.hpp"
 #include "count.hpp"
+#include <functional>
+#include <type_traits>
 
 /**
  * 常量定义
@@ -118,6 +120,7 @@ FileLogger estimatorLogger("../log/estimator_log.txt");
 #ifdef DEBUG
     #define TEST(x) x
     std::ofstream fout("output.txt"); // 测试用输出
+    std::ofstream tout("time.txt");
 #else
     #define TEST(x) 
 #endif
@@ -148,5 +151,47 @@ void bugs(Args... args) {
     fout << std::endl;
 #endif
 }
+class Timer {
+public:
+#ifdef DEBUG
+    template<typename Func, typename... Args>
+    static auto measure(const std::string& description, Func func, Args&&... args) {
+        auto start = std::chrono::high_resolution_clock::now();
+        
+        if constexpr (std::is_same_v<std::invoke_result_t<Func, Args...>, void>) {
+            // If the function returns void
+            func(std::forward<Args>(args)...);
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = end - start;
+            tout << nowTime <<" "<< description << "\t - Elapsed time: \t" << elapsed.count() * 1000 << "\tmirco seconds.\n";
+        } else {
+            // If the function returns a value
+            auto result = func(std::forward<Args>(args)...);
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = end - start;
+            tout << nowTime <<" "<< description << "\t - Elapsed time: \t" << elapsed.count() * 1000 << "\tmicro seconds.\n";
+            return result;
+        }
+    }
+#else
+    template<typename Func, typename... Args>
+    static auto measure(const std::string& description, Func func, Args&&... args) -> decltype(func(std::forward<Args>(args)...)) {
+        return func(std::forward<Args>(args)...);
+    }
+#endif
+};
+#ifdef DEBUG
+void measureAndExecute(const std::string& description, const std::function<void()>& action) {
+    auto start = std::chrono::high_resolution_clock::now();
+    action();
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    tout << description << " - Elapsed time: " << elapsed.count() << " ms\n";
+}
+#else
+void measureAndExecute(const std::string& description, const std::function<void()>& action) {
+    action();
+}
+#endif
 
 #endif

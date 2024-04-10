@@ -219,17 +219,19 @@ void buyShip() {
 
 void solveFrame() {
     flowLogger.log(nowTime, "当前帧数={0}", nowTime);
-    for (auto & robot : robots) robot->action();
+    measureAndExecute("Action for all robots", [&]() {for (auto & robot : robots) robot->action();});
     // 碰撞检测
     // solveCollision();
     // 移动
-    for (auto & robot : robots) robot->move();
+    measureAndExecute("Move all robots", [&]() {for (auto & robot : robots) robot->move();});
     // 时间向前推进
     if (allPath.size() > 0) allPath.pop_front();
     // 船只调度
-    berth_center->call_ship_and_berth_check();
-    // 船只移动
-    for (auto & ship : ships) ship->move();
+    measureAndExecute("Move all ships", [&]() {
+        berth_center->call_ship_and_berth_check();
+        // 船只移动
+        for (auto & ship : ships) ship->move();
+    });
     do_special_frame();
     
     if (robots.size() < exptRobotCnt) {

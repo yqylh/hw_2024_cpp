@@ -1,5 +1,7 @@
 import pygame
 import numpy as np
+import tkinter
+from tkinter import messagebox
 import argparse
 import sys
 
@@ -44,8 +46,8 @@ BLACK_COLOR = (0, 0, 0)
 
 class CResult:
     def __init__(self) -> None:
-        self.result = np.zeros((200, 200), dtype=np.int8)
-        self.last_result = np.zeros((200, 200), dtype=np.int8)
+        self.result = np.zeros((200, 200), dtype=np.int8) + 2
+        self.last_result = np.zeros((200, 200), dtype=np.int8) + 2
     
     def update(self, x, y, value):
         self.last_result = self.result.copy()
@@ -146,20 +148,30 @@ class MapEditor:
 
     def update_cell(self, x, y, color):
         if 0 <= x < self.map_width and 0 <= y < self.map_height:
-            if self.now_type !=3:
+            if self.now_type != 3 and self.now_type != 13:
                 rect = pygame.Rect(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
                 pygame.draw.rect(self.screen, self.rgb_to_fill(color), rect)
                 Result.result[x][y] = self.now_type
                 # Result.update(x, y, self.now_type)
             else:
                 Result.update_last_result()
-                for i in range(4):
-                    for j in range(4):
-                        if 0 <= x + i - 1 < self.map_width and 0 <= y + j - 1 < self.map_height:
-                            rect = pygame.Rect((x + i - 1) * self.cell_size, (y + j - 1) * self.cell_size, self.cell_size, self.cell_size)
-                            pygame.draw.rect(self.screen, self.rgb_to_fill(color), rect)
-                            Result.result[x + i - 1][y + j - 1] = self.now_type
-                
+                for i in range(9):
+                    for j in range(6):
+                        now_x = x + i - 3
+                        now_y = y + j - 2
+                        if 0 <= now_x < self.map_width and 0 <= now_y < self.map_height:
+                            # rect = pygame.Rect((now_x) * self.cell_size, (now_y) * self.cell_size, self.cell_size, self.cell_size)
+                            # pygame.draw.rect(self.screen, self.rgb_to_fill(color), rect)
+                            Result.result[now_x][now_y] = 9
+                for i in range(3):
+                    for j in range(2):
+                        now_x = x + i
+                        now_y = y + j
+                        if 0 <= now_x < self.map_width and 0 <= now_y < self.map_height:
+                            Result.result[now_x][now_y] = 3
+                Result.result[x][y] = 13
+                self.now_type = 13
+                print("泊位已绘制")
 
     def handle_mouse_event(self, event):
         for button in self.buttons:
@@ -336,6 +348,9 @@ def save_map():
     with open(map_name, 'w') as map_file:
         to_save_result = Result.result.T
         center_list = []
+        T_count = 0
+        R_count = 0
+        S_count = 0
         print(len(to_save_result))
         for x, line in enumerate(to_save_result):
             for y, grid_content in enumerate(line):
@@ -355,8 +370,10 @@ def save_map():
                     map_file.write('~')
                 if grid_content == 7:
                     map_file.write('R')
+                    R_count += 1
                 if grid_content == 8:
                     map_file.write('S')
+                    S_count += 1
                 if grid_content == 9:
                     map_file.write('K')
                 if grid_content == 10:
@@ -365,13 +382,20 @@ def save_map():
                     map_file.write('c')
                 if grid_content == 12:
                     map_file.write('T')
+                    T_count += 1
                 if grid_content == 13:
                     center_list.append([y, x])
             map_file.write('\n')
         map_file.write(f"{len(center_list)}\n")
         for centerId, center in enumerate(center_list):
-            map_file.write(f"{center[0]} {center[1]} 0 2\n")
+            map_file.write(f"{center[1]} {center[0]} 0 2\n")
     print("Map saved as " + map_name)
+    if T_count == 0:
+        messagebox.showinfo('警告!', '未设置交货点')
+    if R_count == 0:
+        messagebox.showinfo('警告!', '未设置机器人购买点')
+    if S_count == 0:
+        messagebox.showinfo('警告!', '未设置船舶购买点')
 
 def load_map(file):
     lines = []
