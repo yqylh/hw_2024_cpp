@@ -313,8 +313,8 @@ void PreproShipAllAble() {
 }
 
 int _dis_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
-// ShipPos _pre_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
-// int _pre_dir_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
+ShipPos _pre_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
+int _pre_dir_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
 /**
  * @brief 计算船的最短路径
  * 2. 三方向 SPFA：直行2、顺时针0、逆时针1
@@ -322,78 +322,78 @@ int _dis_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
  * 4. 存路径：直行2、顺时针0、逆时针1
 */
 ShipPos _queue_ship[120010];
-// std::deque<int> *sovleShip_ori(Pos origin, int direction, Pos target, bool needPath = true) {
-//     allPathLogger.log(nowTime, "sovleShip origin{},{} direction{} target{},{}", origin.x, origin.y, direction, target.x, target.y);
-//     for (int i = 0; i < MAX_Line_Length; i++) {
-//         for (int j = 0; j < MAX_Col_Length; j++) {
-//             for (int k = 0; k < 4; k++) {
-//                 _dis_s[i][j][k] = INT_MAX;
-//                 _pre_s[i][j][k] = ShipPos(-1, -1, -1);
-//                 _pre_dir_s[i][j][k] = -1;
-//             }
-//         }
-//     }
-//     int start = 0;
-//     int end = 0;
-//     _queue_ship[end++] = ShipPos(origin, direction);
-//     _dis_s[origin.x][origin.y][direction] = 0;
-//     while (start != end) {
-//         ShipPos now = _queue_ship[start++];
-//         if (start == 120010) start = 0;
-//         // 直行
-//         ShipPos next = now + dir[now.direction];
-//         // 判断是否可以走 0 表示不能走, 1 表示可以走(正常道路), 2 表示主航道道路
-//         auto checkRes = grids[next.x][next.y]->shipAble[next.direction];
-//         if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
-//             _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
-//             _pre_s[next.x][next.y][next.direction] = now;
-//             _pre_dir_s[next.x][next.y][next.direction] = 2;
-//             _queue_ship[end++] = next;
-//             if (end == 120010) end = 0;
-//         }
-//         // 顺时针
-//         next = calShipRotPos(now.toPos(), now.direction, 0);
-//         checkRes = grids[next.x][next.y]->shipAble[next.direction];
-//         if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
-//             _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
-//             _pre_s[next.x][next.y][next.direction] = now;
-//             _pre_dir_s[next.x][next.y][next.direction] = 0;
-//             _queue_ship[end++] = next;
-//             if (end == 120010) end = 0;
-//         }
-//         // 逆时针
-//         next = calShipRotPos(now.toPos(), now.direction, 1);
-//         checkRes = grids[next.x][next.y]->shipAble[next.direction];
-//         if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
-//             _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
-//             _pre_s[next.x][next.y][next.direction] = now;
-//             _pre_dir_s[next.x][next.y][next.direction] = 1;
-//             _queue_ship[end++] = next;
-//             if (end == 120010) end = 0;
-//         }
-//     }
-//     std::deque<int> *result = new std::deque<int>;
-//     // 首先找到重点的四个方向里 dis 最小的
-//     ShipPos now = ShipPos(target, 0);
-//     for (int i = 1; i < 4; i++) {
-//         if (_dis_s[target.x][target.y][i] < _dis_s[now.x][now.y][now.direction]) {
-//             now.direction = i;
-//         }
-//     }
-//     // std::string allPos = std::to_string(target.x) + "," + std::to_string(target.y) + "," + std::to_string(now.direction) + "<";
-//     // std::string allDir = std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
-//     // 每次找到前一个的位置
-//     while (true && needPath) {
-//         result->push_front(_pre_dir_s[now.x][now.y][now.direction]);
-//         now = _pre_s[now.x][now.y][now.direction];
-//         if (now.toPos() == origin && now.direction == direction) break;
-//         // allPos += std::to_string(now.x) + "," + std::to_string(now.y) + "," + std::to_string(now.direction) + "<";
-//         // allDir += std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
-//     }
-//     // allPathLogger.log(nowTime, "allPos:{}", allPos);
-//     // allPathLogger.log(nowTime, "allDir:{}", allDir);
-//     return result;
-// }
+std::deque<int> *sovleShip_ori(Pos origin, int direction, Pos target, bool needPath = true) {
+    allPathLogger.log(nowTime, "sovleShip origin{},{} direction{} target{},{}", origin.x, origin.y, direction, target.x, target.y);
+    for (int i = 0; i < MAX_Line_Length; i++) {
+        for (int j = 0; j < MAX_Col_Length; j++) {
+            for (int k = 0; k < 4; k++) {
+                _dis_s[i][j][k] = INT_MAX;
+                _pre_s[i][j][k] = ShipPos(-1, -1, -1);
+                _pre_dir_s[i][j][k] = -1;
+            }
+        }
+    }
+    int start = 0;
+    int end = 0;
+    _queue_ship[end++] = ShipPos(origin, direction);
+    _dis_s[origin.x][origin.y][direction] = 0;
+    while (start != end) {
+        ShipPos now = _queue_ship[start++];
+        if (start == 120010) start = 0;
+        // 直行
+        ShipPos next = now + dir[now.direction];
+        // 判断是否可以走 0 表示不能走, 1 表示可以走(正常道路), 2 表示主航道道路
+        auto checkRes = grids[next.x][next.y]->shipAble[next.direction];
+        if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
+            _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
+            _pre_s[next.x][next.y][next.direction] = now;
+            _pre_dir_s[next.x][next.y][next.direction] = 2;
+            _queue_ship[end++] = next;
+            if (end == 120010) end = 0;
+        }
+        // 顺时针
+        next = calShipRotPos(now.toPos(), now.direction, 0);
+        checkRes = grids[next.x][next.y]->shipAble[next.direction];
+        if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
+            _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
+            _pre_s[next.x][next.y][next.direction] = now;
+            _pre_dir_s[next.x][next.y][next.direction] = 0;
+            _queue_ship[end++] = next;
+            if (end == 120010) end = 0;
+        }
+        // 逆时针
+        next = calShipRotPos(now.toPos(), now.direction, 1);
+        checkRes = grids[next.x][next.y]->shipAble[next.direction];
+        if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
+            _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
+            _pre_s[next.x][next.y][next.direction] = now;
+            _pre_dir_s[next.x][next.y][next.direction] = 1;
+            _queue_ship[end++] = next;
+            if (end == 120010) end = 0;
+        }
+    }
+    std::deque<int> *result = new std::deque<int>;
+    // 首先找到重点的四个方向里 dis 最小的
+    ShipPos now = ShipPos(target, 0);
+    for (int i = 1; i < 4; i++) {
+        if (_dis_s[target.x][target.y][i] < _dis_s[now.x][now.y][now.direction]) {
+            now.direction = i;
+        }
+    }
+    // std::string allPos = std::to_string(target.x) + "," + std::to_string(target.y) + "," + std::to_string(now.direction) + "<";
+    // std::string allDir = std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
+    // 每次找到前一个的位置
+    while (true && needPath) {
+        result->push_front(_pre_dir_s[now.x][now.y][now.direction]);
+        now = _pre_s[now.x][now.y][now.direction];
+        if (now.toPos() == origin && now.direction == direction) break;
+        // allPos += std::to_string(now.x) + "," + std::to_string(now.y) + "," + std::to_string(now.direction) + "<";
+        // allDir += std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
+    }
+    // allPathLogger.log(nowTime, "allPos:{}", allPos);
+    // allPathLogger.log(nowTime, "allDir:{}", allDir);
+    return result;
+}
 
 Pos _arr[40010];
 Navigator * sovleGrid(Pos origin) {
