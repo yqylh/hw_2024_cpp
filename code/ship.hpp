@@ -72,14 +72,18 @@ struct Ship {
             return;
         }
         int nextDir = path->front(); path->pop_front();
+        if (nextDir ==4) {
+            nextDir = path->front();path->pop_front();
+            }
+
         if (nextDir == 2) {
             printf("ship %d\n", id);
             flowLogger.log(nowTime, "ship{} move", id);
-        } else if (nextDir == 0 or nextDir == 1){ 
+        } else{ 
             printf("rot %d %d\n", id, nextDir);
             flowLogger.log(nowTime, "ship{} rot{}", id, nextDir);
         }
-        else if (nextDir == 4){} //4表示不动作
+        
     }
 };
 

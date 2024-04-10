@@ -322,7 +322,7 @@ int _pre_dir_s[MAX_Line_Length + 1][MAX_Col_Length + 1][4];
  * 4. 存路径：直行2、顺时针0、逆时针1
 */
 ShipPos _queue_ship[120010];
-std::deque<int> *sovleShip_ori(Pos origin, int direction, Pos target, bool needPath = true) {
+std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath = true) {
     allPathLogger.log(nowTime, "sovleShip origin{},{} direction{} target{},{}", origin.x, origin.y, direction, target.x, target.y);
     for (int i = 0; i < MAX_Line_Length; i++) {
         for (int j = 0; j < MAX_Col_Length; j++) {
@@ -419,13 +419,21 @@ Navigator * sovleGrid(Pos origin) {
 int _ship_map_front[120010];
 int _ship_map_front_pos[120010];
 std::deque<int> *return_path(int now);
-std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath = true) {
+std::deque<int> *sovleShip_2(Pos origin, int direction, Pos target, bool needPath = true) {
     Navigator_ship *map = new Navigator_ship;
     Navigator_ship *map_main_channel = new Navigator_ship;
     int start = 0, end = 0;
     _queue_ship[end++] = ShipPos(origin, direction);
     while (start < end){
         ShipPos now = _queue_ship[start++];
+        if (grids[now.x][now.y]->shipAble[now.direction] == 2){
+            if (map_main_channel->isVisited(now.x, now.y, now.direction) == 0) { //第一次访问
+                    map_main_channel->setVisited(now.x, now.y, now.direction);
+                    _ship_map_front[end] = start - 1;
+                    _ship_map_front_pos[end] = 4;
+                    _queue_ship[end++] = now;
+            }
+        }
         ShipPos next[3] = { // 三个方向 2直行 0顺时针 1逆时针
                             calShipRotPos(now.toPos(), now.direction, 0), 
                             calShipRotPos(now.toPos(), now.direction, 1),
@@ -433,15 +441,6 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath 
         for (int i = 0; i < 3; i++) { // 遍历三个方向
             if (map->isVisited(next[i].x, next[i].y, next[i].direction)) continue;
             if (grids[next[i].x][next[i].y]->shipAble[next[i].direction] == 0) continue;
-            else if (grids[next[i].x][next[i].y]->shipAble[next[i].direction] == 2){ // 主航道, 相当于这次不能走,下次才能走
-                if (map_main_channel->isVisited(next[i].x, next[i].y, next[i].direction) == 0) {
-                    map_main_channel->setVisited(next[i].x, next[i].y, next[i].direction);
-                    _ship_map_front[end] = start - 1;
-                    _ship_map_front_pos[end] = 4;
-                    _queue_ship[end++] = now;
-                    continue;
-                }
-            }
             map->setVisited(next[i].x, next[i].y, next[i].direction);
             _ship_map_front[end] = start - 1;   // 记录前一个位置
             _ship_map_front_pos[end] = i;       // 记录来这个位置的方向
@@ -452,6 +451,7 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target, bool needPath 
                 return new std::deque<int>;
             }
             _queue_ship[end++] = next[i];
+            
         }
     }
     return new std::deque<int>;
