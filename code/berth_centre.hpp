@@ -167,9 +167,10 @@ public:
             // line1: 如果船只装满了
             // line2: 或者是最后一轮了(暂时没法判断了)
             // line3: 如果港口没货物了, 并且船装满了百分之 ratio
+            int estSellTime = delivery2berthAll[bert_id][dbss[ship_ptr->dbssId].berthGoSell[bert_id]] + 30;
             if (   ship_ptr->leftCapacity() == 0
-                || nowTime + 350 > MAX_TIME
-                || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration  && nowTime + 350 * 2 + lastRoundRuningTime < MAX_TIME)
+                || nowTime + estSellTime > MAX_TIME
+                || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration  && nowTime + estSellTime * 2 + 200 < MAX_TIME)
             ) {
                 berth_ptr->shipId.clear();
                 int sellId = dbss[ship_ptr->dbssId].berthGoSell[bert_id];
@@ -180,8 +181,9 @@ public:
             // 让船去别的地方的情况
             // 港口没货了,并且船没装满Sell_Ration
             // 但是去了之后不能超时
-            if (berth_ptr->goodsNum == 0 /*&& berth_ptr->time + nowTime + 10 + 500 < MAX_TIME*/) {
-                int best_bert_id = ship_choose_berth(ship_ptr->id);
+            int best_bert_id = ship_choose_berth(ship_ptr->id);
+            estSellTime = berth2berth[bert_id][best_bert_id] + delivery2berthAll[best_bert_id][dbss[ship_ptr->dbssId].berthGoSell[best_bert_id]] + 30;
+            if (berth_ptr->goodsNum == 0 && nowTime + estSellTime + 100 < MAX_TIME) {
                 if (best_bert_id == -1) return;
                 if (berths[best_bert_id]->sum_value < Min_Next_Berth_Value) return;
                 berth_ptr->shipId.clear();
