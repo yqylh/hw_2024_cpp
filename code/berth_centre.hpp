@@ -117,16 +117,16 @@ public:
     }
     // 用于指引机器人进入最佳的泊位
     std::vector<int> get_robot_berth(int id) {
-        if (nowTime + Only_Run_On_Berth_with_Ship > MAX_TIME) {
-            std::vector<int> ret;
-            for (int i = 0; i < MAX_Berth_Num; i++) {
-                if (berths[i]->shipId.size() != 0) ret.push_back(i);
-            }
-            if (ret.size() != 0) return ret;
-            else return robot_choose_berth[id];
-        } else {
+        // if (nowTime + Only_Run_On_Berth_with_Ship > MAX_TIME) {
+        //     std::vector<int> ret;
+        //     for (int i = 0; i < MAX_Berth_Num; i++) {
+        //         if (berths[i]->shipId.size() != 0) ret.push_back(i);
+        //     }
+        //     if (ret.size() != 0) return ret;
+        //     else return robot_choose_berth[id];
+        // } else {
             return robot_choose_berth[id];
-        }
+        // }
     }
     // 机器人告知塔台卸货
     void declare_robot_pull_good(int bert_id, int item_value){
