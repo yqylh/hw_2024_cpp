@@ -77,7 +77,7 @@ void inputMap(){
         }
     }
     if (grids[0][0]->type == 1) {
-        _maxShipCnt = 1;
+        _maxShipCnt = 50;
     }
     scanf("%d", &MAX_Berth_Num);
     for (int i = 0; i < MAX_Berth_Num; i++) {
@@ -211,9 +211,24 @@ void buyRobot() {
 }
 
 void buyShip() {
-    for (auto & shipBuyer : berth_center->ship_buyer) {
-        if ((nowTime == 1 or (nowTime > 5000 and nowTime < 100000) ) and money > 8000 && ships.size() < _maxShipCnt) newShip(shipBuyer.pos.x, shipBuyer.pos.y);
-        break;
+    if ((nowTime == 1 or (nowTime > 7000 and nowTime < 10000) ) and money > 8000 && ships.size() < _maxShipCnt) {
+        int minDBSS = -1;
+        int min = 0x3f3f3f3f;
+        for (int i = 0; i < berth_center->dbss.size(); i++) {
+            // 找到一个船数量最少的DBSS, 且船的数量小于delivery的数量
+            if (berth_center->dbss[i].shipId.size() == berth_center->dbss[i].deliveryId.size()) continue;
+            // 如果新增的船不会分配港口,也不买
+            if (berth_center->dbss[i].deliveryWithBerth[berth_center->dbss[i].shipId.size()].size() == 0) continue;
+            if (berth_center->dbss[i].shipId.size() < min) {
+                min = berth_center->dbss[i].shipId.size();
+                minDBSS = i;
+            }
+        }
+        if (minDBSS != -1) {
+            auto shipBuyer = berth_center->dbss[minDBSS].shipBuyerId[0];
+            newShip(berth_center->ship_buyer[shipBuyer].pos.x, berth_center->ship_buyer[shipBuyer].pos.y, minDBSS);
+            berth_center->dbss[minDBSS].shipId.push_back(ships.back()->id);
+        }
     }
 }
 

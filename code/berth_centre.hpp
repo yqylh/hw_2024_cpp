@@ -28,6 +28,27 @@ struct Delivery {
 };
 
 /**
+ * @brief 一个销售点(Delivery)-泊位(Berth)-购买点(shipBuyer)-船(ship)的连通块
+*/
+struct DBSS {
+    std::vector<int> deliveryId;
+    std::vector<int> berthId;
+    std::vector<int> shipBuyerId;
+    std::vector<int> shipId;
+    std::vector<std::vector<int>> deliveryWithBerth;
+    std::map<int, int> berthGoSell;
+    bool correct;
+    DBSS() {
+        deliveryId.clear();
+        berthId.clear();
+        shipBuyerId.clear();
+        shipId.clear();
+        deliveryWithBerth.clear();
+        correct = false;
+    }
+};
+
+/**
  * Berth_center即船坞、轮船控制中心（塔台），进行统一调配，并指引机器人进入泊位
 */
 class Berth_center {
@@ -51,7 +72,8 @@ public:
     std::vector<std::vector<int>> berth2shipBuyer;
     // 泊位到所有销售点的距离
     std::vector<std::vector<int>> delivery2berthAll;
-
+    // 一个销售点-泊位-购买点-船的连通块
+    std::vector<DBSS> dbss;
     Berth_center() {
         robot_buyer.clear();
         ship_buyer.clear();
@@ -61,14 +83,28 @@ public:
     }    
 
     // 用于指引船只进入最佳的泊位
-    int ship_choose_berth() {
+    int ship_choose_berth(int shipId) {
         int max_goods = -1;
         int max_goods_id = -1;
-        for (int i = 0; i < MAX_Berth_Num; i++) {
-            if (berths[i]->shipId.empty() == false) continue;
-            if (berths[i]->sum_value > 0 && berths[i]->sum_value > max_goods) {
-                max_goods = berths[i]->sum_value;
-                max_goods_id = i;
+        int dbssId = ships[shipId]->dbssId;
+        // 找到船在dbss中的位置
+        int shipIdInDBSS = -1;
+        for (int i = 0; i < dbss[dbssId].shipId.size(); i++) {
+            if (dbss[dbssId].shipId[i] == shipId) {
+                shipIdInDBSS = i;
+                break;
+            }
+        }
+        // 遍历船 id 对应的销售点最近的一批泊位,以及没有分配的销售点的泊位
+        for (int d = 0; d < dbss[dbssId].deliveryWithBerth.size(); d++) {
+            if (d >= dbss[dbssId].shipId.size() || d == shipIdInDBSS) {
+                for (auto & i : dbss[dbssId].deliveryWithBerth[d]) {
+                    if (berths[i]->shipId.empty() == false) continue;
+                    if (berths[i]->sum_value > max_goods) {
+                        max_goods = berths[i]->sum_value;
+                        max_goods_id = i;
+                    }
+                }
             }
         }
         
@@ -136,7 +172,8 @@ public:
                 || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration  && nowTime + 350 * 2 + lastRoundRuningTime < MAX_TIME)
             ) {
                 berth_ptr->shipId.clear();
-                ship_ptr->goSell(delivery2berth[bert_id].first, delivery2berth[bert_id].second);
+                int sellId = dbss[ship_ptr->dbssId].berthGoSell[bert_id];
+                ship_ptr->goSell(delivery[sellId].pos, delivery2berthAll[bert_id][sellId]);
                 shipLogger.log(nowTime, "center command ship{0} goSell", ship_ptr->id);
                 return;
             }
@@ -144,7 +181,7 @@ public:
             // 港口没货了,并且船没装满Sell_Ration
             // 但是去了之后不能超时
             if (berth_ptr->goodsNum == 0 /*&& berth_ptr->time + nowTime + 10 + 500 < MAX_TIME*/) {
-                int best_bert_id = ship_choose_berth();
+                int best_bert_id = ship_choose_berth(ship_ptr->id);
                 if (best_bert_id == -1) return;
                 if (berths[best_bert_id]->sum_value < Min_Next_Berth_Value) return;
                 berth_ptr->shipId.clear();
@@ -204,9 +241,95 @@ public:
             }
         }
     }
+    void findDBSS() {
+        dbss.clear();
+        std::vector<bool> delivery_used(delivery.size(), false);
+        std::vector<bool> berth_used(MAX_Berth_Num, false);
+        std::vector<bool> shipBuyer_used(ship_buyer.size(), false);
+        for (int i = 0; i < berths.size(); i++) {
+            if (berth_used[i]) continue;
+            DBSS tmp;
+            tmp.berthId.push_back(i);
+            berth_used[i] = true;
+            // 加入所有可以到达的 berth
+            for (int j = i + 1; j < MAX_Berth_Num; j++) {
+                if (berth_used[j]) continue;
+                if (berth2berth[i][j] != INT_MAX) {
+                    tmp.berthId.push_back(j);
+                    berth_used[j] = true;
+                }
+            }
+            // 加入所有可以到达的 delivery
+            for (int j = 0; j < delivery.size(); j++) {
+                if (delivery_used[j]) continue;
+                if (delivery2berthAll[i][j] != INT_MAX) {
+                    tmp.deliveryId.push_back(j);
+                    delivery_used[j] = true;
+                }
+            }
+            // 加入所有可以到达的 shipBuyer
+            for (int j = 0; j < ship_buyer.size(); j++) {
+                if (shipBuyer_used[j]) continue;
+                if (berth2shipBuyer[i][j] != INT_MAX) {
+                    tmp.shipBuyerId.push_back(j);
+                    shipBuyer_used[j] = true;
+                }
+            }
+            if (tmp.deliveryId.size() > 0 && tmp.shipBuyerId.size() > 0) {
+                tmp.correct = true;
+                // 每个销售点逐个选择最近的泊位
+                tmp.deliveryWithBerth = std::vector<std::vector<int>>(tmp.deliveryId.size(), std::vector<int>());
+                for (int berth_index = 0; berth_index < tmp.berthId.size(); berth_index++) {
+                    int min_dis = INT_MAX;
+                    int min_delivery = -1;
+                    for (int delivery_index = 0; delivery_index < tmp.deliveryId.size(); delivery_index++) {
+                        auto delivery_id = tmp.deliveryId[delivery_index];
+                        centerLogger.log(nowTime, "berth{}->delivery{} len={}", tmp.berthId[berth_index], delivery_id, delivery2berthAll[tmp.berthId[berth_index]][delivery_id]);
+                        // 选一个距离最近的.如果有多个可以选,少的可以给一个 1.1 的特权
+                        if (delivery2berthAll[tmp.berthId[berth_index]][delivery_id] < min_dis || (delivery2berthAll[tmp.berthId[berth_index]][delivery_id] < min_dis * 1.1 && tmp.deliveryWithBerth[delivery_index].size() < tmp.deliveryWithBerth[min_delivery].size())) {
+                            min_dis = delivery2berthAll[tmp.berthId[berth_index]][delivery_id];
+                            min_delivery = delivery_index;
+                        } 
+                    }
+                    if (min_delivery != -1) {
+                        tmp.deliveryWithBerth[min_delivery].push_back(tmp.berthId[berth_index]);
+                        tmp.berthGoSell[tmp.berthId[berth_index]] = tmp.deliveryId[min_delivery];
+                    }
+                    
+                }
+                dbss.push_back(tmp);
+                centerLogger.log(nowTime, "DBSS {}", dbss.size());
+                centerLogger.log(nowTime, "\t deliveryID:");
+                for (auto & delivery : dbss.back().deliveryId) {
+                    centerLogger.log(nowTime, "\t\t{}", delivery);
+                }
+                centerLogger.log(nowTime, "\t berthId:");
+                for (auto & berth : dbss.back().berthId) {
+                    centerLogger.log(nowTime, "\t\t{}", berth);
+                }
+                centerLogger.log(nowTime, "\t shipBuyerId:");
+                for (auto & shipBuyer : dbss.back().shipBuyerId) {
+                    centerLogger.log(nowTime, "\t\t{}", shipBuyer);
+                }
+                centerLogger.log(nowTime, "\t shipId:");
+                for (auto & ship : dbss.back().shipId) {
+                    centerLogger.log(nowTime, "\t\t{}", ship);
+                }
+                centerLogger.log(nowTime, "\t deliveryWithBerth:");
+                for (auto & temp : dbss.back().deliveryWithBerth) {
+                    centerLogger.log(nowTime, "\t ---");
+                    for (auto & berth : temp) {
+                        centerLogger.log(nowTime, "\t\t{}", berth);
+                    }
+                }
+                
+            }
+        }
+    }
     void find_private_space() {
         // 计算每个泊位到每个销售点的时间
         solvedelivery2berth();
+        findDBSS();
         // 对所有的泊位进行分组
         std::vector<int> is_grouped(MAX_Berth_Num, -1);
         group = std::vector<std::vector<int> >(MAX_Berth_Num, std::vector<int>());
@@ -341,7 +464,7 @@ public:
         if (ship_ptr->status == 1) return;
         // 到达了销售点卖掉了. 或者船刚出生
         if ((ship_ptr->berthId == -2) || (ship_ptr->pos == ship_ptr->targetPos && ship_ptr->berthId == -1)) {
-            int best_bert_id = ship_choose_berth();
+            int best_bert_id = ship_choose_berth(ship_ptr->id);
             // 一个个都没货是吧,死了得了
             if (best_bert_id == -1) best_bert_id = 0;
             declare_ship(best_bert_id, shipId);

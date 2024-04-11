@@ -20,6 +20,7 @@ struct Ship {
     int pathLengthLimit; // 船的路径长度限制
     int isLastRound; // 是否是最后一轮
     Pos targetPos; // 目标位置
+    int dbssId; // 船所在的 dbssId
     Ship(int id): id(id) {
         status = 1;
         capacity = 0;
@@ -89,9 +90,10 @@ struct Ship {
 };
 
 std::vector<Ship *> ships;
-void newShip(int x, int y) {
+void newShip(int x, int y, int dbssID) {
     printf("lboat %d %d\n", x, y);
     ships.push_back(new Ship(MAX_Ship_Num++));
+    ships.back()->dbssId = dbssID;
     money -= 8000;
 }
 
