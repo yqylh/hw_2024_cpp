@@ -26,7 +26,7 @@ struct Robot{
     int bindToBerth; // 机器人绑定的泊位
 
     bool havePath;
-    std::deque<Pos> wholePath; // 机器人的路径，front为当前位置
+    std::vector<Pos> wholePath; // 机器人的路径，front为当前位置
     Pos tarItemPos;
 
     Robot() {
@@ -49,8 +49,8 @@ struct Robot{
     void action(); // 计算机器人的路径和生成行动
     void move(); // 生成机器人的移动指令
     void checkCollision(std::unordered_map<Pos, Pos> &otherPos);
-    std::deque<Pos> actionFindBerth(Pos beginPos, int beginFrame); // 机器人在当前pos找港口或给定item的pos找港口
-    std::deque<Pos> actionFindItem(); // 机器人在当前的pos下寻找一个item
+    std::vector<Pos> actionFindBerth(Pos beginPos, int beginFrame); // 机器人在当前pos找港口或给定item的pos找港口
+    std::vector<Pos> actionFindItem(); // 机器人在当前的pos下寻找一个item
 };
 
 
@@ -58,7 +58,7 @@ struct Robot{
 // beginFrame是起始时间，如果起始时间是0，则说明从机器人位置开始，否则从item开始，所有的dis都需要加上item
 // 返回值是机器人的路径，无论是从机器人开始还是从item开始
 // 如果已经找到了一段item的路径，但没有找到合适的港口，机器人会停在原地
-std::deque<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=0) {
+std::vector<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=0) {
     
     if (beginPos != Pos(-1, -1)) {
         solveGridWithTime(beginPos, id, beginFrame);
@@ -156,11 +156,11 @@ std::deque<Pos> Robot::actionFindBerth(Pos beginPos=Pos(-1, -1), int beginFrame=
         }
     }
     
-    return std::deque<Pos>();
+    return std::vector<Pos>();
 }
 
 // 无论如何，调用这个函数一定是因为机器人没有货物
-std::deque<Pos> Robot::actionFindItem() {
+std::vector<Pos> Robot::actionFindItem() {
         
     double value = 0;
     int minDis = 0x3f3f3f3f;
@@ -319,14 +319,14 @@ std::deque<Pos> Robot::actionFindItem() {
         }
     }
 
-    return std::deque<Pos>();
+    return std::vector<Pos>();
 }
 
 
 void Robot::action() {
     flowLogger.log(nowTime, "action {0}", id);
     // 如果机器人的路径首位不等于当前位置，则需要重新计算路径。
-    if (wholePath.size() == 0 || pos != wholePath.front()) {
+    if (wholePath.size() == 0 || pos != wholePath[0]) {
         havePath = false;
         wholePath.clear();
         deletePathFromAllPath(id);
@@ -423,12 +423,12 @@ void Robot::action() {
 
             if (berthPath.size() > 0) {
                 //注意，由于上一个path的终点是item的位置，这里的起点也是item位置，所以不需要再计算一次，应该把item pop出去
-                berthPath.pop_front();
-                wholePath.insert(wholePath.end(), berthPath.begin(), berthPath.end());
+                // berthPath.pop_front();
+                wholePath.insert(wholePath.end(), berthPath.begin() + 1, berthPath.end());
                 // TODO: VISPATH wholePath 记得输出机器人id，这时候找到的是往返的（回港口的）
                 counter.push_back("robot_path",-1000,2);
-                for (auto & tpos : berthPath){
-                    counter.push_back("robot_path",tpos.x,tpos.y);
+                for (int i = 1; i < berthPath.size(); i++) {
+                    counter.push_back("robot_path",berthPath[i].x,berthPath[i].y);
                 }
                 havePath = true;
                 // 直接用wholePath，就不需要考虑从哪个时间加入了
@@ -459,7 +459,7 @@ void Robot::move() {
     auto nextPos = wholePath.at(1);
     int nextDir = getDirWithPath(nowPos, nextPos);
     // 把当前位置弹出
-    wholePath.pop_front();
+    wholePath.erase(wholePath.begin());
     flowLogger.log(nowTime, "move {0} {1}", id, nextDir);
     counter.add("robot_move_length", 1);
     

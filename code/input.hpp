@@ -240,7 +240,9 @@ void solveFrame() {
     // 移动
     measureAndExecute("Move all robots", [&]() {for (auto & robot : robots) robot->move();});
     // 时间向前推进
-    if (allPath.size() > 0) allPath.pop_front();
+    if (allPath.size() > 0) {
+        allPath.erase(allPath.begin());
+    }
     // 船只调度
     measureAndExecute("Move all ships", [&]() {
         berth_center->call_ship_and_berth_check();

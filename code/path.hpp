@@ -18,7 +18,7 @@ struct TPos {
 int disWithTime[MAX_Line_Length + 1][MAX_Col_Length + 1];
 Pos preWithTime[MAX_Line_Length + 1][MAX_Col_Length + 1];
 int delayWithTime[MAX_Line_Length + 1][MAX_Col_Length + 1];
-std::deque<std::vector<Pos>> allPath;
+std::vector<std::vector<Pos>> allPath;
 std::vector<Pos> fixPos(MAX_Robot_Num, Pos(-1, -1));
 TPos _queueRobot[40010];
 
@@ -166,7 +166,7 @@ void solveGridWithTime(Pos beginPos, int nowRobotId, int beginFrame=0) {
     return;
 }
 
-void addPathToAllPath(std::deque<Pos> path, int nowRobotId) {
+void addPathToAllPath(std::vector<Pos> path, int nowRobotId) {
     for (int nowFrame = 0; nowFrame < path.size(); nowFrame++) {
         if (nowFrame >= allPath.size()) {
             // vector<Pos> size is equal to robotNum
@@ -204,8 +204,8 @@ int getDirWithPath(Pos now, Pos next) {
     }
 }
 
-std::deque<Pos> findPathWithTime(Pos beginPos, Pos endPos) {
-    std::deque<Pos> path;
+std::vector<Pos> findPathWithTime(Pos beginPos, Pos endPos) {
+    std::vector<Pos> path;
     auto now = endPos;
     path.push_back(now);
     while (!(now == beginPos)) {
