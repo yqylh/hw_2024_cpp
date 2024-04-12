@@ -53,6 +53,8 @@ int nowTime = 0; // 当前帧数
 bool inputFlag = true; // 是否input是否结束
 std::vector<int> robotPriority; // 机器人的优先级
 int priorityTimeControl = -1; // 优先级控制时间
+std::unordered_map<Pos, bool> unMoveShip; // 不能移动的船
+std::unordered_map<int, std::unordered_map<Pos, bool>> shipPos; // 船的位置
 
 /**
  * 预处理&多线程控制相关变量

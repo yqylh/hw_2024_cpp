@@ -114,7 +114,7 @@ class Button:
 
 class MapEditor:
     global now_time
-    def __init__(self, map_height=200, map_width=200, cell_size=6):
+    def __init__(self, map_height=200, map_width=200, cell_size=4):
         pygame.init()
         self.screen_width = map_width * cell_size + 200
         self.screen_height = map_height * cell_size + 75

@@ -311,39 +311,44 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target, int lengthLimi
     while (start != end) {
         ShipPos now = _queue_ship[start++];
         if (start == 120010) start = 0;
-        // 直行
-        ShipPos next = now + dir[now.direction];
-        // 判断是否可以走 0 表示不能走, 1 表示可以走(正常道路), 2 表示主航道道路
-        auto checkRes = grids[next.x][next.y]->shipAble[next.direction];
-        if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
-            if (_dis_s[now.x][now.y][now.direction] + checkRes > lengthLimit) continue;
-            _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
-            _pre_s[next.x][next.y][next.direction] = now;
-            _pre_dir_s[next.x][next.y][next.direction] = 2;
-            _queue_ship[end++] = next;
-            if (end == 120010) end = 0;
-        }
-        // 顺时针
-        next = calShipRotPos(now.toPos(), now.direction, 0);
-        checkRes = grids[next.x][next.y]->shipAble[next.direction];
-        if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
-            if (_dis_s[now.x][now.y][now.direction] + checkRes > lengthLimit) continue;
-            _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
-            _pre_s[next.x][next.y][next.direction] = now;
-            _pre_dir_s[next.x][next.y][next.direction] = 0;
-            _queue_ship[end++] = next;
-            if (end == 120010) end = 0;
-        }
-        // 逆时针
-        next = calShipRotPos(now.toPos(), now.direction, 1);
-        checkRes = grids[next.x][next.y]->shipAble[next.direction];
-        if (checkRes && _dis_s[next.x][next.y][next.direction] > _dis_s[now.x][now.y][now.direction] + checkRes) {
-            if (_dis_s[now.x][now.y][now.direction] + checkRes > lengthLimit) continue;
-            _dis_s[next.x][next.y][next.direction] = _dis_s[now.x][now.y][now.direction] + checkRes;
-            _pre_s[next.x][next.y][next.direction] = now;
-            _pre_dir_s[next.x][next.y][next.direction] = 1;
-            _queue_ship[end++] = next;
-            if (end == 120010) end = 0;
+        auto nowTime = _dis_s[now.x][now.y][now.direction];
+        for (int _status = 0; _status < 3; _status++) {
+            ShipPos next;
+            if (_status == 2) { // 直行
+                next = now + dir[now.direction];
+            } else { // 0 顺时针 1 逆时针
+                next = calShipRotPos(now.toPos(), now.direction, _status);
+            }
+            // 判断是否可以走 0 表示不能走, 1 表示可以走(正常道路), 2 表示主航道道路
+            auto checkRes = grids[next.x][next.y]->shipAble[next.direction];
+            if (unMoveShip.size() != 0 && shipPos.size() != 0) for (auto & pos : getShipAllPos(next.toPos(), next.direction)) {
+                if (unMoveShip.find(pos) != unMoveShip.end()) {
+                    if (checkRes != 2 || unMoveShip[pos] == false) {
+                        checkRes = 0;
+                        break;
+                    }
+                }
+                if (shipPos.find(nowTime + 1) != shipPos.end() && shipPos[nowTime + 1].find(pos) != shipPos[nowTime + 1].end()) {
+                    if (checkRes != 2 || shipPos[nowTime + 1][pos] == false) {
+                        checkRes = 0;
+                        break;
+                    }
+                }
+                if (checkRes == 2 && shipPos.find(nowTime + 2) != shipPos.end() &&  shipPos[nowTime + 2].find(pos) != shipPos[nowTime + 2].end()) {
+                    if (shipPos[nowTime + 2][pos] == false) {
+                        checkRes = 0;
+                        break;
+                    }
+                }
+            }
+            if (checkRes && _dis_s[next.x][next.y][next.direction] > nowTime + checkRes) {
+                if (nowTime + checkRes > lengthLimit) continue;
+                _dis_s[next.x][next.y][next.direction] = nowTime + checkRes;
+                _pre_s[next.x][next.y][next.direction] = now;
+                _pre_dir_s[next.x][next.y][next.direction] = _status;
+                _queue_ship[end++] = next;
+                if (end == 120010) end = 0;
+            }
         }
     }
     std::deque<int> *result = new std::deque<int>;
@@ -361,6 +366,7 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target, int lengthLimi
         result->push_front(_pre_dir_s[now.x][now.y][now.direction]);
         now = _pre_s[now.x][now.y][now.direction];
         if (now.toPos() == origin && now.direction == direction) break;
+        if (result->size() > 2000) return nullptr;
         // allPos += std::to_string(now.x) + "," + std::to_string(now.y) + "," + std::to_string(now.direction) + "<";
         // allDir += std::to_string(_pre_dir_s[now.x][now.y][now.direction]) + "<";
     }

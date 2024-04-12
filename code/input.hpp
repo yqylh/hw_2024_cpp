@@ -228,6 +228,7 @@ void buyShip() {
             auto shipBuyer = berth_center->dbss[minDBSS].shipBuyerId[0];
             newShip(berth_center->ship_buyer[shipBuyer].pos.x, berth_center->ship_buyer[shipBuyer].pos.y, minDBSS);
             berth_center->dbss[minDBSS].shipId.push_back(ships.back()->id);
+            berth_center->updateOtherShip();
         }
     }
 }

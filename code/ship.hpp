@@ -21,13 +21,14 @@ struct Ship {
     int isLastRound; // 是否是最后一轮
     Pos targetPos; // 目标位置
     int dbssId; // 船所在的 dbssId
+    std::vector<int> otherShip; // 其他船只的 id
     Ship(int id): id(id) {
         status = 1;
         capacity = 0;
         isLastRound = 0;
         berthId = -2;
         path = nullptr;
-
+        otherShip.clear();
     }
     void output() {
         shipLogger.log(nowTime, "ship{} pos{},{} capacity{} status{} direction{} berthId{}  targetPos{},{}", id, pos.x, pos.y, capacity, status, direction, berthId, targetPos.x, targetPos.y);
@@ -67,12 +68,15 @@ struct Ship {
         path = nullptr;
         targetPos = to;
     }
+    void otherShipPos();
     void move() {
         if (status != 0) return;
         if (targetPos == pos) return;
         // 没有到达目标位置 如果路径为空,则找路径
         if (path == nullptr) {
+            otherShipPos();
             path = sovleShip(pos, direction, targetPos, pathLengthLimit);
+            if (path == nullptr) return;
         }
         if (path->empty()) {
             path = nullptr;
@@ -98,4 +102,54 @@ void newShip(int x, int y, int dbssID) {
 }
 
 
+void insertShipPos(int nowTime, Pos pos, int direction) {
+    if (shipPos.find(nowTime) == shipPos.end()) shipPos[nowTime] = std::unordered_map<Pos, bool>();
+    bool flag = (checkShipAllAble(pos, direction) == 2);
+    for (auto & pos : getShipAllPos(pos, direction)) {
+        shipPos[nowTime][pos] = flag;
+    }
+}
+
+void Ship::otherShipPos() {
+    unMoveShip.clear();
+    shipPos.clear();
+    for (auto & shipId : otherShip) {
+        auto ship_ptr = ships[shipId];
+        if (ship_ptr->status == 2) continue;
+        // 如果船只在港口,或者到了位置,或者没有路径,那么就把这个船只的位置加入到 unMoveShip
+        if (ship_ptr->targetPos == ship_ptr->pos || ship_ptr->path == nullptr) {
+            bool flag = (checkShipAllAble(pos, direction) == 2);
+            for (auto & pos : getShipAllPos(ship_ptr->pos, ship_ptr->direction)) {
+                unMoveShip[ship_ptr->pos] = flag;
+            }
+            continue;
+        }
+        auto pos = ship_ptr->pos;
+        auto direction = ship_ptr->direction;
+        // 此时path一定不为空
+        auto path = ship_ptr->path;
+        int nowTime = ship_ptr->status; // 如果 status 表明要经过 1 帧的回复时间
+        // 如果要经过 1 帧的回复时间,那么就把这个船只的位置加入到 unMoveShip
+        if (nowTime == 1) {
+            insertShipPos(nowTime, pos, direction);
+        }
+        for (int i = 0; i < path->size(); i++) {
+            nowTime++;
+            // 执行
+            if (path->at(i) == 2) {
+                pos = pos + dir[direction];
+            } else {
+                auto nextAction = path->at(i);
+                auto ret = calShipRotPos(pos, direction, nextAction);
+                pos = Pos(ret.x, ret.y);
+                direction = ret.direction;
+            }
+            insertShipPos(nowTime, pos, direction);
+            if (checkShipAllAble(pos, direction) == 2) {
+                nowTime++;
+                insertShipPos(nowTime, pos, direction);
+            }
+        }
+    }
+}
 #endif
