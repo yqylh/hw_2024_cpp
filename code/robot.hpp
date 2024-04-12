@@ -174,12 +174,10 @@ std::deque<Pos> Robot::actionFindItem() {
         }
         auto itemPos = i->pos;
         // 如果绑定了，并且(物品不在绑定区内 且 物品不在开放区内），就不考虑，即一定不去别人家拿东西
-        /*
         if (bindToBerth != -1 and (grids[itemPos.x][itemPos.y]->belongToBerth != bindToBerth and grids[itemPos.x][itemPos.y]->belongToBerth != -1)) {
             i++;
             continue;
         }
-        */
         // 如果没有绑定，随便拿吧
 
         int toBerthTime = 0x3f3f3f3f;
