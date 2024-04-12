@@ -76,9 +76,9 @@ def Do_cmd(args):
         res = win_cmd(args)
     else:
         res = linux_cmd(args)
+    file_path = '../log/judger_output.txt'
+    analyze_judger_output_v3(file_path)
     if args.debug:
-        file_path = '../log/judger_output.txt'
-        analyze_judger_output_v3(file_path)
         file_path = '../log/path_log.txt'
         analyze_time_distribution(file_path)
         file_path = '../log/berth_log.txt'
