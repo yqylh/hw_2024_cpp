@@ -182,9 +182,9 @@ public:
             // 港口没货了,并且船没装满Sell_Ration
             // 但是去了之后不能超时
             int best_bert_id = ship_choose_berth(ship_ptr->id);
+            if (best_bert_id == -1) return;
             estSellTime = berth2berth[bert_id][best_bert_id] + delivery2berthAll[best_bert_id][dbss[ship_ptr->dbssId].berthGoSell[best_bert_id]] + 30;
             if (berth_ptr->goodsNum == 0 && nowTime + estSellTime + 100 < MAX_TIME) {
-                if (best_bert_id == -1) return;
                 if (berths[best_bert_id]->sum_value < Min_Next_Berth_Value) return;
                 berth_ptr->shipId.clear();
                 declare_ship(best_bert_id, ship_ptr->id);
