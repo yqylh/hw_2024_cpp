@@ -311,7 +311,7 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target, int lengthLimi
     while (start != end) {
         ShipPos now = _queue_ship[start++];
         if (start == 120010) start = 0;
-        auto nowTime = _dis_s[now.x][now.y][now.direction];
+        auto simTime = _dis_s[now.x][now.y][now.direction];
         for (int _status = 0; _status < 3; _status++) {
             ShipPos next;
             if (_status == 2) { // 直行
@@ -328,22 +328,22 @@ std::deque<int> *sovleShip(Pos origin, int direction, Pos target, int lengthLimi
                         break;
                     }
                 }
-                if (shipPos.find(nowTime + 1) != shipPos.end() && shipPos[nowTime + 1].find(pos) != shipPos[nowTime + 1].end()) {
-                    if (checkRes != 2 || shipPos[nowTime + 1][pos] == false) {
+                if (shipPos.find(simTime + 1) != shipPos.end() && shipPos[simTime + 1].find(pos) != shipPos[simTime + 1].end()) {
+                    if (checkRes != 2 || shipPos[simTime + 1][pos] == false) {
                         checkRes = 0;
                         break;
                     }
                 }
-                if (checkRes == 2 && shipPos.find(nowTime + 2) != shipPos.end() &&  shipPos[nowTime + 2].find(pos) != shipPos[nowTime + 2].end()) {
-                    if (shipPos[nowTime + 2][pos] == false) {
+                if (checkRes == 2 && shipPos.find(simTime + 2) != shipPos.end() &&  shipPos[simTime + 2].find(pos) != shipPos[simTime + 2].end()) {
+                    if (shipPos[simTime + 2][pos] == false) {
                         checkRes = 0;
                         break;
                     }
                 }
             }
-            if (checkRes && _dis_s[next.x][next.y][next.direction] > nowTime + checkRes) {
-                if (nowTime + checkRes > lengthLimit) continue;
-                _dis_s[next.x][next.y][next.direction] = nowTime + checkRes;
+            if (checkRes && _dis_s[next.x][next.y][next.direction] > simTime + checkRes) {
+                if (simTime + checkRes > lengthLimit) continue;
+                _dis_s[next.x][next.y][next.direction] = simTime + checkRes;
                 _pre_s[next.x][next.y][next.direction] = now;
                 _pre_dir_s[next.x][next.y][next.direction] = _status;
                 _queue_ship[end++] = next;

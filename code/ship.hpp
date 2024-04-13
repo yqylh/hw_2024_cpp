@@ -102,11 +102,11 @@ void newShip(int x, int y, int dbssID) {
 }
 
 
-void insertShipPos(int nowTime, Pos pos, int direction) {
-    if (shipPos.find(nowTime) == shipPos.end()) shipPos[nowTime] = std::unordered_map<Pos, bool>();
+void insertShipPos(int simTime, Pos pos, int direction) {
+    if (shipPos.find(simTime) == shipPos.end()) shipPos[simTime] = std::unordered_map<Pos, bool>();
     bool flag = (checkShipAllAble(pos, direction) == 2);
     for (auto & pos : getShipAllPos(pos, direction)) {
-        shipPos[nowTime][pos] = flag;
+        shipPos[simTime][pos] = flag;
     }
 }
 
@@ -128,13 +128,13 @@ void Ship::otherShipPos() {
         auto direction = ship_ptr->direction;
         // 此时path一定不为空
         auto path = ship_ptr->path;
-        int nowTime = ship_ptr->status; // 如果 status 表明要经过 1 帧的回复时间
+        int simTime = ship_ptr->status; // 如果 status 表明要经过 1 帧的回复时间
         // 如果要经过 1 帧的回复时间,那么就把这个船只的位置加入到 unMoveShip
-        if (nowTime == 1) {
-            insertShipPos(nowTime, pos, direction);
+        if (simTime == 1) {
+            insertShipPos(simTime, pos, direction);
         }
         for (auto i = path->begin(); i != path->end(); i++){
-            nowTime++;
+            simTime++;
             // 执行
             if (*i == 2) {
                 pos = pos + dir[direction];
@@ -144,10 +144,10 @@ void Ship::otherShipPos() {
                 pos = Pos(ret.x, ret.y);
                 direction = ret.direction;
             }
-            insertShipPos(nowTime, pos, direction);
+            insertShipPos(simTime, pos, direction);
             if (checkShipAllAble(pos, direction) == 2) {
-                nowTime++;
-                insertShipPos(nowTime, pos, direction);
+                simTime++;
+                insertShipPos(simTime, pos, direction);
             }
         }
     }
