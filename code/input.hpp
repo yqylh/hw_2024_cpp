@@ -76,15 +76,19 @@ void inputMap(){
             }
         }
     }
-    if (grids[0][0]->type == 1) {
-        _maxShipCnt = 50;
-    }
     scanf("%d", &MAX_Berth_Num);
     for (int i = 0; i < MAX_Berth_Num; i++) {
         int id, x, y, velocity;
         scanf("%d%d%d%d", &id, &x, &y, &velocity);
         berths.emplace_back(new Berth(id, x, y, velocity));
         berthLogger.log(nowTime, "Berth{0} :id={1} x={2} y={3} v={4}", i, id, x, y, velocity);
+    }
+    if (grids[0][0]->type == 5 && berths.size() == 3) { // 图 1
+        bugs("图1\n");
+    } else if (grids[0][0]->type == 0 && grids[0][199]->type == 5) { // 图 2
+        bugs("图2\n");
+    } else { // 图 3
+
     }
     std::cin >> MAX_Capacity;
     std::string line;
@@ -252,7 +256,7 @@ void solveFrame() {
     });
     do_special_frame();
     
-    if (robots.size() < exptRobotCnt) {
+    if (robots.size() < exptRobotCnt && nowTime < 4000) {
         buyRobot();
         berth_center->update_robot_choose_berth();
     }

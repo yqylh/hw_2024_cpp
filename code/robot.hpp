@@ -208,7 +208,7 @@ std::vector<Pos> Robot::actionFindItem() {
             continue;
         }
         double time_eff = std::exp((nowTime - i->beginTime) / 500.0);
-        auto tempValue = double(i->value) * time_eff / (toItemDis + toBerthTime);
+        auto tempValue = double(i->value * i->value) * time_eff / (toItemDis + toBerthTime);
 
         // 如果绑定了港口，而且物品不在绑定区内，那么价值降低
         if (bindToBerth != -1 and (grids[itemPos.x][itemPos.y]->belongToBerth != bindToBerth and grids[itemPos.x][itemPos.y]->belongToBerth != -1)) {
