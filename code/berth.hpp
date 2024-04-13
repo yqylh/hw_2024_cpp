@@ -146,14 +146,22 @@ void initBerthEstimator(const int &totalSpawnPlace, const int &berthNumber) {
         }
     }
     berthEstimator.checkBerthAll(beginPosList, controlNumber, robotControlLengths);
-    double estRobotFull = 0;
+    double estRobotFull = 0, sumAvgPerPull = 0;
 
     for (int i = 0; i < berthNumber; i++) {
         estRobotFull += berthEstimator.berthState[i].avgNewItemPerPull(totalSpawnPlace);
     }
+    sumAvgPerPull = estRobotFull;
+
     estimatorLogger.log(0, "estRobotFull={},{}", estRobotFull, estRobotFull * _pulledItemAtEnd / _itemAtEnd);
+    if (estRobotFull * _pulledItemAtEnd / _itemAtEnd > _maxRobotCnt) {
+        estRobotFull = _maxRobotCnt;
+    } else {
+        estRobotFull = estRobotFull * _pulledItemAtEnd / _itemAtEnd;
+    }
+    
     for (int i = 0; i < berthNumber; i++) {
-        controlNumber[i] = berthEstimator.berthState[i].avgNewItemPerPull(totalSpawnPlace) * _pulledItemAtEnd / _itemAtEnd;
+        controlNumber[i] = estRobotFull / berthNumber;
         estimatorLogger.log(0, "berthId={},controlNumber={}", i, controlNumber[i]);
     }
 
@@ -165,8 +173,8 @@ void initBerthEstimator(const int &totalSpawnPlace, const int &berthNumber) {
 
         auto avgNewItemPerPull = berthEstimator.berthState[i].avgNewItemPerPull(totalSpawnPlace);
         if (avgNewItemPerPull <= 0) continue;
-        int robotNumber = int(avgNewItemPerPull + 1.0);
-        
+        int robotNumber = int(avgNewItemPerPull + 0.95);
+
         for (int j = 1; j <= robotNumber; j++) {
             _buyRobotQueue.push_back({i, berthEstimator.berthState[i].avgDistanceToItem(), (double)robotNumber, j, false});
             exptRobotCnt += 1;
