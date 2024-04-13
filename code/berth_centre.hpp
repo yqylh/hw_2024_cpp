@@ -86,6 +86,16 @@ public:
     int ship_choose_berth(int shipId) {
         int max_goods = -1;
         int max_goods_id = -1;
+        if (mapId == 1) {
+            for (auto & i : berths) {
+                if (i->shipId.empty() == false) continue;
+                if (i->sum_value > max_goods) {
+                    max_goods = i->sum_value;
+                    max_goods_id = i->id;
+                }
+            }
+            return max_goods_id;
+        }
         int dbssId = ships[shipId]->dbssId;
         // 找到船在dbss中的位置
         int shipIdInDBSS = -1;
