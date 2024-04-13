@@ -24,6 +24,7 @@ struct Berth {
     int sum_value;
     int total_value;
     int total_goods;
+    bool isUsed; // 是否使用这个 berth, isUsed = true 表示这个泊位合法
 
     int robotNumLeft = 0;
 
@@ -40,6 +41,7 @@ struct Berth {
         this->total_value = 0;
         this->total_goods = 0;
         this->robotNumLeft = 0;
+        this->isUsed = true;
     }
     void findUsePos() {
         usePos.clear();

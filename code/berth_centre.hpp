@@ -325,6 +325,10 @@ public:
                     }
                 }
                 
+            } else {
+                for (auto & berthId : tmp.berthId) {
+                    berths[berthId]->isUsed = false;
+                }
             }
         }
     }
