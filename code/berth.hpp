@@ -140,6 +140,7 @@ void initBerthEstimator(const int &totalSpawnPlace, const int &berthNumber) {
     std::vector<double> robotControlLengths(berthNumber, 99999.0);
     std::vector<double> controlNumber(berthNumber, 9999999.0);
     for (int i = 0; i < berthNumber; i++) {
+        if (berths[i]->isUsed == false) continue;
         for (auto & pos : berths[i]->usePos) {
             beginPosList[i].push_back(pos);
         }
@@ -163,6 +164,7 @@ void initBerthEstimator(const int &totalSpawnPlace, const int &berthNumber) {
     for (int i = 0; i < berthNumber; i++) {
 
         auto avgNewItemPerPull = berthEstimator.berthState[i].avgNewItemPerPull(totalSpawnPlace);
+        if (avgNewItemPerPull <= 0) continue;
         int robotNumber = int(avgNewItemPerPull + 1.0);
         
         for (int j = 1; j <= robotNumber; j++) {

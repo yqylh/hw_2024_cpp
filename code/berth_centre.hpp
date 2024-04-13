@@ -472,7 +472,7 @@ public:
         if ((ship_ptr->berthId == -2) || (ship_ptr->pos == ship_ptr->targetPos && ship_ptr->berthId == -1)) {
             int best_bert_id = ship_choose_berth(ship_ptr->id);
             // 一个个都没货是吧,死了得了
-            if (best_bert_id == -1) best_bert_id = 0;
+            if (best_bert_id == -1) best_bert_id = dbss[ship_ptr->dbssId].berthId[0];
             declare_ship(best_bert_id, shipId);
             int maxLengthLimit = INT_MAX;
             if (ship_ptr->berthId == -2) {
