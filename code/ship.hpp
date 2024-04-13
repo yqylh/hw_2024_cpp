@@ -133,13 +133,13 @@ void Ship::otherShipPos() {
         if (nowTime == 1) {
             insertShipPos(nowTime, pos, direction);
         }
-        for (int i = 0; i < path->size(); i++) {
+        for (auto i = path->begin(); i != path->end(); i++){
             nowTime++;
             // 执行
-            if (path->at(i) == 2) {
+            if (*i == 2) {
                 pos = pos + dir[direction];
             } else {
-                auto nextAction = path->at(i);
+                auto nextAction = *i;
                 auto ret = calShipRotPos(pos, direction, nextAction);
                 pos = Pos(ret.x, ret.y);
                 direction = ret.direction;
