@@ -13,9 +13,8 @@
 struct Robot{
     int id; // 机器人的 id
     Pos pos; // 机器人的位置
-
     int status; // 机器人的状态 0表示寄了 1 表示正常运行 用来控制避障
-    int bring; // 机器人带的货物 0 表示没有货物 1 表示有货物
+    int bring; // 机器人带的货物 0 表示没有货物 1表示有1个货物 2 表示2个货物
     int bringTimeLimit; // 机器人到达带货物的时间
     int choosed_berth_id; // 机器人选择的泊位
     int item_value; // 机器人选择的物品的价值
@@ -645,7 +644,7 @@ void solveCollision() {
 
 
 void newRobot(int x, int y, int berthId) {
-    printf("lbot %d %d\n", x, y);
+    printf("lbot %d %d 0\n", x, y);
     robots.push_back(new Robot(MAX_Robot_Num++, x, y));
     robots.back()->bindToBerth = berthId;
 
