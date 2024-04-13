@@ -83,6 +83,8 @@ int lastRoundRuningTime = 600; // 估计的最后一轮的运行时间
 int Min_Next_Berth_Goods = 10; // another 港口的货物少于这个值就不去, 0~100
 int Last_Round_delay_time = 4500; // 预留给最后一轮的时间,含去 回 去
 
+int mapId = 3;
+
 int _maxRobotCnt = 15;
 int _maxShipCnt = 2;
 

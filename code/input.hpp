@@ -83,13 +83,17 @@ void inputMap(){
         berths.emplace_back(new Berth(id, x, y, velocity));
         berthLogger.log(nowTime, "Berth{0} :id={1} x={2} y={3} v={4}", i, id, x, y, velocity);
     }
-    if (grids[0][0]->type == 5 && berths.size() == 3) { // 图 1
+    if (grids[0][0]->type == 5 && grids[2][2]->type == 7 && grids[197][10]->type == 12) { // 图 1
         bugs("图1\n");
         _maxRobotCnt = 17;
-    } else if (grids[0][0]->type == 0 && grids[0][199]->type == 5) { // 图 2
+        mapId = 1;
+    } else if (grids[0][0]->type == 0 && grids[0][199]->type == 5 && grids[3][22]->type == 7 && grids[2][197]->type == 12) { // 图 2
         bugs("图2\n");
+        mapId = 2;
+        _maxShipCnt = 1;
     } else { // 图 3
-
+        mapId = 3;
+        _maxShipCnt = 2;
     }
     std::cin >> MAX_Capacity;
     std::string line;
