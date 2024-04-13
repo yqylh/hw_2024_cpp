@@ -26,6 +26,10 @@
 
 void inputMap(){
     int totalSpawnPlace = 0;
+    int tmpCnt[16] = {0};
+    int map1Cnt[] = {31527,4060,722,18,0,3201,3,2,81,0,0,384,2};
+    int map2Cnt[] = {32500,2661,2296,18,0,2397,4,2,90,0,0,30,2};
+
     for (int i = 0; i < MAX_Line_Length; i++) {
         std::string line;
         getline(std::cin, line);
@@ -34,41 +38,53 @@ void inputMap(){
                 case '.':
                     totalSpawnPlace++;
                     grids[i][j] = new Grid(i, j, 0);
+                    tmpCnt[0]++;
                     break;
                 case '*':
                     grids[i][j] = new Grid(i, j, 1);
+                    tmpCnt[1]++;
                     break;
                 case '#':
                     grids[i][j] = new Grid(i, j, 2);
+                    tmpCnt[2]++;
                     break;
                 case 'B':
                     grids[i][j] = new Grid(i, j, 3);
+                    tmpCnt[3]++;
                     break;
                 case '>':
                     grids[i][j] = new Grid(i, j, 4);
+                    tmpCnt[4]++;
                     break;
                 case '~':
                     grids[i][j] = new Grid(i, j, 5);
+                    tmpCnt[5]++;
                     break;
                 case 'R':
                     grids[i][j] = new Grid(i, j, 6);
+                    tmpCnt[6]++;
                     berth_center->robot_buyer.emplace_back(Pos(i, j));
                     break;
                 case 'S':
                     grids[i][j] = new Grid(i, j, 7);
+                    tmpCnt[7]++;
                     berth_center->ship_buyer.emplace_back(Pos(i, j));
                     break;
                 case 'K':
                     grids[i][j] = new Grid(i, j, 8);
+                    tmpCnt[8]++;
                     break;
                 case 'C':
                     grids[i][j] = new Grid(i, j, 9);
+                    tmpCnt[9]++;
                     break;
                 case 'c':
                     grids[i][j] = new Grid(i, j, 11);
+                    tmpCnt[11]++;
                     break;
                 case 'T':
                     grids[i][j] = new Grid(i, j, 12);
+                    tmpCnt[12]++;
                     berth_center->delivery.emplace_back(Pos(i, j));
                     break;
                 default:
@@ -76,6 +92,8 @@ void inputMap(){
             }
         }
     }
+    bugs(tmpCnt[0], tmpCnt[1], tmpCnt[2], tmpCnt[3], tmpCnt[4], tmpCnt[5], tmpCnt[6], tmpCnt[7], tmpCnt[8], tmpCnt[9], tmpCnt[10], tmpCnt[11], tmpCnt[12]);
+
     scanf("%d", &MAX_Berth_Num);
     for (int i = 0; i < MAX_Berth_Num; i++) {
         int id, x, y, velocity;
@@ -83,6 +101,40 @@ void inputMap(){
         berths.emplace_back(new Berth(id, x, y, velocity));
         berthLogger.log(nowTime, "Berth{0} :id={1} x={2} y={3} v={4}", i, id, x, y, velocity);
     }
+
+    bool isMap1 = true;
+    for (int i = 0; i < 13; i++) {
+        if (tmpCnt[i] != map1Cnt[i]) {
+            isMap1 = false;
+            break;
+        }
+    }
+
+    bool isMap2 = true;
+    for (int i = 0; i < 13; i++) {
+        if (tmpCnt[i] != map2Cnt[i]) {
+            isMap2 = false;
+            break;
+        }
+    }
+
+    bugs(isMap1, isMap2);
+
+    if (isMap1 && grids[0][0]->type == 5 && grids[2][2]->type == 7 && grids[197][10]->type == 12) {
+        _maxRobotCnt = 17;
+        mapId = 1;
+        bugs("图1\n");
+    } else if (isMap2 && grids[0][0]->type == 0 && grids[0][199]->type == 5 && grids[3][22]->type == 7 && grids[2][197]->type == 12) {
+        mapId = 2;
+        _maxShipCnt = 1;
+        bugs("图2\n");
+    } else {
+        mapId = 3;
+        _maxShipCnt = 1;
+        bugs("图3\n");
+    }
+
+    /*
     if (grids[0][0]->type == 5 && grids[2][2]->type == 7 && grids[197][10]->type == 12) { // 图 1
         bugs("图1\n");
         _maxRobotCnt = 17;
@@ -95,6 +147,7 @@ void inputMap(){
         mapId = 3;
         _maxShipCnt = 2;
     }
+    */
     std::cin >> MAX_Capacity;
     std::string line;
     while(getline(std::cin, line) && line != "OK");
