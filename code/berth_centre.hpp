@@ -87,11 +87,23 @@ public:
         int max_goods = -1;
         int max_goods_id = -1;
         if (mapId == 1) {
-            for (auto & i : berths) {
-                if (i->shipId.empty() == false) continue;
-                if (i->sum_value > max_goods) {
-                    max_goods = i->sum_value;
-                    max_goods_id = i->id;
+            std::vector<int> berthId;
+            if (ships.size() == 1) {
+                berthId = {0, 1, 2};
+            }
+            if (ships.size() == 2) {
+                if (shipId == 0) berthId = {0, 1};
+                if (shipId == 1) berthId = {0, 2};
+            }
+            if (ships.size() == 3) {
+                Sell_Ration = 0.95;
+                berthId = {shipId};
+            }
+            for (auto & i : berthId) {
+                if (berths[i]->shipId.empty() == false) continue;
+                if (berths[i]->sum_value > max_goods) {
+                    max_goods = berths[i]->sum_value;
+                    max_goods_id = berths[i]->id;
                 }
             }
             return max_goods_id;
@@ -168,6 +180,45 @@ public:
     }
     // 检查港口的状态
     void normal_berth_check(int bert_id){
+        // if (mapId == 1) {
+        //     auto berth_ptr = berths[bert_id];
+        //     if (!berth_ptr->shipId.empty()) {
+        //         auto ship_ptr = ships[berth_ptr->shipId[0]];
+        //         if (ship_ptr->status != 2) return;
+        //         // 让船去虚拟点的几种情况
+        //         // line1: 如果船只装满了
+        //         // line2: 或者是最后一轮了(暂时没法判断了)
+        //         // line3: 如果港口没货物了, 并且船装满了百分之 ratio
+        //         int estSellTime = delivery2berthAll[bert_id][dbss[ship_ptr->dbssId].berthGoSell[bert_id]] + 150;
+        //         // 从 0 去卖
+        //         if (   ship_ptr->leftCapacity() == 0
+        //             || nowTime + estSellTime > MAX_TIME
+        //             || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * 0.95 && nowTime + estSellTime * 2 + 200 < MAX_TIME)
+        //         ) {
+        //             berth_ptr->shipId.clear();
+        //             int sellId = ship_ptr->id;
+        //             ship_ptr->goSell(delivery[sellId].pos, delivery2berthAll[bert_id][sellId]);
+        //             shipLogger.log(nowTime, "center command ship{0} goSell", ship_ptr->id);
+        //             return;
+        //         }
+        //         // 让船去别的地方的情况
+        //         // 港口没货了,并且船没装满Sell_Ration
+        //         // 但是去了之后不能超时
+        //         // 去 0
+        //         int best_bert_id = ship_choose_berth(ship_ptr->id);
+        //         if (best_bert_id != 0) return;
+        //         estSellTime = berth2berth[bert_id][best_bert_id] + delivery2berthAll[best_bert_id][dbss[ship_ptr->dbssId].berthGoSell[best_bert_id]] + 30;
+        //         if (ship_ptr->capacity > MAX_Capacity * 0.66 && nowTime + estSellTime + 400 < MAX_TIME) {
+        //             if (berths[best_bert_id]->sum_value < Min_Next_Berth_Value) return;
+        //             berth_ptr->shipId.clear();
+        //             declare_ship(best_bert_id, ship_ptr->id);
+        //             ship_ptr->moveToBerth(best_bert_id, berths[best_bert_id]->pos, berth2berth[bert_id][best_bert_id]);
+        //             shipLogger.log(nowTime, "center command ship{0} move_berth to berth{1}", ship_ptr->id, best_bert_id);
+        //             return;
+        //         }
+        //     }
+        //     return;
+        // }
         auto berth_ptr = berths[bert_id];
         // 因为先移动,所以先检查船的状态
         if (!berth_ptr->shipId.empty()) {
@@ -184,6 +235,7 @@ public:
             ) {
                 berth_ptr->shipId.clear();
                 int sellId = dbss[ship_ptr->dbssId].berthGoSell[bert_id];
+                if (mapId == 1 && ship_ptr->id != 2) sellId = ship_ptr->id;
                 ship_ptr->goSell(delivery[sellId].pos, delivery2berthAll[bert_id][sellId]);
                 shipLogger.log(nowTime, "center command ship{0} goSell", ship_ptr->id);
                 return;
@@ -264,27 +316,29 @@ public:
             tmp.berthId.push_back(i);
             berth_used[i] = true;
             // 加入所有可以到达的 berth
-            for (int j = i + 1; j < MAX_Berth_Num; j++) {
-                if (berth_used[j]) continue;
-                if (berth2berth[i][j] != INT_MAX) {
-                    tmp.berthId.push_back(j);
-                    berth_used[j] = true;
+            if (mapId == 1 && i == 0) {} else {
+                for (int j = i + 1; j < MAX_Berth_Num; j++) {
+                    if (berth_used[j]) continue;
+                    if (berth2berth[i][j] != INT_MAX) {
+                        tmp.berthId.push_back(j);
+                        berth_used[j] = true;
+                    }
                 }
-            }
-            // 加入所有可以到达的 delivery
-            for (int j = 0; j < delivery.size(); j++) {
-                if (delivery_used[j]) continue;
-                if (delivery2berthAll[i][j] != INT_MAX) {
-                    tmp.deliveryId.push_back(j);
-                    delivery_used[j] = true;
+                // 加入所有可以到达的 delivery
+                for (int j = 0; j < delivery.size(); j++) {
+                    if (delivery_used[j]) continue;
+                    if (delivery2berthAll[i][j] != INT_MAX) {
+                        tmp.deliveryId.push_back(j);
+                        delivery_used[j] = true;
+                    }
                 }
-            }
-            // 加入所有可以到达的 shipBuyer
-            for (int j = 0; j < ship_buyer.size(); j++) {
-                if (shipBuyer_used[j]) continue;
-                if (berth2shipBuyer[i][j] != INT_MAX) {
-                    tmp.shipBuyerId.push_back(j);
-                    shipBuyer_used[j] = true;
+                // 加入所有可以到达的 shipBuyer
+                for (int j = 0; j < ship_buyer.size(); j++) {
+                    if (shipBuyer_used[j]) continue;
+                    if (berth2shipBuyer[i][j] != INT_MAX) {
+                        tmp.shipBuyerId.push_back(j);
+                        shipBuyer_used[j] = true;
+                    }
                 }
             }
             if (tmp.deliveryId.size() > 0 && tmp.shipBuyerId.size() > 0) {
@@ -483,6 +537,10 @@ public:
             int best_bert_id = ship_choose_berth(ship_ptr->id);
             // 一个个都没货是吧,死了得了
             if (best_bert_id == -1) best_bert_id = dbss[ship_ptr->dbssId].berthId[0];
+            // if (mapId == 1) {
+            //     if (ships.size() == 2) best_bert_id = ship_ptr->id + 1;
+            //     else best_bert_id = rand() % 2 + 1;
+            // }
             declare_ship(best_bert_id, shipId);
             int maxLengthLimit = INT_MAX;
             if (ship_ptr->berthId == -2) {

@@ -123,6 +123,7 @@ void inputMap(){
     if (isMap1 && grids[0][0]->type == 5 && grids[2][2]->type == 7 && grids[197][10]->type == 12) {
         _maxRobotCnt = 17;
         mapId = 1;
+        _maxShipCnt = 2;
         bugs("图1\n");
     } else if (isMap2 && grids[0][0]->type == 0 && grids[0][199]->type == 5 && grids[3][22]->type == 7 && grids[2][197]->type == 12) {
         mapId = 2;
