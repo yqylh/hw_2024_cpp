@@ -85,6 +85,7 @@ void inputMap(){
     }
     if (grids[0][0]->type == 5 && berths.size() == 3) { // 图 1
         bugs("图1\n");
+        _maxRobotCnt = 17;
     } else if (grids[0][0]->type == 0 && grids[0][199]->type == 5) { // 图 2
         bugs("图2\n");
     } else { // 图 3
@@ -256,7 +257,7 @@ void solveFrame() {
     });
     do_special_frame();
     
-    if (robots.size() < exptRobotCnt && nowTime < 4000) {
+    if (robots.size() < exptRobotCnt) {
         buyRobot();
         berth_center->update_robot_choose_berth();
     }
