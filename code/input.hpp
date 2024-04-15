@@ -121,17 +121,21 @@ void inputMap(){
     bugs(isMap1, isMap2);
 
     if (isMap1 && grids[0][0]->type == 5 && grids[2][2]->type == 7 && grids[197][10]->type == 12) {
-        _maxRobotCnt = 17;
+        _maxRobotCnt = 22;
         mapId = 1;
         _maxShipCnt = 2;
+        Sell_Ration = 0.98;
         bugs("图1\n");
     } else if (isMap2 && grids[0][0]->type == 0 && grids[0][199]->type == 5 && grids[3][22]->type == 7 && grids[2][197]->type == 12) {
         mapId = 2;
         _maxShipCnt = 1;
+        _maxRobotCnt = 19;
         bugs("图2\n");
     } else {
         mapId = 3;
         _maxShipCnt = 1;
+        _maxRobotCnt = 21;
+        Sell_Ration = 0.98;
         bugs("图3\n");
     }
 

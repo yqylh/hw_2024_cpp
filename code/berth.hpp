@@ -164,7 +164,14 @@ void initBerthEstimator(const int &totalSpawnPlace, const int &berthNumber) {
         controlNumber[i] = estRobotFull / berthNumber;
         estimatorLogger.log(0, "berthId={},controlNumber={}", i, controlNumber[i]);
     }
-
+    int _c_more =  int(controlNumber[0] + 1)* berthNumber - estRobotFull;
+    if (_c_more == 1){
+        controlNumber[0] --;
+    }else if (_c_more == 2)
+    {
+        controlNumber[0] --;
+        controlNumber[1] --;
+    }
     berthEstimator.reset();
     berthEstimator.checkBerthAll(beginPosList, controlNumber, robotControlLengths);
 

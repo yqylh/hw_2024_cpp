@@ -231,7 +231,7 @@ public:
             int estSellTime = delivery2berthAll[bert_id][dbss[ship_ptr->dbssId].berthGoSell[bert_id]] + 30;
             if (   ship_ptr->leftCapacity() == 0
                 || nowTime + estSellTime > MAX_TIME
-                || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > MAX_Capacity * Sell_Ration  && nowTime + estSellTime * 2 + 200 < MAX_TIME)
+                || (berth_ptr->goodsNum == 0 && ship_ptr->capacity > double(MAX_Capacity) * Sell_Ration  && nowTime + estSellTime * 2 + 200 < MAX_TIME)
             ) {
                 berth_ptr->shipId.clear();
                 int sellId = dbss[ship_ptr->dbssId].berthGoSell[bert_id];
