@@ -11,6 +11,7 @@
 
 ### 多环境的测试脚本
 我们的`run.py`支持在 Windows、linux、mac 上执行同样的运行测试逻辑，并支持各种细节的参数。
+`upload.py`支持在 Windows、linux、mac 上执行同样的打包逻辑，并按照时间戳命名，并自动将旧的压缩包移动到 OldFile 中备份。
 
 ### 多线程 logger
 为了不影响 logger 对实际运行速度的影响，我们写了一套多线程的 logger 用来将中间日志输出到文件中。
